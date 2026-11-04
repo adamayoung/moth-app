@@ -41,7 +41,12 @@ make test TEST_TARGET=MothCoreTests TESTS='VariableResolverTests/requestScopeWin
 make test-all                     # unit, packages, and the full UI suite
 ```
 
-See [UI Testing](ui-testing.md) for UI plans, filters, and commands.
+See [UI Testing](ui-testing.md) for UI plans, filters, and commands. The scripts
+behind these targets have tests of their own:
+
+```bash
+python3 -m unittest discover -s Scripts/tests -p 'test_*.py'
+```
 
 `TESTS=` defaults to the `MothTests` target. Supply `TEST_TARGET=` when the suite
 belongs to a package. Swift Testing function filters require trailing `()`;

@@ -39,4 +39,4 @@ Start with the [documentation guide](docs/README.md).
 
 ## Licence
 
-MIT
+[MIT](LICENSE)
