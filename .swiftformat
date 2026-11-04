@@ -1,0 +1,24 @@
+--exclude **/.build,**/DerivedData
+
+--type-blank-lines preserve
+--indent 4
+--commas inline
+--self init-only
+--wrap-arguments before-first
+--wrap-parameters before-first
+--xcode-indentation enabled
+--pattern-let inline
+--max-width 120
+--guard-else next-line
+--else-position same-line
+--func-attributes prev-line
+--type-attributes prev-line
+--complex-attributes prev-line
+--non-complex-attributes @AppStorage,@Binding,@Environment,@FocusedValue,@Query,@SceneStorage
+
+--disable wrapMultilineStatementBraces
+--disable redundantLetError
+--disable unusedArguments
+--disable blankLinesAtStartOfScope
+
+--header "//  {file}\n//  Moth\n//\n//  Copyright © 2026 Adam Young."

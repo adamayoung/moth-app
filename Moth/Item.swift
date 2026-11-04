@@ -1,9 +1,7 @@
-//
 //  Item.swift
 //  Moth
 //
-//  Created by Adam Young on 04/11/2026.
-//
+//  Copyright © 2026 Adam Young.
 
 import Foundation
 import SwiftData
@@ -11,7 +9,7 @@ import SwiftData
 @Model
 final class Item {
     var timestamp: Date
-    
+
     init(timestamp: Date) {
         self.timestamp = timestamp
     }
