@@ -50,6 +50,15 @@ class TestSelectionTests(unittest.TestCase):
         self.assertIn("-only-testing:'MothUITests/RequestEditorTests'", dry_run("test-ui", "TESTS=RequestEditorTests").stdout)
 
 
+    def test_test_all_runs_unit_then_packages_then_ui(self):
+        output = dry_run("test-all").stdout
+        unit = output.index("-testPlan UnitTests")
+        packages = output.index("Scripts/test-packages.sh")
+        ui = output.index("-testPlan UITests")
+        self.assertLess(unit, packages)
+        self.assertLess(packages, ui)
+
+
 class UIAllowanceTests(unittest.TestCase):
     def test_no_allowance_adds_no_flags(self):
         self.assertNotIn("-test-timeouts-enabled", dry_run("test-ui").stdout)
