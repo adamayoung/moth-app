@@ -147,9 +147,11 @@ into its own `DerivedData` and takes the same build lock as every other checkout
 - **Formatting and lint.** SwiftFormat also applies a parent directory's
   `.swiftformat`, and a worktree sits inside the main checkout, so the main
   checkout's config governs the worktree's files. That is why `make lint` and
-  `make format` exclude `.claude/worktrees` on their command line, not in
+  `make format` give SwiftFormat `.claude/worktrees` on its command line, not in
   `.swiftformat`, where the exclusion would skip every file in a worktree, the
-  format hook's included.
+  format hook's included. SwiftLint has no such flag, so its exclusion is in
+  `.swiftlint.yml`. It reads no parent configuration and lints a file named
+  explicitly, so the hook is unaffected.
 - **Xcode.** The Xcode window is open on the main checkout, and the Xcode MCP
   lists it as `windowtab-…`; a call aimed at it from a worktree reads and writes
   the main checkout's files. Xcode's headless MCP server
