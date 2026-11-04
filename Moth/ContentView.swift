@@ -1,12 +1,10 @@
-//
 //  ContentView.swift
 //  Moth
 //
-//  Created by Adam Young on 04/11/2026.
-//
+//  Copyright © 2026 Adam Young.
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext

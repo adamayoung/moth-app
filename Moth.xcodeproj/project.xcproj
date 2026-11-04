@@ -12,9 +12,35 @@
   },
   "files": [
     { "kind": "folder", "path": "Moth", "target-membership": [ "Moth" ] },
-    { "kind": "folder", "path": "MothTests", "target-membership": [ "MothTests" ] },
-    { "kind": "folder", "path": "MothUITests", "target-membership": [ "MothUITests" ] },
     {
+      "kind": "folder",
+      "path": "MothTests",
+      "target-membership": [
+        "MothTests",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "MothTests",
+          "exclusions": [
+            ".swiftformat",
+          ],
+        },
+      ],
+    }, {
+      "kind": "folder",
+      "path": "MothUITests",
+      "target-membership": [
+        "MothUITests",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "MothUITests",
+          "exclusions": [
+            ".swiftformat",
+          ],
+        },
+      ],
+    }, {
       "kind": "group",
       "name": "Products",
       "children": [

@@ -1,18 +1,16 @@
-//
 //  MothApp.swift
 //  Moth
 //
-//  Created by Adam Young on 04/11/2026.
-//
+//  Copyright © 2026 Adam Young.
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct MothApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Item.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

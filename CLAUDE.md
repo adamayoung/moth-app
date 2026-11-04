@@ -49,7 +49,7 @@ and [Persistence](docs/architecture.md#persistence) govern every change to one.
 
 `Moth.xcodeproj` holds a JSON `project.xcproj`, Xcode's default format since
 27.2, not a `project.pbxproj`. Edit it by hand when that is simpler, then run
-`xcprojformatter --update Moth.xcodeproj`.
+`xcrun xcprojformatter --update Moth.xcodeproj`, because it is not on `PATH`.
 
 ## Xcode MCP and Make
 
