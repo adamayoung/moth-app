@@ -16,8 +16,9 @@ if [ ! -w "$(dirname "$lock")" ]; then
     exit 1
 fi
 
+# The lock goes last: the next run takes it at once and writes its own holder file.
 release() {
-    rm -f "$lock" "$holder"
+    rm -f "$holder" "$lock"
 }
 
 polls=0
@@ -37,6 +38,4 @@ trap 'exit 143' TERM
 
 echo "$label in $PWD" > "$holder"
 
-status=0
-"$@" || status=$?
-exit "$status"
+"$@"

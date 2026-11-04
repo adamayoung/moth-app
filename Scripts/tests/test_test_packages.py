@@ -5,6 +5,7 @@ Run with: python3 -m unittest discover -s Scripts/tests -p 'test_*.py'
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -25,6 +26,9 @@ class TestPackagesTests(unittest.TestCase):
         self.fake_bin.mkdir()
         self.ran = self.directory / "ran"
         self.environment = {**os.environ, "PATH": f"{self.fake_bin}:{os.environ['PATH']}"}
+        self.script = self.directory / "Scripts" / TEST_PACKAGES.name
+        self.script.parent.mkdir()
+        shutil.copy(TEST_PACKAGES, self.script)
 
     def add_package(self, name, output, status=0):
         package = self.directory / "Packages" / name
@@ -33,7 +37,7 @@ class TestPackagesTests(unittest.TestCase):
         (package / "output").write_text(output)
         (package / "status").write_text(str(status))
 
-    def run_script(self):
+    def run_script(self, cwd=None):
         fake_swift = self.fake_bin / "swift"
         fake_swift.write_text(
             '#!/bin/sh\n'
@@ -43,8 +47,8 @@ class TestPackagesTests(unittest.TestCase):
         )
         fake_swift.chmod(0o755)
         return subprocess.run(
-            [TEST_PACKAGES],
-            cwd=self.directory,
+            [self.script],
+            cwd=cwd or self.directory,
             env=self.environment,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -56,6 +60,11 @@ class TestPackagesTests(unittest.TestCase):
         result = self.run_script()
         self.assertEqual(result.returncode, 0)
         self.assertIn("no packages", result.stdout)
+
+    def test_finds_the_packages_from_any_directory(self):
+        self.add_package("HTTPKit", SWIFT_TESTING_SUMMARY.format(2))
+        result = self.run_script(cwd=self.fake_bin)
+        self.assertIn("HTTPKit: ran 2 test(s)", result.stdout)
 
     def test_passes_a_package_with_swift_testing_tests(self):
         self.add_package("HTTPKit", XCTEST_SUMMARY.format(0) + "\n" + SWIFT_TESTING_SUMMARY.format(2))

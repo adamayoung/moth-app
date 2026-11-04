@@ -5,6 +5,7 @@ Run with: python3 -m unittest discover -s Scripts/tests -p 'test_*.py'
 
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
 
 
@@ -17,6 +18,24 @@ def dry_run(*arguments):
         capture_output=True,
         text=True,
     )
+
+
+class RecipeShellTests(unittest.TestCase):
+    def run_recipe(self, recipe):
+        with tempfile.NamedTemporaryFile("w", suffix=".mk") as probe:
+            probe.write(f"probe:\n\t@{recipe}\n")
+            probe.flush()
+            return subprocess.run(
+                ["make", "-C", str(REPOSITORY), "-f", "Makefile", "-f", probe.name, "probe"],
+                capture_output=True,
+                text=True,
+            )
+
+    def test_a_failure_inside_a_pipeline_fails_the_recipe(self):
+        self.assertNotEqual(self.run_recipe("false | true").returncode, 0)
+
+    def test_a_recipe_stops_at_its_first_failure(self):
+        self.assertNotEqual(self.run_recipe("false; true").returncode, 0)
 
 
 class TestSelectionTests(unittest.TestCase):
@@ -49,6 +68,10 @@ class TestSelectionTests(unittest.TestCase):
     def test_a_ui_filter_uses_the_ui_target(self):
         self.assertIn("-only-testing:'MothUITests/RequestEditorTests'", dry_run("test-ui", "TESTS=RequestEditorTests").stdout)
 
+
+    def test_test_target_cannot_redirect_a_ui_filter(self):
+        output = dry_run("test-ui", "TEST_TARGET=MothTests", "TESTS=RequestEditorTests").stdout
+        self.assertIn("-only-testing:'MothUITests/RequestEditorTests'", output)
 
     def test_test_all_runs_unit_then_packages_then_ui(self):
         output = dry_run("test-all").stdout

@@ -34,8 +34,11 @@ class RunXcodeTestsTests(unittest.TestCase):
         creates = f'mkdir -p "{self.bundle}"' if writes_bundle else ":"
         self.fake("xcodebuild", f'echo "$@" > "{self.arguments_file}"\n{creates}\nexit {status}')
 
-    def fake_summary(self, total):
-        self.fake("xcrun", f'[ "$3 $4" = "test-results summary" ] && echo \'{{"totalTestCount": {total}}}\'')
+    def fake_summary(self, total, skipped=0):
+        self.fake_summary_output(f'{{"totalTestCount": {total}, "skippedTests": {skipped}}}')
+
+    def fake_summary_output(self, output):
+        self.fake("xcrun", f'[ "$3 $4" = "test-results summary" ] && echo \'{output}\'')
 
     def run_script(self, *arguments):
         return subprocess.run(
@@ -69,6 +72,37 @@ class RunXcodeTestsTests(unittest.TestCase):
         result = self.run_script()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Ran 0 test(s).", result.stdout)
+
+    def test_does_not_count_skipped_tests(self):
+        self.fake_xcodebuild()
+        self.fake_summary(3, skipped=1)
+        self.assertIn("Ran 2 test(s).", self.run_script().stdout)
+
+    def test_fails_a_run_whose_tests_were_all_skipped(self):
+        self.fake_xcodebuild()
+        self.fake_summary(2, skipped=2)
+        result = self.run_script()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Ran 0 test(s).", result.stdout)
+
+    def test_fails_when_the_summary_is_empty(self):
+        self.fake_xcodebuild()
+        self.fake("xcrun", "exit 1")
+        result = self.run_script()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("Ran ", result.stdout)
+
+    def test_fails_when_the_summary_has_no_count(self):
+        self.fake_xcodebuild()
+        self.fake_summary_output("{}")
+        result = self.run_script()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("Ran ", result.stdout)
+
+    def test_keeps_the_status_of_a_failed_run_when_the_summary_is_unreadable(self):
+        self.fake_xcodebuild(status=65)
+        self.fake("xcrun", "exit 1")
+        self.assertEqual(self.run_script().returncode, 65)
 
     def test_keeps_the_status_of_a_failed_run_and_still_reports(self):
         self.fake_xcodebuild(status=65)

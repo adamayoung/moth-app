@@ -14,7 +14,7 @@
 --func-attributes prev-line
 --type-attributes prev-line
 --complex-attributes prev-line
---non-complex-attributes @AppStorage,@Binding,@Environment,@FocusedValue,@Query,@SceneStorage
+--non-complex-attributes @AppStorage,@Binding,@Environment,@FocusedValue,@Query,@SceneStorage,@State
 
 --disable wrapMultilineStatementBraces
 --disable redundantLetError

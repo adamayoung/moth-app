@@ -1,5 +1,5 @@
-SHELL := /bin/bash
-.SHELLFLAGS := -o pipefail -ec
+# Not .SHELLFLAGS, which needs make 3.82: Apple ships 3.81, and it ignores the line.
+SHELL := /bin/bash -o pipefail -e
 
 -include .env
 
@@ -7,6 +7,7 @@ DERIVED_DATA := $(CURDIR)/DerivedData
 RESULT_BUNDLE := $(DERIVED_DATA)/Result.xcresult
 
 XCODEBUILD_FLAGS ?= -scheme Moth -destination 'platform=macOS' -parallelizeTargets -skipMacroValidation -derivedDataPath '$(DERIVED_DATA)'
+RUN_XCODE_TESTS = Scripts/run-xcode-tests.sh '$(RESULT_BUNDLE)' $(XCODEBUILD_FLAGS)
 
 TEST_TARGET ?= MothTests
 TESTS ?=
@@ -32,15 +33,15 @@ build:
 	@MOTH_BUILD_LOCK_LABEL="build Moth" Scripts/build-lock.sh xcodebuild build $(XCODEBUILD_FLAGS)
 
 test:
-	@MOTH_BUILD_LOCK_LABEL="test UnitTests" Scripts/build-lock.sh Scripts/run-xcode-tests.sh '$(RESULT_BUNDLE)' $(XCODEBUILD_FLAGS) -testPlan UnitTests $(ONLY_TESTING_FLAG)
+	@MOTH_BUILD_LOCK_LABEL="test UnitTests" Scripts/build-lock.sh $(RUN_XCODE_TESTS) -testPlan UnitTests $(ONLY_TESTING_FLAG)
 
 test-unit:
-	@MOTH_BUILD_LOCK_LABEL="test-unit UnitTests" Scripts/build-lock.sh Scripts/run-xcode-tests.sh '$(RESULT_BUNDLE)' $(XCODEBUILD_FLAGS) -testPlan UnitTests $(or $(ONLY_TESTING_FLAG),-only-testing:MothTests)
+	@MOTH_BUILD_LOCK_LABEL="test-unit UnitTests" Scripts/build-lock.sh $(RUN_XCODE_TESTS) -testPlan UnitTests $(or $(ONLY_TESTING_FLAG),-only-testing:MothTests)
 
-test-ui: TEST_TARGET = MothUITests
+test-ui: override TEST_TARGET = MothUITests
 test-ui:
 	@Scripts/clear-stale-moth.sh --check-only
-	@MOTH_BUILD_LOCK_LABEL="test-ui UITests" Scripts/build-lock.sh Scripts/clear-stale-moth.sh Scripts/run-xcode-tests.sh '$(RESULT_BUNDLE)' $(XCODEBUILD_FLAGS) -testPlan UITests $(ONLY_TESTING_FLAG) $(UI_ALLOWANCE_FLAGS)
+	@MOTH_BUILD_LOCK_LABEL="test-ui UITests" Scripts/build-lock.sh Scripts/clear-stale-moth.sh $(RUN_XCODE_TESTS) -testPlan UITests $(ONLY_TESTING_FLAG) $(UI_ALLOWANCE_FLAGS)
 
 test-packages:
 	@Scripts/test-packages.sh

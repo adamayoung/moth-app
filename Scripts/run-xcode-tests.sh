@@ -14,12 +14,24 @@ rm -rf "$bundle"
 status=0
 xcodebuild test "$@" -resultBundlePath "$bundle" || status=$?
 
-if [ ! -d "$bundle" ]; then
-    echo "error: xcodebuild left no result bundle at $bundle, so no tests can be counted" >&2
+fail_uncounted() {
+    echo "error: $1" >&2
     exit $((status == 0 ? 1 : status))
+}
+
+if [ ! -d "$bundle" ]; then
+    fail_uncounted "xcodebuild left no result bundle at $bundle, so no tests can be counted"
 fi
 
-count=$(xcrun xcresulttool get test-results summary --path "$bundle" --compact | jq -r '.totalTestCount')
+count=$(xcrun xcresulttool get test-results summary --path "$bundle" --compact |
+    jq -r '.totalTestCount - .skippedTests' 2>/dev/null) || count=""
+
+case "$count" in
+"" | *[!0-9]*)
+    fail_uncounted "could not read a test count from $bundle"
+    ;;
+esac
+
 echo "Ran $count test(s)."
 
 if [ "$status" -eq 0 ] && [ "$count" -eq 0 ]; then

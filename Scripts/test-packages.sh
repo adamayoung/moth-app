@@ -4,6 +4,8 @@
 set -uo pipefail
 shopt -s nullglob
 
+cd "$(dirname "$0")/.." || exit 1
+
 manifests=(Packages/*/Package.swift)
 if [ ${#manifests[@]} -eq 0 ]; then
     echo "no packages to test"
