@@ -1,0 +1,60 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__sosumi__*"
+    ]
+  },
+  "outputStyle": "default",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/deny-cd-into-worktree.py"
+          }
+        ]
+      },
+      {
+        "matcher": "^(Bash|mcp__.*github.*__(create_pull_request|push_files|create_or_update_file|delete_file))$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/require-review-before-push.py || exit 2"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__xcode(-tools)?__",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/xcode-worktree-guard.py || exit 2"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|mcp__.*__Xcode(Write|Update)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "in=$(cat); p=$(printf '%s' \"$in\" | jq -r '.tool_input.file_path // (.tool_response | if type == \"string\" then (fromjson? // {}) else . end | .absolutePath?) // .tool_input.filePath // empty'); d=$(git -C \"$(printf '%s' \"$in\" | jq -r '.cwd // empty')\" rev-parse --show-toplevel 2>/dev/null) || d=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; f=\"\"; for c in \"$p\" \"$d/$p\" \"$d/${p#*/}\" \"$d/Packages/$p\"; do [ -f \"$c\" ] && { f=\"$c\"; break; }; done; case \"$f\" in *.swift) swiftlint --fix \"$f\" >/dev/null 2>&1; swiftformat \"$f\" >/dev/null 2>&1 ;; esac; true",
+            "statusMessage": "Linting & formatting Swift file..."
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__xcode(-tools)?__Xcode(OpenWorkspace|ListWorkspaces)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/record-xcode-workspaces.py; true"
+          }
+        ]
+      }
+    ]
+  }
+}

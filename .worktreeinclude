@@ -1,0 +1,24 @@
+# Gitignored files copied into every worktree Claude Code creates
+# (--worktree, subagent worktrees, desktop parallel sessions).
+#
+# Syntax is .gitignore's, but the rule is narrower: a pattern only takes effect
+# if the file it matches is ALSO gitignored. Tracked files are never duplicated.
+#
+# `.env` carries local overrides the Makefile `-include`s. A fresh worktree has
+# none, so a build there would silently lose whatever it sets. Treat as
+# credential-bearing: never paste it, never commit it.
+.env
+
+# MCP server enablement and the permission allowlist. Without it a worktree
+# session prompts for tool calls the main checkout allows, which stalls an
+# unattended run.
+.claude/settings.local.json
+
+# A contributor's signing overrides, pulled in with `#include?`. The `?` makes
+# it optional, so a worktree without it builds cleanly and without iCloud.
+Configs/Local.xcconfig
+
+# Apple's skills, which are local copies and not in the repository.
+.claude/skills/audit-xcode-security-settings/
+.claude/skills/swiftui-specialist/
+.claude/skills/swiftui-whats-new-27/

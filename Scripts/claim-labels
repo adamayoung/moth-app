@@ -1,0 +1,5 @@
+# The GitHub labels that mark an issue as taken by an /implement-issue run,
+# one per line. next-issue.sh skips an issue carrying any of them, and
+# concurrent-work.sh resolves a worktree's issue through them.
+claude: in progress
+claude: in review

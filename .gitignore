@@ -1,0 +1,43 @@
+# macOS
+.DS_Store
+
+# Xcode build products
+build/
+DerivedData/
+
+# Xcode user-specific files
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Archives & symbols
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Local configuration
+Configs/Local.xcconfig
+.env
+.env.*
+
+# Claude
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees
+.worktrees/
+
+# Apple's skills, copied locally from Xcode. They are not ours to publish.
+.claude/skills/audit-xcode-security-settings/
+.claude/skills/swiftui-specialist/
+.claude/skills/swiftui-whats-new-27/
+
+# SwiftData writes these beside any store it opens.
+*.store-shm
+*.store-wal

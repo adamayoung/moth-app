@@ -1,0 +1,14 @@
+---
+paths:
+  - "TestPlans/*.xctestplan"
+  - "Packages/*/Package.swift"
+  - "Moth.xcodeproj/project.xcproj"
+---
+
+# Test plans and what ships in the app
+
+`UnitTests.xctestplan` carries the app and package unit targets, and `UITests.xctestplan` carries `MothUITests`. A new test target must be added to the plan *and* the scheme, or `-only-testing` cannot reach it.
+
+**A folder in the app target's membership ships inside `Moth.app`.** A `folder` entry in `project.xcproj` with `Moth` in its `target-membership` compiles what it can and copies every other file into the bundle, with no warning and no check. Keep `Packages/`, `TestPlans/` and `Configs/` out of the app target's membership, and read the built bundle's `Contents/Resources` after changing it. See [Module Boundaries](../../docs/architecture.md#module-boundaries).
+
+Commands and filter syntax live in [Testing](../../docs/testing.md) and [UI Testing](../../docs/ui-testing.md).
