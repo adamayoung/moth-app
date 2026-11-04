@@ -6,26 +6,27 @@
 import Foundation
 import Testing
 
+// swiftformat:disable swiftTestingTestCaseNames
 struct AppBundleConfigurationTests {
 
     private let appInfo = Bundle.main.infoDictionary ?? [:]
 
-    @Test
-    func `The iCloud container comes from the build setting and is empty when none is configured`() throws {
+    @Test("The iCloud container comes from the build setting and is empty when none is configured")
+    func iCloudContainerIsResolved() throws {
         let container = try #require(appInfo["MothICloudContainer"] as? String)
 
         #expect(container.isEmpty || container.hasPrefix("iCloud."))
     }
 
-    @Test
-    func `App Transport Security allows plain-HTTP hosts`() throws {
+    @Test("App Transport Security allows plain-HTTP hosts")
+    func appTransportSecurityAllowsPlainHTTP() throws {
         let transportSecurity = try #require(appInfo["NSAppTransportSecurity"] as? [String: Any])
 
         #expect(transportSecurity["NSAllowsArbitraryLoads"] as? Bool == true)
     }
 
-    @Test
-    func `The development region is British English`() {
+    @Test("The development region is British English")
+    func developmentRegionIsBritishEnglish() {
         #expect(appInfo["CFBundleDevelopmentRegion"] as? String == "en-GB")
     }
 
