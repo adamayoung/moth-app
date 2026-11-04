@@ -1,0 +1,5 @@
+// Copy to Local.xcconfig, which git ignores, and set your own values. Without that file Moth builds
+// ad hoc and runs local-only. The iCloud entitlements need a team, so set the two together.
+
+DEVELOPMENT_TEAM = ABCDE12345
+MOTH_ICLOUD_CONTAINER = iCloud.uk.co.adam-young.Moth
