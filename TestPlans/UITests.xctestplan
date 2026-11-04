@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "8D2C7E54-3B1F-4A68-A9C2-5E4F1C0B7D02",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Moth.xcodeproj",
+        "identifier" : "663853B2309BDC9700B9519C",
+        "name" : "MothUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
