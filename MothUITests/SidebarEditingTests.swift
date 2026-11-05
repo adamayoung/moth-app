@@ -210,4 +210,31 @@ final class SidebarEditingTests: MothTestCase {
         XCTAssertFalse(screen.fileMenuItem("New Folder").isEnabled)
     }
 
+    @MainActor
+    func testDraggingARequestOntoACollapsedFolderMovesItInside() {
+        let screen = seededScreen()
+        expandUsers(on: screen)
+
+        screen.drag("Health", onto: "Admins")
+
+        XCTAssertTrue(screen.waitForRowToDisappear("Health"))
+        screen.expand("Admins")
+        XCTAssertTrue(screen.sidebarText("Health").waitForExistence(timeout: 10))
+        XCTAssertGreaterThan(screen.sidebarText("Health").frame.minX, screen.sidebarText("Admins").frame.minX)
+    }
+
+    @MainActor
+    func testDraggingARequestAboveItsSiblingReordersIt() {
+        let screen = seededScreen()
+        expandUsers(on: screen)
+
+        screen.drag("Update User", aboveTopOf: "List Users")
+
+        let predicate = NSPredicate { _, _ in
+            screen.sidebarText("Update User").frame.minY < screen.sidebarText("List Users").frame.minY
+        }
+        let reordered = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [reordered], timeout: 10), .completed)
+    }
+
 }
