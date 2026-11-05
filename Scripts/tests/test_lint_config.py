@@ -6,6 +6,7 @@ Run with: python3 -m unittest discover -s Scripts/tests -p 'test_*.py'
 
 from pathlib import Path
 import re
+import subprocess
 import unittest
 
 
@@ -22,9 +23,15 @@ def swiftlint_same_line_attributes():
     return set(re.findall(r'"(@\w+)"', section.group(1))) - {"@testable"}
 
 
-def swiftformat_test_case_name_format():
-    match = re.search(r"^--test-case-name-format (\S+)$", (REPOSITORY / ".swiftformat").read_text(), re.MULTILINE)
-    return match.group(1) if match else None
+def swiftformat_test_case_name_formats():
+    configs = subprocess.run(
+        ["git", "ls-files", "*.swiftformat"], cwd=REPOSITORY, capture_output=True, text=True, check=True
+    ).stdout.split()
+    return {
+        value
+        for config in configs
+        for value in re.findall(r"^--test-case-name-format (\S+)$", (REPOSITORY / config).read_text(), re.MULTILINE)
+    }
 
 
 class AttributePlacementTests(unittest.TestCase):
@@ -33,8 +40,8 @@ class AttributePlacementTests(unittest.TestCase):
 
 
 class TestCaseNameTests(unittest.TestCase):
-    def test_swiftformat_leaves_test_names_as_swiftlint_identifier_name_accepts_them(self):
-        self.assertEqual(swiftformat_test_case_name_format(), "preserve")
+    def test_every_swiftformat_config_preserves_test_case_names(self):
+        self.assertEqual(swiftformat_test_case_name_formats(), {"preserve"})
 
 
 if __name__ == "__main__":
