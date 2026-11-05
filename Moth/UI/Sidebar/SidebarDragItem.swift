@@ -7,7 +7,7 @@ import CoreTransferable
 import MothCore
 import UniformTypeIdentifiers
 
-/// `Configs/Info.plist` declares this type, because a drop of an undeclared exported type never arrives.
+/// `Configs/Info.plist` declares this type, as `exportedAs:` requires.
 nonisolated extension UTType {
 
     static let mothTreeNode = UTType(exportedAs: "uk.co.adam-young.moth.tree-node")

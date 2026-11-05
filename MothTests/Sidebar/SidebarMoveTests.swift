@@ -90,7 +90,7 @@ struct SidebarMoveTests {
             in: tree
         )
 
-        #expect(move == .item(.request(request.id), to: .folder(outer.id), before: .folder(inner.id)))
+        #expect(move == .item(.request(request.id), into: .folder(outer.id), before: .folder(inner.id)))
     }
 
     @Test("A folder moves to another collection")
@@ -102,7 +102,7 @@ struct SidebarMoveTests {
             in: tree
         )
 
-        #expect(move == .item(.folder(outer.id), to: .collection(other.id), before: nil))
+        #expect(move == .item(.folder(outer.id), into: .collection(other.id), before: nil))
     }
 
     @Test("A folder cannot go inside itself or anything beneath it")

@@ -17,7 +17,7 @@ nonisolated enum SidebarParent: Hashable, Sendable {
 enum SidebarMove: Equatable {
 
     case collection(UUID, before: UUID?)
-    case item(TreeNodeID, to: TreeContainerID, before: TreeNodeID?)
+    case item(TreeNodeID, into: TreeContainerID, before: TreeNodeID?)
 
     /// Nil for a drop the tree cannot hold, which leaves the row where it was.
     init?(moving id: TreeNodeID, to parent: SidebarParent, before: TreeNodeID?, in tree: CollectionTree) {
@@ -31,7 +31,7 @@ enum SidebarMove: Equatable {
             guard destination != id, !tree.ancestors(of: destination).contains(id) else {
                 return nil
             }
-            self = .item(id, to: container, before: before)
+            self = .item(id, into: container, before: before)
         }
     }
 

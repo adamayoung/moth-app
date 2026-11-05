@@ -6,6 +6,7 @@
 import MothCore
 import SwiftUI
 
+/// Drops land on each `ForEach`, not through `.reorderable()`, which strips a nested `List`'s disclosure chevrons.
 struct SidebarRow: View {
 
     let node: TreeNode
