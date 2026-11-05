@@ -135,21 +135,22 @@ struct WriteBoundaryTests {
                 contentsOf: Self.dataModelSources.appending(path: path),
                 encoding: .utf8
             )
-            return source.split(separator: "\n").contains(where: Self.opensARouteToAWrite)
+            let makesModels = path.hasPrefix("Schema/") || path.hasPrefix("Mapping/")
+            return source.split(separator: "\n").contains { line in
+                Self.exposesTheWriter(line) || makesModels && line.contains("public") && line.contains(" init(")
+            }
         }
 
         #expect(!sources.isEmpty)
         #expect(offending.isEmpty)
     }
 
-    private static func opensARouteToAWrite(_ line: Substring) -> Bool {
+    private static func exposesTheWriter(_ line: Substring) -> Bool {
         guard line.contains("public ") else {
             return false
         }
 
-        return line.contains("ModelContext") && !line.contains("var mainContext")
-            || line.contains("public convenience init")
-            || line.contains("func write")
+        return line.contains("ModelContext") && !line.contains("var mainContext") || line.contains("func write")
     }
 
 }
