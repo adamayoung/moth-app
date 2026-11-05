@@ -27,7 +27,13 @@ UPCOMING_FEATURES = {
     "InferIsolatedConformances",
     "NonisolatedNonsendingByDefault",
 }
-UI_IMPORT = re.compile(r"^\s*(?:@\w+\s+)?import\s+(?:\w+\s+)?(?:SwiftUI|AppKit)\b", re.MULTILINE)
+APP_DEPENDENCIES = {"HTTPKit", "MothCore", "MothImport"}
+UI_MODULES = {"SwiftUI", "AppKit"}
+IMPORT = re.compile(
+    r"^[ \t]*(?:@\w+[ \t]+)*(?:(?:public|package|internal|fileprivate|private)[ \t]+)?import[ \t]+"
+    r"(?:(?:class|enum|func|let|protocol|struct|typealias|var)[ \t]+)?(\w+)",
+    re.MULTILINE,
+)
 
 
 @lru_cache(maxsize=None)
@@ -127,18 +133,50 @@ class SettingsTests(unittest.TestCase):
                     self.assertEqual(setting_values(entry, "defaultIsolation"), expected)
 
 
+def imports(text):
+    return set(IMPORT.findall(text))
+
+
+def swift_files(directory):
+    return [path for path in directory.glob("**/*.swift") if ".build" not in path.parts]
+
+
 class ImportTests(unittest.TestCase):
-    def test_the_ui_import_pattern_matches_the_forms_swift_allows(self):
-        for line in ("import SwiftUI", "@testable import AppKit", "import struct SwiftUI.Color"):
+    def test_the_import_pattern_reads_the_forms_swift_allows(self):
+        forms = {
+            "import SwiftUI": "SwiftUI",
+            "@testable import AppKit": "AppKit",
+            "import struct SwiftUI.Color": "SwiftUI",
+            "public import HTTPKit": "HTTPKit",
+            "@preconcurrency internal import PostmanKit": "PostmanKit",
+        }
+        for line, module in forms.items():
             with self.subTest(line=line):
-                self.assertRegex(line, UI_IMPORT)
+                self.assertEqual(imports(line), {module})
 
     def test_no_package_imports_swiftui_or_appkit(self):
-        sources = [path for path in PACKAGES.glob("*/**/*.swift") if ".build" not in path.parts]
+        sources = swift_files(PACKAGES)
         self.assertTrue(sources, "found no package sources to check")
         for path in sources:
             with self.subTest(path=path.relative_to(REPOSITORY)):
-                self.assertNotRegex(path.read_text(), UI_IMPORT)
+                self.assertFalse(imports(path.read_text()) & UI_MODULES)
+
+    # SwiftPM compiles an import of a transitive dependency, even with
+    # --explicit-target-dependency-import-check error, so the compiler alone cannot hold the table.
+    def test_each_library_imports_only_the_table_s_dependencies(self):
+        for package, allowed in ALLOWED_DEPENDENCIES.items():
+            for path in swift_files(PACKAGES / package / "Sources"):
+                with self.subTest(path=path.relative_to(REPOSITORY)):
+                    local = imports(path.read_text()) & set(ALLOWED_DEPENDENCIES)
+                    self.assertLessEqual(local, allowed)
+
+    def test_the_app_imports_only_the_table_s_dependencies(self):
+        sources = swift_files(REPOSITORY / "Moth")
+        self.assertTrue(sources, "found no app sources to check")
+        for path in sources:
+            with self.subTest(path=path.relative_to(REPOSITORY)):
+                local = imports(path.read_text()) & set(ALLOWED_DEPENDENCIES)
+                self.assertLessEqual(local, APP_DEPENDENCIES)
 
 
 if __name__ == "__main__":
