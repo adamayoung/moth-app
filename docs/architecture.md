@@ -127,6 +127,19 @@ An auth provider is a protocol that mutates a `URLRequest`. Its requirement must
 be `async throws`: OAuth2 refreshes tokens, and SigV4 has to sign the final
 body. Digest answers a 401 challenge, so it also needs the transport to retry.
 
+`.inherit` is replaced before resolution, by `RequestCollection.effectiveAuth(of:)`,
+because `VariableResolver` fetches secrets only for the auth it is given. The walk
+goes up through folders to the collection and stops at the first that sets auth,
+where setting `.none` counts.
+
+`RequestBuilder` turns a `ResolvedRequest` into the `URLRequest` that `HTTPKit`
+sends. An empty or unsendable URL throws. What it cannot send yet stays out of the
+request and is reported in `BuiltRequest.notices`: an auth kind with no provider,
+a binary or GraphQL body, and a form-data file field. A credential with no stored
+value sends no auth, and `ResolvedRequest.unresolvedCredentials` already reports
+it. An auth provider's `Authorization` header replaces a manual one. `URLRequest`
+holds one value per header name, so repeated names go out comma-joined.
+
 ## Persistence
 
 ### Two Stores

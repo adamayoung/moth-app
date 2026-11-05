@@ -30,7 +30,11 @@ public nonisolated struct RequestBuilder: Sendable {
             urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
 
-        return BuiltRequest(urlRequest: urlRequest, notices: body.notices)
+        try await request.authProvider?.apply(to: &urlRequest)
+
+        let authNotices = request.unsupportedAuthKind.map { [RequestBuildNotice.unsupportedAuth($0)] } ?? []
+
+        return BuiltRequest(urlRequest: urlRequest, notices: body.notices + authNotices)
     }
 
 }

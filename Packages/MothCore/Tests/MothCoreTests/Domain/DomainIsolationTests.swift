@@ -43,6 +43,8 @@ struct DomainIsolationTests {
         #expect(plain.initialValue == "a")
         #expect(collection.children.first?.id == folder.id)
         #expect(Set([workspace, workspace]).count == 1)
+        #expect(collection.effectiveAuth(of: request) == Auth.none)
+        #expect(Set([RequestBuildNotice.unsupportedBody(.binary)]).count == 1)
     }
 
     private nonisolated func allAuthKinds() -> Set<Auth> {

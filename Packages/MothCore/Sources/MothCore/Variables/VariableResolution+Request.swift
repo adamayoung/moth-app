@@ -33,7 +33,7 @@ nonisolated extension VariableResolution {
         }
     }
 
-    /// Stays an ``Auth``, so `.inherit` passes through for the caller to replace with what it inherits.
+    /// Stays an ``Auth``. `.inherit` passes through with no credentials, so a caller replaces it before resolving.
     mutating func resolve(_ auth: Auth) async throws -> Auth {
         switch auth {
         case .inherit, .none:
