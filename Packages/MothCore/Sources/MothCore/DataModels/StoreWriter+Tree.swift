@@ -3,11 +3,14 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import Foundation
 import SwiftData
 
 public nonisolated enum TreeWriteError: Error, Equatable {
 
     case containerNotFound(TreeContainerID)
+    case folderIntoItself
+    case notMovable(TreeNodeID)
 
 }
 
@@ -44,6 +47,71 @@ extension StoreWriter {
             for row in try Self.rows(id, in: context) {
                 context.delete(row)
             }
+        }
+    }
+
+    /// Moves a folder or request to sit ahead of `before` in `container`, or last if `before` is nil or has gone.
+    public func moveItem(_ id: TreeNodeID, to container: TreeContainerID, before: TreeNodeID?) throws {
+        guard id != before else {
+            return
+        }
+        try write { context in
+            let moved = try Self.childRows(id, in: context)
+            let parent = try Self.containerRow(container, in: context)
+            try Self.refuseFolderIntoItself(id, parent: parent)
+            let siblings = try Self.children(of: container, in: context)
+            for row in moved {
+                row.place(in: parent)
+            }
+            Self.order(siblings, moving: moved, before: before?.uuid)
+        }
+    }
+
+    public func moveCollection(_ id: UUID, before: UUID?) throws {
+        guard id != before else {
+            return
+        }
+        try write { context in
+            let collections = try context.fetch(FetchDescriptor<CollectionModel>()).inSortOrder
+            Self.order(collections, moving: collections.filter { $0.id == id }, before: before)
+        }
+    }
+
+    private static func childRows(_ id: TreeNodeID, in context: ModelContext) throws -> [any TreeChildRow] {
+        switch id {
+        case .collection: throw TreeWriteError.notMovable(id)
+        case .folder(let id): try context.fetch(FolderModel.withID(id))
+        case .request(let id): try context.fetch(RequestModel.withID(id))
+        }
+    }
+
+    /// Tracks visited folders because two Macs can each make half of a cycle, which would otherwise never end.
+    private static func refuseFolderIntoItself(_ id: TreeNodeID, parent: TreeContainerRow) throws {
+        guard case .folder(let movedID) = id, case .folder(let destination) = parent else {
+            return
+        }
+        var visited: Set<UUID> = []
+        var ancestor: FolderModel? = destination
+        while let folder = ancestor, visited.insert(folder.id).inserted {
+            if folder.id == movedID {
+                throw TreeWriteError.folderIntoItself
+            }
+            ancestor = folder.parent
+        }
+    }
+
+    /// Writes only the rows whose position changed, so a reorder syncs as few rows as it can.
+    private static func order(
+        _ siblings: [any OrderedTreeRow],
+        moving moved: [any OrderedTreeRow],
+        before: UUID?
+    ) {
+        let movedIDs = Set(moved.map(\.id))
+        var ordered = siblings.filter { !movedIDs.contains($0.id) }
+        let index = ordered.firstIndex { $0.id == before } ?? ordered.endIndex
+        ordered.insert(contentsOf: moved, at: index)
+        for (sortOrder, row) in ordered.enumerated() where row.sortOrder != sortOrder {
+            row.sortOrder = sortOrder
         }
     }
 

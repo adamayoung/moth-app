@@ -22,11 +22,17 @@ nonisolated extension CollectionModel: NamedTreeRow {}
 nonisolated extension FolderModel: NamedTreeRow {}
 nonisolated extension RequestModel: NamedTreeRow {}
 
-/// A folder or request under a collection or folder. The two kinds share one `sortOrder` sequence within a parent.
-nonisolated protocol TreeChildRow: PersistentModel, SortedRow {
+nonisolated protocol OrderedTreeRow: PersistentModel, SortedRow {
 
     var sortOrder: Int { get set }
-    var nodeID: TreeNodeID { get }
+
+}
+
+nonisolated extension CollectionModel: OrderedTreeRow {}
+
+/// A folder or request under a collection or folder. The two kinds share one `sortOrder` sequence within a parent.
+nonisolated protocol TreeChildRow: OrderedTreeRow {
+
     var container: TreeContainerID? { get }
 
     func place(in container: TreeContainerRow)
@@ -37,10 +43,6 @@ nonisolated extension FolderModel: SortedRow {}
 nonisolated extension RequestModel: SortedRow {}
 
 nonisolated extension FolderModel: TreeChildRow {
-
-    var nodeID: TreeNodeID {
-        .folder(id)
-    }
 
     var container: TreeContainerID? {
         parent.map { .folder($0.id) } ?? collection.map { .collection($0.id) }
@@ -69,10 +71,6 @@ nonisolated extension FolderModel: TreeChildRow {
 }
 
 nonisolated extension RequestModel: TreeChildRow {
-
-    var nodeID: TreeNodeID {
-        .request(id)
-    }
 
     var container: TreeContainerID? {
         folder.map { .folder($0.id) } ?? collection.map { .collection($0.id) }

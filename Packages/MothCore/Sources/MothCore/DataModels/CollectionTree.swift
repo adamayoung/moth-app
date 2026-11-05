@@ -11,6 +11,12 @@ public nonisolated enum TreeNodeID: Hashable, Sendable, Codable {
     case folder(UUID)
     case request(UUID)
 
+    var uuid: UUID {
+        switch self {
+        case .collection(let id), .folder(let id), .request(let id): id
+        }
+    }
+
 }
 
 public nonisolated enum TreeContainerID: Hashable, Sendable {

@@ -167,4 +167,186 @@ struct StoreWriterTreeTests {
         #expect(try Self.savedRows(RequestModel.self, in: dataModel).isEmpty)
     }
 
+    @Test("Reordering moves an item among its siblings, across both kinds")
+    func reorderWithinAParent() async throws {
+        let first = Request(name: "First")
+        let second = Folder(name: "Second")
+        let third = Request(name: "Third")
+        let collection = RequestCollection(name: "API", children: [
+            Self.item(0, first),
+            Self.item(1, second),
+            Self.item(2, third)
+        ])
+        let container = TreeContainerID.collection(collection.id)
+        let dataModel = try Self.dataModel(holding: collection)
+
+        try await dataModel.writer.moveItem(.request(third.id), to: container, before: .request(first.id))
+        #expect(try Self.names(of: .collection(collection.id), in: dataModel) == ["Third", "First", "Second"])
+
+        try await dataModel.writer.moveItem(.folder(second.id), to: container, before: .request(first.id))
+        #expect(try Self.names(of: .collection(collection.id), in: dataModel) == ["Third", "Second", "First"])
+
+        try await dataModel.writer.moveItem(.request(third.id), to: container, before: nil)
+        #expect(try Self.names(of: .collection(collection.id), in: dataModel) == ["Second", "First", "Third"])
+    }
+
+    @Test("Dropping an item before itself changes nothing")
+    func moveBeforeItselfChangesNothing() async throws {
+        let first = Request(name: "First")
+        let second = Request(name: "Second")
+        let collection = RequestCollection(name: "API", children: [Self.item(0, first), Self.item(1, second)])
+        let dataModel = try Self.dataModel(holding: collection)
+
+        try await dataModel.writer.moveItem(
+            .request(first.id),
+            to: .collection(collection.id),
+            before: .request(first.id)
+        )
+
+        #expect(try Self.names(of: .collection(collection.id), in: dataModel) == ["First", "Second"])
+    }
+
+    @Test("A request moved into a folder leaves its collection, and lands where it was dropped")
+    func moveIntoAFolder() async throws {
+        let request = Request(name: "Moved")
+        let inside = Request(name: "Inside")
+        let folder = Folder(name: "Folder", children: [Self.item(0, inside)])
+        let collection = RequestCollection(name: "API", children: [Self.item(0, request), Self.item(1, folder)])
+        let dataModel = try Self.dataModel(holding: collection)
+
+        try await dataModel.writer.moveItem(
+            .request(request.id),
+            to: .folder(folder.id),
+            before: .request(inside.id)
+        )
+
+        #expect(try Self.names(of: .collection(collection.id), in: dataModel) == ["Folder"])
+        #expect(try Self.names(of: .folder(folder.id), in: dataModel) == ["Moved", "Inside"])
+        let row = try #require(Self.savedRows(RequestModel.self, in: dataModel).first { $0.id == request.id })
+        #expect(row.collection == nil)
+        #expect(row.folder?.id == folder.id)
+    }
+
+    @Test("A request moved out of a folder leaves the folder")
+    func moveOutOfAFolder() async throws {
+        let request = Request(name: "Moved")
+        let folder = Folder(name: "Folder", children: [Self.item(0, request)])
+        let collection = RequestCollection(name: "API", children: [Self.item(0, folder)])
+        let dataModel = try Self.dataModel(holding: collection)
+
+        try await dataModel.writer.moveItem(.request(request.id), to: .collection(collection.id), before: nil)
+
+        #expect(try Self.names(of: .collection(collection.id), in: dataModel) == ["Folder", "Moved"])
+        #expect(try Self.names(of: .folder(folder.id), in: dataModel).isEmpty)
+        let row = try #require(Self.savedRows(RequestModel.self, in: dataModel).first)
+        #expect(row.folder == nil)
+        #expect(row.collection?.id == collection.id)
+    }
+
+    @Test("A folder moved to another collection brings everything beneath it, and leaves the first")
+    func moveAFolderBetweenCollections() async throws {
+        let folder = Folder(name: "Moved", children: [Self.item(0, Request(name: "Inside"))])
+        let source = RequestCollection(name: "Source", children: [Self.item(0, folder)])
+        let target = RequestCollection(name: "Target", children: [Self.item(0, Request(name: "There"))])
+        let dataModel = try Self.dataModel(holding: source, target)
+
+        try await dataModel.writer.moveItem(.folder(folder.id), to: .collection(target.id), before: nil)
+
+        #expect(try Self.names(of: .collection(source.id), in: dataModel).isEmpty)
+        #expect(try Self.names(of: .collection(target.id), in: dataModel) == ["There", "Moved"])
+        #expect(try Self.names(of: .folder(folder.id), in: dataModel) == ["Inside"])
+    }
+
+    @Test("A folder moved into another folder leaves its collection, and one moved back leaves the folder")
+    func moveAFolderInAndOutOfAFolder() async throws {
+        let moved = Folder(name: "Moved")
+        let target = Folder(name: "Target")
+        let collection = RequestCollection(name: "API", children: [Self.item(0, moved), Self.item(1, target)])
+        let dataModel = try Self.dataModel(holding: collection)
+
+        try await dataModel.writer.moveItem(.folder(moved.id), to: .folder(target.id), before: nil)
+        let nested = try #require(Self.savedRows(FolderModel.self, in: dataModel).first { $0.id == moved.id })
+        #expect(nested.collection == nil)
+        #expect(nested.parent?.id == target.id)
+
+        try await dataModel.writer.moveItem(.folder(moved.id), to: .collection(collection.id), before: nil)
+        let restored = try #require(Self.savedRows(FolderModel.self, in: dataModel).first { $0.id == moved.id })
+        #expect(restored.parent == nil)
+        #expect(restored.collection?.id == collection.id)
+    }
+
+    @Test("A folder cannot move into itself or anything beneath it, and the tree stays as it was")
+    func moveIntoItselfIsRefused() async throws {
+        let inner = Folder(name: "Inner")
+        let outer = Folder(name: "Outer", children: [Self.item(0, inner)])
+        let collection = RequestCollection(name: "API", children: [Self.item(0, outer)])
+        let dataModel = try Self.dataModel(holding: collection)
+        let before = try CollectionTree(savedIn: dataModel)
+
+        await #expect(throws: TreeWriteError.folderIntoItself) {
+            try await dataModel.writer.moveItem(.folder(outer.id), to: .folder(outer.id), before: nil)
+        }
+        await #expect(throws: TreeWriteError.folderIntoItself) {
+            try await dataModel.writer.moveItem(.folder(outer.id), to: .folder(inner.id), before: nil)
+        }
+
+        #expect(try CollectionTree(savedIn: dataModel) == before)
+    }
+
+    @Test("A collection cannot move into a folder or another collection")
+    func moveItemRefusesACollection() async throws {
+        let moved = RequestCollection(name: "Moved")
+        let target = RequestCollection(name: "Target")
+        let dataModel = try Self.dataModel(holding: moved, target)
+
+        await #expect(throws: TreeWriteError.notMovable(.collection(moved.id))) {
+            try await dataModel.writer.moveItem(.collection(moved.id), to: .collection(target.id), before: nil)
+        }
+    }
+
+    @Test("Collections reorder before another collection and to the end")
+    func reorderCollections() async throws {
+        let first = RequestCollection(name: "First")
+        let second = RequestCollection(name: "Second")
+        let third = RequestCollection(name: "Third")
+        let dataModel = try DataModel.inMemory()
+        for collection in [first, second, third] {
+            try await dataModel.writer.createCollection(collection)
+        }
+
+        try await dataModel.writer.moveCollection(third.id, before: first.id)
+        #expect(try CollectionTree(savedIn: dataModel).roots.map(\.name) == ["Third", "First", "Second"])
+
+        try await dataModel.writer.moveCollection(third.id, before: nil)
+        #expect(try CollectionTree(savedIn: dataModel).roots.map(\.name) == ["First", "Second", "Third"])
+    }
+
+    @Test("A create, rename, move and delete survive a new container on the same store")
+    func changesSurviveANewContainer() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "StoreWriterTreeTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let collection = RequestCollection(name: "Before")
+        let folder = Folder(name: "Folder")
+        let moved = Request(name: "Moved")
+        let deleted = Request(name: "Deleted")
+
+        do {
+            let dataModel = try DataModel(location: .directory(directory), containerIdentifier: nil)
+            try await dataModel.writer.createCollection(collection)
+            try await dataModel.writer.rename(.collection(collection.id), to: "After")
+            try await dataModel.writer.createFolder(folder, in: .collection(collection.id))
+            try await dataModel.writer.createRequest(moved, in: .collection(collection.id))
+            try await dataModel.writer.createRequest(deleted, in: .collection(collection.id))
+            try await dataModel.writer.moveItem(.request(moved.id), to: .folder(folder.id), before: nil)
+            try await dataModel.writer.delete(.request(deleted.id))
+        }
+
+        let reopened = try DataModel(location: .directory(directory), containerIdentifier: nil)
+        let tree = try CollectionTree(savedIn: reopened)
+        #expect(tree.roots.map(\.name) == ["After"])
+        #expect(try Self.names(of: .collection(collection.id), in: reopened) == ["Folder"])
+        #expect(try Self.names(of: .folder(folder.id), in: reopened) == ["Moved"])
+    }
+
 }
