@@ -8,7 +8,7 @@ the [README](README.md). Treat those three as hard limits on every change.
 
 Start with [docs/README.md](docs/README.md), then read the relevant linked
 guide. Source code, test plans, and tool configuration win if documentation has
-drifted. [docs/README.md](docs/README.md) says what does not exist yet.
+drifted.
 
 The stack and module boundaries are decided: see
 [Architecture](docs/architecture.md), and do not reopen them without being
