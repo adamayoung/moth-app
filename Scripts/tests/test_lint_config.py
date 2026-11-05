@@ -22,9 +22,19 @@ def swiftlint_same_line_attributes():
     return set(re.findall(r'"(@\w+)"', section.group(1))) - {"@testable"}
 
 
+def swiftformat_test_case_name_format():
+    match = re.search(r"^--test-case-name-format (\S+)$", (REPOSITORY / ".swiftformat").read_text(), re.MULTILINE)
+    return match.group(1) if match else None
+
+
 class AttributePlacementTests(unittest.TestCase):
     def test_both_tools_keep_the_same_attributes_on_the_declaration_line(self):
         self.assertEqual(swiftformat_same_line_attributes(), swiftlint_same_line_attributes())
+
+
+class TestCaseNameTests(unittest.TestCase):
+    def test_swiftformat_leaves_test_names_as_swiftlint_identifier_name_accepts_them(self):
+        self.assertEqual(swiftformat_test_case_name_format(), "preserve")
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@
 --type-attributes prev-line
 --complex-attributes prev-line
 --non-complex-attributes @AppStorage,@Binding,@Environment,@FocusedValue,@Query,@SceneStorage,@State
+--test-case-name-format preserve
 
 --disable wrapMultilineStatementBraces
 --disable redundantLetError
