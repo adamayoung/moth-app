@@ -11,6 +11,13 @@ public nonisolated enum TreeNodeID: Hashable, Sendable, Codable {
     case folder(UUID)
     case request(UUID)
 
+    public init(_ container: TreeContainerID) {
+        switch container {
+        case .collection(let id): self = .collection(id)
+        case .folder(let id): self = .folder(id)
+        }
+    }
+
     var uuid: UUID {
         switch self {
         case .collection(let id), .folder(let id), .request(let id): id
@@ -23,6 +30,15 @@ public nonisolated enum TreeContainerID: Hashable, Sendable {
 
     case collection(UUID)
     case folder(UUID)
+
+    /// Nil for a request, which holds nothing.
+    public init?(_ node: TreeNodeID) {
+        switch node {
+        case .collection(let id): self = .collection(id)
+        case .folder(let id): self = .folder(id)
+        case .request: return nil
+        }
+    }
 
 }
 
@@ -41,6 +57,8 @@ public nonisolated struct TreeNode: Identifiable, Hashable, Sendable {
 
 public nonisolated struct CollectionTree: Hashable, Sendable {
 
+    public static let empty = CollectionTree(roots: [])
+
     public let roots: [TreeNode]
 
     init(roots: [TreeNode]) {
@@ -50,27 +68,32 @@ public nonisolated struct CollectionTree: Hashable, Sendable {
     /// Moves a selection only on its transition out of the tree, so a row made a moment ago keeps its selection until
     /// the query delivers it.
     public func selection(_ selection: TreeNodeID?, carriedTo newTree: CollectionTree) -> TreeNodeID? {
-        guard let selection, let path = path(to: selection), !newTree.contains(selection) else {
+        guard let selection, contains(selection), !newTree.contains(selection) else {
             return selection
         }
-        return path.dropLast().last(where: newTree.contains)
+        return ancestors(of: selection).last(where: newTree.contains)
+    }
+
+    /// From the collection down to the node's parent.
+    public func ancestors(of id: TreeNodeID) -> [TreeNodeID] {
+        Self.path(to: id, in: roots)?.dropLast().map(\.id) ?? []
+    }
+
+    public func node(_ id: TreeNodeID) -> TreeNode? {
+        Self.path(to: id, in: roots)?.last
     }
 
     public func contains(_ id: TreeNodeID) -> Bool {
-        path(to: id) != nil
+        node(id) != nil
     }
 
-    private func path(to id: TreeNodeID) -> [TreeNodeID]? {
-        Self.path(to: id, in: roots)
-    }
-
-    private static func path(to id: TreeNodeID, in nodes: [TreeNode]) -> [TreeNodeID]? {
+    private static func path(to id: TreeNodeID, in nodes: [TreeNode]) -> [TreeNode]? {
         for node in nodes {
             if node.id == id {
-                return [id]
+                return [node]
             }
             if let descendants = path(to: id, in: node.children) {
-                return [node.id] + descendants
+                return [node] + descendants
             }
         }
         return nil

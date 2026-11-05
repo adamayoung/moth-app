@@ -86,4 +86,21 @@ nonisolated struct CollectionTreeSelectionTests {
         #expect(Self.tree.selection(nil, carriedTo: Self.tree) == nil)
     }
 
+    @Test("A node's ancestors run from its collection down to its parent")
+    func ancestorsRunTopDown() {
+        #expect(Self.tree.ancestors(of: Self.nestedRequestID) == [
+            Self.collectionID,
+            Self.folderID,
+            Self.innerFolderID
+        ])
+        #expect(Self.tree.ancestors(of: Self.collectionID).isEmpty)
+        #expect(Self.tree.ancestors(of: .request(Self.id(9))).isEmpty)
+    }
+
+    @Test("A node is found by its identifier, at any depth")
+    func nodeIsFoundById() {
+        #expect(Self.tree.node(Self.nestedRequestID)?.id == Self.nestedRequestID)
+        #expect(Self.tree.node(.request(Self.id(9))) == nil)
+    }
+
 }
