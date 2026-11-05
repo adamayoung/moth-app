@@ -20,6 +20,7 @@ public nonisolated enum UnresolvedReason: Sendable, Hashable {
     case undefined
     case cycle
     case tooDeep
+    case tooLarge
     case missingSecret
 
 }

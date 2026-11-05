@@ -105,9 +105,10 @@ Postman-shaped:
 `{{name}}` resolves request, then collection, then environment, then globals.
 Dynamic variables are `{{$guid}}`, `{{$timestamp}}` and `{{$randomInt}}`.
 
-A value can hold further references, up to ten variables in a chain. A reference
-that is undefined, part of a cycle, too deep or a missing secret stays as written
-and is reported.
+A value can hold further references, up to ten variables in a chain, and one
+resolution has a size budget, because depth alone allows billions of expansions
+from one imported file. A reference that is undefined, part of a cycle, too deep,
+over budget or a missing secret stays as written and is reported.
 
 `VariableResolver` returns a `ResolvedRequest`. It holds plaintext secrets, so it
 is not a `Request` and nothing that persists a request can take one. Its `auth`

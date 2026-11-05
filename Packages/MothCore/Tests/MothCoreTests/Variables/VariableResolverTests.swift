@@ -245,6 +245,49 @@ struct VariableResolverTests {
         #expect(resolved.url == expected)
     }
 
+    @Test("When a scope repeats a name, its last enabled row wins, as in Postman")
+    func lastEnabledRowInAScopeWins() async throws {
+        let disabled = Variable(name: "host", value: .plain(initial: "off", current: "off"), isEnabled: false)
+
+        let resolved = try await resolve("{{host}}", with: [.plain("host", "first"), .plain("host", "last"), disabled])
+
+        #expect(resolved.url == "last")
+    }
+
+    @Test("Values that each repeat the next stop at the budget, and are reported as too large", .timeLimit(.minutes(1)))
+    func fanOutStops() async throws {
+        let fanOut = (1 ... 10).map { level in
+            Variable.plain("level\(level)", level == 10 ? "end" : String(repeating: "{{level\(level + 1)}}", count: 10))
+        }
+
+        let resolved = try await resolve("{{level1}}", with: fanOut)
+
+        #expect(Set(resolved.unresolved.map(\.reason)) == [.tooLarge])
+    }
+
+    @Test("A large value used a few times is within the budget")
+    func largeValuesAreWithinTheBudget() async throws {
+        let large = String(repeating: "x", count: 1024 * 1024)
+
+        let resolved = try await resolve("{{large}}{{large}}{{large}}", with: [.plain("large", large)])
+
+        #expect(resolved.url.utf8.count == 3 * large.utf8.count)
+        #expect(resolved.unresolved.isEmpty)
+    }
+
+    @Test("A cancelled task stops resolving")
+    func cancellationStopsResolving() async {
+        let resolving = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+
+            return try await resolve("{{host}}", with: [.plain("host", "request")])
+        }
+
+        await #expect(throws: CancellationError.self) {
+            try await resolving.value
+        }
+    }
+
     private func resolve(_ template: String, with variables: [Variable]) async throws -> ResolvedRequest {
         let request = Request(name: "Request", urlTemplate: template)
 

@@ -7,9 +7,16 @@ nonisolated struct VariableResolution {
 
     private static let maximumDepth = 10
 
+    /// Ten levels of values that each repeat the next ten times pass the depth and cycle checks, as ten billion
+    /// expansions from one imported file. Each expansion spends its value's size, and a flat cost for empty values.
+    private static let expansionBudget = 64 * 1024 * 1024
+    private static let expansionCost = 1024
+
     private let scopes: [[Variable]]
     private let secretStore: any SecretStore
     private let dynamicVariables: DynamicVariables
+
+    private var remainingExpansionBudget = Self.expansionBudget
 
     private(set) var unresolved: [UnresolvedVariable] = []
     private(set) var credentials: [SecretReference: String] = [:]
@@ -46,10 +53,16 @@ nonisolated struct VariableResolution {
     }
 
     private func references(in text: String) -> [Regex<(Substring, Substring)>.Match] {
-        text.matches(of: /\{\{([^{}]*)\}\}/)
+        guard text.contains("{{") else {
+            return []
+        }
+
+        return text.matches(of: /\{\{([^{}]*)\}\}/)
     }
 
     private mutating func expand(_ template: String, chain: [String]) async throws -> String {
+        try Task.checkCancellation()
+
         var expanded = ""
         var remainder = template[...]
 
@@ -58,42 +71,51 @@ nonisolated struct VariableResolution {
             remainder = remainder[reference.range.upperBound...]
 
             let name = String(reference.output.1)
-            expanded += try await substitution(for: name, writtenAs: String(reference.output.0), chain: chain)
+            expanded += try await substitution(for: name, chain: chain) ?? String(reference.output.0)
         }
 
         return expanded + remainder
     }
 
-    private mutating func substitution(
-        for name: String,
-        writtenAs reference: String,
-        chain: [String]
-    ) async throws -> String {
+    private mutating func substitution(for name: String, chain: [String]) async throws -> String? {
         if chain.contains(name) {
             report(name, .cycle)
-            return reference
+            return nil
+        }
+
+        guard let variable = variable(named: name) else {
+            let dynamicValue = dynamicVariables.value(named: name)
+
+            if dynamicValue == nil {
+                report(name, .undefined)
+            }
+
+            return dynamicValue
         }
 
         if chain.count == Self.maximumDepth {
             report(name, .tooDeep)
-            return reference
-        }
-
-        if let dynamicValue = dynamicVariables.value(named: name) {
-            return dynamicValue
-        }
-
-        guard let variable = scopes.joined().first(where: { $0.isEnabled && $0.name == name }) else {
-            report(name, .undefined)
-            return reference
+            return nil
         }
 
         guard let value = try await value(of: variable) else {
             report(name, .missingSecret)
-            return reference
+            return nil
+        }
+
+        guard spendExpansionBudget(on: value) else {
+            report(name, .tooLarge)
+            return nil
         }
 
         return try await expand(value, chain: chain + [name])
+    }
+
+    private func variable(named name: String) -> Variable? {
+        scopes.lazy.compactMap { scope in
+            scope.last { $0.isEnabled && $0.name == name }
+        }
+        .first
     }
 
     private func value(of variable: Variable) async throws -> String? {
@@ -103,6 +125,12 @@ nonisolated struct VariableResolution {
         case .secret(let reference):
             try await secretStore.value(for: reference.identifier)
         }
+    }
+
+    private mutating func spendExpansionBudget(on value: String) -> Bool {
+        remainingExpansionBudget -= value.utf8.count + Self.expansionCost
+
+        return remainingExpansionBudget >= 0
     }
 
     private mutating func report(_ name: String, _ reason: UnresolvedReason) {

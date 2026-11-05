@@ -174,6 +174,31 @@ struct VariableResolverFieldTests {
         #expect(resolved.auth == auth)
     }
 
+    @Test("Every field resolves off the main actor, so a large body can’t stall the UI")
+    func everyFieldResolvesOffTheMainActor() async throws {
+        let threadName: @Sendable () -> String = { Thread.isMainThread ? "main" : "background" }
+        let dynamicVariables = DynamicVariables(guid: threadName, timestamp: threadName, randomInt: threadName)
+        let password = SecretReference()
+        let request = Request(
+            name: "Request",
+            urlTemplate: "{{$guid}}",
+            queryParameters: [KeyValue(key: "key", value: "{{$guid}}")],
+            body: .raw(content: "{{$guid}}", contentType: ""),
+            auth: .basic(BasicAuth(username: "{{$guid}}", password: password))
+        )
+
+        let resolved = try await VariableResolver(
+            secretStore: InMemorySecretStore(),
+            dynamicVariables: dynamicVariables
+        )
+        .resolve(request, collection: [], environment: [], globals: [])
+
+        #expect(resolved.url == "background")
+        #expect(resolved.queryParameters.map(\.value) == ["background"])
+        #expect(resolved.body == .raw(content: "background", contentType: ""))
+        #expect(resolved.auth == .basic(BasicAuth(username: "background", password: password)))
+    }
+
     private func resolve(_ request: Request) async throws -> ResolvedRequest {
         try await resolver.resolve(request, collection: [], environment: [.plain("v", "x")], globals: [])
     }

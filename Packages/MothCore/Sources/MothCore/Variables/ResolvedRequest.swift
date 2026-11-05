@@ -13,6 +13,7 @@ public nonisolated struct ResolvedRequest: Sendable, Hashable {
     public var headers: [KeyValue]
     public var body: RequestBody
     /// Keeps its references, because OAuth2 writes refreshed tokens back through them.
+    /// Its strings are expanded and can hold a secret, so never assign it to a ``Request``.
     public var auth: Auth
     public var credentials: [SecretReference: String]
     public var settings: RequestSettings

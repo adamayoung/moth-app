@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-extension VariableResolution {
+nonisolated extension VariableResolution {
 
     mutating func resolve(_ rows: [KeyValue]) async throws -> [KeyValue] {
         var resolved = rows

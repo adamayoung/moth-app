@@ -67,9 +67,37 @@ struct DynamicVariablesTests {
         #expect(resolved.url == "id-1")
     }
 
-    @Test("A user variable does not shadow a dynamic variable")
-    func userVariableDoesNotShadow() async throws {
+    @Test("A dynamic variable is not a level, so it resolves at the end of a full chain")
+    func dynamicVariableEndsAFullChain() async throws {
+        let chain = (1 ... 10).map { level in
+            Variable.plain("level\(level)", level == 10 ? "{{$guid}}" : "{{level\(level + 1)}}")
+        }
+
+        let resolved = try await resolverCountingOccurrences().resolve(
+            Request(name: "Request", urlTemplate: "{{level1}}"),
+            collection: chain,
+            environment: [],
+            globals: []
+        )
+
+        #expect(resolved.url == "1")
+        #expect(resolved.unresolved.isEmpty)
+    }
+
+    @Test("A user variable shadows a dynamic variable, as in Postman")
+    func userVariableShadowsADynamicVariable() async throws {
         let request = Request(name: "Request", urlTemplate: "{{$guid}}", variables: [.plain("$guid", "mine")])
+
+        let resolved = try await resolverCountingOccurrences()
+            .resolve(request, collection: [], environment: [], globals: [])
+
+        #expect(resolved.url == "mine")
+    }
+
+    @Test("A disabled user variable does not shadow a dynamic variable")
+    func disabledUserVariableDoesNotShadow() async throws {
+        let disabled = Variable(name: "$guid", value: .plain(initial: "mine", current: "mine"), isEnabled: false)
+        let request = Request(name: "Request", urlTemplate: "{{$guid}}", variables: [disabled])
 
         let resolved = try await resolverCountingOccurrences()
             .resolve(request, collection: [], environment: [], globals: [])
