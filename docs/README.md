@@ -8,9 +8,9 @@ when documentation has drifted.
 ## Status
 
 The design comes first: the repository still holds Xcode's template app.
-`Moth.xcodeproj` has not been restructured, and `Packages/`, `Configs/` and CI do
-not exist yet. These guides describe them as they will be. Delete this section
-when they land.
+`Moth.xcodeproj` has not been restructured, and `Packages/` and CI do not exist
+yet. These guides describe them as they will be. Delete this section when they
+land.
 
 ## Guide Index
 
