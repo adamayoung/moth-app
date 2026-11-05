@@ -1,4 +1,4 @@
-//  SwiftDataCharacterisationTests.swift
+//  SwiftDataStaleSaveCharacterisationTests.swift
 //  MothCore
 //
 //  Copyright © 2026 Adam Young.
@@ -6,37 +6,6 @@
 import Foundation
 import SwiftData
 import Testing
-
-@Model
-final class CrossStoreOwner {
-    var name: String = ""
-
-    @Relationship(deleteRule: .nullify, inverse: \CrossStoreItem.owner)
-    var items: [CrossStoreItem]? = []
-
-    init(name: String) {
-        self.name = name
-    }
-}
-
-@Model
-final class CrossStoreItem {
-    var label: String = ""
-    var owner: CrossStoreOwner?
-
-    init(label: String) {
-        self.label = label
-    }
-}
-
-@Model
-final class StoreRoutingControl {
-    var label: String = ""
-
-    init(label: String) {
-        self.label = label
-    }
-}
 
 @Model
 final class StaleSaveRow {
@@ -51,90 +20,7 @@ struct RowValues: Equatable {
     var notes: String
 }
 
-enum StoreLocation: CaseIterable {
-    case inMemory
-    case onDisk
-}
-
-struct SwiftDataCharacterisationTests {
-
-    private nonisolated static let ownersConfiguration = "owners"
-    private nonisolated static let itemsConfiguration = "items"
-
-    @Test("Characterises SwiftData: control, an unrelated model lands in its own configuration's store")
-    func characterisesAnUnrelatedModelStayingInItsStore() throws {
-        let container = try ModelContainer(
-            for: Schema([CrossStoreOwner.self, CrossStoreItem.self, StoreRoutingControl.self]),
-            configurations: [
-                Self.inMemoryConfiguration(named: "related", for: [CrossStoreOwner.self]),
-                Self.inMemoryConfiguration(named: "unrelated", for: [StoreRoutingControl.self])
-            ]
-        )
-        let context = ModelContext(container)
-        let owner = CrossStoreOwner(name: "owner")
-        let control = StoreRoutingControl(label: "control")
-        context.insert(owner)
-        context.insert(control)
-        try context.save()
-
-        let relatedStore = container.storeIdentifier(forConfigurationNamed: "related")
-        let unrelatedStore = container.storeIdentifier(forConfigurationNamed: "unrelated")
-        #expect(relatedStore != unrelatedStore)
-        #expect(owner.persistentModelID.storeIdentifier == relatedStore)
-        #expect(control.persistentModelID.storeIdentifier == unrelatedStore)
-    }
-
-    @Test(
-        "Characterises SwiftData: related models in two configurations both land in one store",
-        arguments: StoreLocation.allCases
-    )
-    func characterisesRelatedModelsLandingInOneStore(location: StoreLocation) throws {
-        let directory = try Self.makeTemporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let (container, configurations) = try Self.makeRelatedModelContainer(at: location, in: directory)
-        defer { container.deleteAllData() }
-
-        let writer = ModelContext(container)
-        let owner = CrossStoreOwner(name: "owner")
-        let item = CrossStoreItem(label: "item")
-        writer.insert(owner)
-        writer.insert(item)
-        item.owner = owner
-        try writer.save()
-
-        let ownerStore = try #require(owner.persistentModelID.storeIdentifier)
-        let itemStore = try #require(item.persistentModelID.storeIdentifier)
-        #expect(ownerStore == itemStore)
-        for configuration in configurations {
-            let entities = configuration.schema?.entities.map(\.name).sorted()
-            #expect(entities == ["CrossStoreItem", "CrossStoreOwner"])
-        }
-        let reader = ModelContext(container)
-        try withExtendedLifetime(reader) {
-            let readBack = try #require(reader.fetch(FetchDescriptor<CrossStoreItem>()).first)
-            #expect(readBack.owner?.name == "owner")
-        }
-    }
-
-    #if os(macOS)
-    @Test("Characterises SwiftData: relating rows already in two stores traps at the assignment")
-    func characterisesARelationshipBetweenRowsInTwoStores() async throws {
-        let directory = try Self.makeTemporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
-        let result = await #expect(
-            processExitsWith: .failure,
-            observing: [\.standardErrorContent]
-        ) { [directory = directory as URL] in
-            try await SwiftDataCharacterisationTests.relateRowsInTwoStores(in: directory)
-        }
-
-        let exit = try #require(result)
-        let standardError = try #require(String(bytes: exit.standardErrorContent, encoding: .utf8))
-        #expect(standardError.contains("Illegal attempt to relate"))
-        #expect(standardError.contains("to a model in another store"))
-    }
-    #endif
+struct SwiftDataStaleSaveCharacterisationTests {
 
     @Test(
         "Characterises SwiftData: a stale save of the same property overwrites a second context's change",
@@ -278,93 +164,12 @@ struct SwiftDataCharacterisationTests {
         }
     }
 
-    #if os(macOS)
-    static func relateRowsInTwoStores(in directory: URL) throws {
-        let schema = Schema([CrossStoreOwner.self, CrossStoreItem.self])
-        let owners = onDiskConfiguration(named: ownersConfiguration, schema: schema, in: directory)
-        let items = onDiskConfiguration(named: itemsConfiguration, schema: schema, in: directory)
-        try seed(CrossStoreOwner(name: "owner"), in: owners, schema: schema)
-        try seed(CrossStoreItem(label: "item"), in: items, schema: schema)
-
-        let container = try ModelContainer(for: schema, configurations: [owners, items])
-        let context = ModelContext(container)
-        let owner = try #require(context.fetch(FetchDescriptor<CrossStoreOwner>()).first)
-        let item = try #require(context.fetch(FetchDescriptor<CrossStoreItem>()).first)
-        let ownerStore = try #require(owner.persistentModelID.storeIdentifier)
-        let itemStore = try #require(item.persistentModelID.storeIdentifier)
-        try #require(ownerStore != itemStore)
-
-        item.owner = owner
-    }
-    #endif
-
-    private static func makeRelatedModelContainer(
-        at location: StoreLocation,
-        in directory: URL
-    ) throws -> (ModelContainer, [ModelConfiguration]) {
-        let configurations = switch location {
-        case .inMemory:
-            [
-                inMemoryConfiguration(named: ownersConfiguration, for: [CrossStoreOwner.self]),
-                inMemoryConfiguration(named: itemsConfiguration, for: [CrossStoreItem.self])
-            ]
-        case .onDisk:
-            [
-                onDiskConfiguration(
-                    named: ownersConfiguration,
-                    schema: Schema([CrossStoreOwner.self]),
-                    in: directory
-                ),
-                onDiskConfiguration(named: itemsConfiguration, schema: Schema([CrossStoreItem.self]), in: directory)
-            ]
-        }
-        let container = try ModelContainer(
-            for: Schema([CrossStoreOwner.self, CrossStoreItem.self]),
-            configurations: configurations
-        )
-        return (container, configurations)
-    }
-
-    /// `.automatic`, the default, uses CloudKit when the test host has the entitlement.
-    private static func inMemoryConfiguration(
-        named name: String,
-        for types: [any PersistentModel.Type]
-    ) -> ModelConfiguration {
-        ModelConfiguration(name, schema: Schema(types), isStoredInMemoryOnly: true, cloudKitDatabase: .none)
-    }
-
-    private static func onDiskConfiguration(
-        named name: String,
-        schema: Schema,
-        in directory: URL
-    ) -> ModelConfiguration {
-        ModelConfiguration(
-            name,
-            schema: schema,
-            url: directory.appending(path: "\(name).store"),
-            cloudKitDatabase: .none
-        )
-    }
-
-    #if os(macOS)
-    private static func seed(
-        _ row: some PersistentModel,
-        in configuration: ModelConfiguration,
-        schema: Schema
-    ) throws {
-        let container = try ModelContainer(for: schema, configurations: configuration)
-        let context = ModelContext(container)
-        context.insert(row)
-        try context.save()
-    }
-    #endif
-
     /// `deleteAllData` runs first because SQLite logs a client bug when an open store is unlinked.
     private static func withSeededContainer(
         at location: StoreLocation,
         _ body: (ModelContainer) throws -> Void
     ) throws {
-        let directory = try makeTemporaryDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let container = try makeSeededContainer(at: location, in: directory)
         defer { container.deleteAllData() }
@@ -375,9 +180,9 @@ struct SwiftDataCharacterisationTests {
         let schema = Schema([StaleSaveRow.self])
         let configuration = switch location {
         case .inMemory:
-            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+            CharacterisationStore.inMemoryConfiguration(schema: schema)
         case .onDisk:
-            onDiskConfiguration(named: "stale", schema: schema, in: directory)
+            CharacterisationStore.onDiskConfiguration(named: "stale", schema: schema, in: directory)
         }
         let container = try ModelContainer(for: schema, configurations: configuration)
         let seeding = ModelContext(container)
@@ -409,13 +214,6 @@ struct SwiftDataCharacterisationTests {
             let row = try #require(reader.fetch(FetchDescriptor<StaleSaveRow>()).first)
             return RowValues(title: row.title, notes: row.notes)
         }
-    }
-
-    private static func makeTemporaryDirectory() throws -> URL {
-        let directory = FileManager.default.temporaryDirectory
-            .appending(path: "SwiftDataCharacterisationTests-\(UUID().uuidString)", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory
     }
 
 }

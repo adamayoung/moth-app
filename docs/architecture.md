@@ -217,8 +217,9 @@ outside its own container, and never touches another tool's configuration.
 ## Open Questions
 
 Settle each with a test before the code that depends on it.
-`SwiftDataCharacterisationTests` in `MothCoreTests` holds the tests behind the
-settled answers, and fails if an OS or SDK update changes them.
+`SwiftDataCrossStoreCharacterisationTests` and
+`SwiftDataStaleSaveCharacterisationTests` in `MothCoreTests` hold the tests behind
+the settled answers, and fail if an OS or SDK update changes them.
 
 - **Cross-store relationships: settled.** A relationship cannot cross the two
   stores. A configuration's schema takes in every model its models relate to, so
