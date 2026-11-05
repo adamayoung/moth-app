@@ -22,6 +22,11 @@ let package = Package(
 
     targets: [
         .target(name: "PostmanKit", swiftSettings: swiftSettings),
-        .testTarget(name: "PostmanKitTests", dependencies: ["PostmanKit"], swiftSettings: swiftSettings)
+        .testTarget(
+            name: "PostmanKitTests",
+            dependencies: ["PostmanKit"],
+            resources: [.copy("Fixtures")],
+            swiftSettings: swiftSettings
+        )
     ]
 )
