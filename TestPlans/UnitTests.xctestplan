@@ -9,7 +9,12 @@
     }
   ],
   "defaultOptions" : {
-
+    "environmentVariableEntries" : [
+      {
+        "key" : "MOTH_TEST_HOST",
+        "value" : "1"
+      }
+    ]
   },
   "testTargets" : [
     {

@@ -7,7 +7,7 @@ import Foundation
 
 public struct URLSessionHTTPTransport: HTTPTransport {
 
-    private let session: URLSession
+    public let session: URLSession
 
     public init(session: URLSession) {
         self.session = session

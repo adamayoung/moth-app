@@ -11,7 +11,7 @@ enum AppLaunchMode: Equatable {
     case demo
     case testHost
 
-    init(arguments: [String], defaults: UserDefaults, environment: [String: String]) throws {
+    init(arguments: [String], defaults: UserDefaults, environment: [String: String]) throws(LaunchConfigurationError) {
         let launchArguments = Array(arguments.dropFirst())
         let isUITesting = try Self.selects("-UITesting", in: launchArguments)
         let isDemo = try Self.selects("-DemoMode", in: launchArguments)
@@ -29,17 +29,18 @@ enum AppLaunchMode: Equatable {
         }
     }
 
-    private static func isTestHost(_ environment: [String: String]) throws -> Bool {
+    private static func isTestHost(_ environment: [String: String]) throws(LaunchConfigurationError) -> Bool {
         if let value = environment["MOTH_TEST_HOST"] {
             guard value == "1" else {
                 throw LaunchConfigurationError.invalidEnvironment(key: "MOTH_TEST_HOST", value: value)
             }
             return true
         }
-        return environment["XCTestConfigurationFilePath"]?.isEmpty == false
+        // Presence is the signal: Xcode 27.2 sets this variable empty in a hosted run.
+        return environment["XCTestConfigurationFilePath"] != nil
     }
 
-    private static func storesDemoMode(_ defaults: UserDefaults) throws -> Bool {
+    private static func storesDemoMode(_ defaults: UserDefaults) throws(LaunchConfigurationError) -> Bool {
         switch defaults.string(forKey: "DemoMode") {
         case nil, "0": false
         case "1": true
@@ -47,7 +48,7 @@ enum AppLaunchMode: Equatable {
         }
     }
 
-    private static func selects(_ flag: String, in arguments: [String]) throws -> Bool {
+    private static func selects(_ flag: String, in arguments: [String]) throws(LaunchConfigurationError) -> Bool {
         var isSelected = false
         for index in arguments.indices where arguments[index] == flag {
             let valueIndex = index + 1

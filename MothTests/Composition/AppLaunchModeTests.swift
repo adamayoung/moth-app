@@ -84,22 +84,14 @@ struct AppLaunchModeTests {
         "The test host is selected by the test plan's variable or by XCTest's",
         arguments: [
             ["MOTH_TEST_HOST": "1"],
-            ["XCTestConfigurationFilePath": "/tmp/Moth.xctestconfiguration"]
+            ["XCTestConfigurationFilePath": "/tmp/Moth.xctestconfiguration"],
+            ["XCTestConfigurationFilePath": ""]
         ]
     )
     func environmentSelectsTestHost(environment: [String: String]) throws {
         let mode = try AppLaunchMode(arguments: ["Moth"], defaults: emptyDefaults(), environment: environment)
 
         #expect(mode == .testHost)
-    }
-
-    @Test("An empty XCTest configuration path does not select the test host")
-    func emptyConfigurationPathIsLive() throws {
-        let environment = ["XCTestConfigurationFilePath": ""]
-
-        let mode = try AppLaunchMode(arguments: ["Moth"], defaults: emptyDefaults(), environment: environment)
-
-        #expect(mode == .live)
     }
 
     @Test("The test host beats UI testing, demo and a stored demo default")
