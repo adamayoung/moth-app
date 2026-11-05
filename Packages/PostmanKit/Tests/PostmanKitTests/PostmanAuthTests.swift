@@ -60,6 +60,35 @@ struct PostmanAuthTests {
         #expect(auth.parameters.map(\.key) == ["algorithm"])
     }
 
+    @Test("An unknown auth type whose payload isn't a list keeps its name")
+    func keepsUnknownTypeWithObjectPayload() throws {
+        let json = #"{ "type": "customAuth", "customAuth": { "token": "x" } }"#
+
+        let auth = try JSONDecoder().decode(PostmanAuth.self, from: Data(json.utf8))
+
+        #expect(auth.type == .unknown("customAuth"))
+        #expect(auth.parameters.isEmpty)
+    }
+
+    @Test("No auth decodes with the object payload the published schema allows")
+    func decodesNoAuthObjectPayload() throws {
+        let json = #"{ "type": "noauth", "noauth": {} }"#
+
+        let auth = try JSONDecoder().decode(PostmanAuth.self, from: Data(json.utf8))
+
+        #expect(auth.type == .noauth)
+        #expect(auth.parameters.isEmpty)
+    }
+
+    @Test("A known auth type whose parameters aren't a list is rejected, so credentials aren't lost silently")
+    func rejectsKnownTypeWithObjectPayload() {
+        let json = #"{ "type": "basic", "basic": { "username": "x" } }"#
+
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PostmanAuth.self, from: Data(json.utf8))
+        }
+    }
+
     @Test(
         "Every type in the published schema is recognised",
         arguments: [

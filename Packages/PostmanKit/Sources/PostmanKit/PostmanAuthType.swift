@@ -18,6 +18,16 @@ public enum PostmanAuthType: Sendable, Equatable {
     case oauth2
     case unknown(String)
 
+    /// The schema lets `noauth` hold anything, and an unknown type's payload has no published shape.
+    var allowsAnyPayload: Bool {
+        switch self {
+        case .noauth, .unknown:
+            true
+        case .apikey, .awsv4, .basic, .bearer, .digest, .edgegrid, .hawk, .ntlm, .oauth1, .oauth2:
+            false
+        }
+    }
+
     init(name: String) {
         switch name {
         case "apikey": self = .apikey

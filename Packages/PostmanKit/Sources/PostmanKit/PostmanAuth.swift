@@ -11,8 +11,13 @@ public struct PostmanAuth: Decodable, Sendable, Equatable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: AuthKey.self)
         let name = try container.decode(String.self, forKey: AuthKey("type"))
-        self.type = PostmanAuthType(name: name)
-        self.parameters = try container.decodeList(forKey: AuthKey(name))
+        let type = PostmanAuthType(name: name)
+        self.type = type
+        if type.allowsAnyPayload {
+            self.parameters = (try? container.decodeList(forKey: AuthKey(name))) ?? []
+        } else {
+            self.parameters = try container.decodeList(forKey: AuthKey(name))
+        }
     }
 
 }
