@@ -10,7 +10,7 @@ enum MothAppLauncher {
 
     static func main() {
         switch DependencyProvider.currentOutcome {
-        case .storeFailure: TestHostApp.main()
+        case .storeFailure: StoreFailureApp.main()
         case .ready(let provider) where provider.launchMode == .testHost: TestHostApp.main()
         case .ready: MothApp.main()
         }

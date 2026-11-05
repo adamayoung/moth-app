@@ -15,7 +15,7 @@ final class StoreFailureAlertTests: MothTestCase {
     func testAlertShowsItsTextAndOnlyQuitWithNoMainWindow() {
         let screen = StoreFailureAlertScreen(app: app)
 
-        XCTAssertTrue(screen.alert.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(screen.alert.waitForExistence(timeout: 10))
 
         XCTAssertTrue(screen.text("Moth can’t open your data.").exists)
         XCTAssertTrue(

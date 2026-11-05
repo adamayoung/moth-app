@@ -84,9 +84,15 @@ long as the app, never to a `.task` on a view.
 
 `LiveAppDependencies` takes the function that opens its store, and that function
 has no default, so a test cannot reach the real store or CloudKit by leaving it
-out. A store that will not open stops the launch through `stopLaunch`, which
-logs and prints the reason and exits, because `fatalError` would leave a crash
-dialog on screen.
+out. A bad launch argument stops the launch through `stopLaunch`, which logs and
+prints the reason and exits, because `fatalError` would leave a crash dialog on
+screen.
+
+A live store that will not open gives `LaunchOutcome.storeFailure`, and
+`MothAppLauncher` starts `StoreFailureApp` in place of `MothApp`. It opens no
+window and shows an alert whose only button is Quit. Moth never offers to delete
+the store, because synced data is at stake. A seeded store that will not open
+still stops the launch, so that a test host cannot wait on an alert.
 
 ## Domain Model
 
@@ -145,7 +151,8 @@ identifier, not by `@Relationship`.
 identifier selects `.private`, and no identifier selects `.none`. Each store has
 its own file in the directory `DataModel` is given. `LiveAppDependencies` passes
 the container only if the running app is entitled to it, so an unsigned build
-stays off CloudKit whatever its Info.plist says.
+stays off CloudKit whatever its Info.plist says. `isSyncedToICloud` reports that
+same result, and the sidebar's "iCloud Sync Off" footer follows it.
 
 ### Rows and Stored JSON
 
@@ -306,8 +313,9 @@ outside its own container, and never touches another tool's configuration.
 ## Open Questions
 
 Settle each with a test before the code that depends on it.
-`SwiftDataCrossStoreCharacterisationTests` and
-`SwiftDataStaleSaveCharacterisationTests` in `MothCoreTests` hold the tests behind
+`SwiftDataCrossStoreCharacterisationTests`,
+`SwiftDataStaleSaveCharacterisationTests` and
+`SwiftDataNewerStoreCharacterisationTests` in `MothCoreTests` hold the tests behind
 the settled answers, and fail if an OS or SDK update changes them.
 
 - **Cross-store relationships: settled.** A relationship cannot cross the two
@@ -321,6 +329,10 @@ the settled answers, and fail if an OS or SDK update changes them.
 - **A second context as a second writer: settled.** A stale save reverts the other
   context's change, as [Writing to the Store](#writing-to-the-store) describes.
   This holds for a second `ModelContext` on one container, in memory and on disk.
+- **Opening a store from a newer schema: characterised, not handled.** It opens
+  with no error, keeps its rows and drops the columns this build does not know, so
+  an older build loses a newer build's data and shows no alert. Nothing stops this
+  yet. The check would have to ship in the older build, before any `SchemaV2`.
 - **CloudKit as a second writer: unverified.** Sync imports write outside
   `StoreActor`, and the tests above use no iCloud account, so they show the
   mechanism and not what an import does. Whether a stale context's save can revert

@@ -7,6 +7,8 @@ import SwiftUI
 
 struct SidebarView: View {
 
+    let isSyncedToICloud: Bool
+
     var body: some View {
         List {
             Section("SIDEBAR_COLLECTIONS_SECTION") {
@@ -29,11 +31,21 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .accessibilityIdentifier("sidebar")
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !isSyncedToICloud {
+                ICloudSyncOffFooter()
+            }
+        }
     }
 
 }
 
-#Preview {
-    SidebarView()
+#Preview("Synced") {
+    SidebarView(isSyncedToICloud: true)
+        .frame(width: 240, height: 500)
+}
+
+#Preview("iCloud Sync Off") {
+    SidebarView(isSyncedToICloud: false)
         .frame(width: 240, height: 500)
 }

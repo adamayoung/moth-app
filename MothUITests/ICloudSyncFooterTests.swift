@@ -11,14 +11,16 @@ final class ICloudSyncFooterTests: MothTestCase {
     func testFooterShowsItsTextAndHelpWithNoContainer() {
         let screen = MainWindowScreen(app: app)
 
-        XCTAssertTrue(screen.iCloudSyncOffFooter.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(screen.iCloudSyncOffFooter.waitForExistence(timeout: 10))
         XCTAssertEqual(screen.iCloudSyncOffFooter.label, "iCloud Sync Off")
+        XCTAssertEqual(
+            screen.iCloudSyncOffFooter.value as? String,
+            "This build has no iCloud container, so your data stays on this Mac."
+        )
 
         screen.iCloudSyncOffFooter.hover()
 
-        let help = app.descendants(matching: .helpTag).firstMatch
-        XCTAssertTrue(help.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertEqual(help.label, "This build has no iCloud container, so your data stays on this Mac.")
+        XCTAssertTrue(app.descendants(matching: .helpTag).firstMatch.waitForExistence(timeout: 10))
     }
 
 }
