@@ -18,6 +18,34 @@
         "identifier" : "663853A8309BDC9700B9519C",
         "name" : "MothTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages/HTTPKit",
+        "identifier" : "HTTPKitTests",
+        "name" : "HTTPKitTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages/MothCore",
+        "identifier" : "MothCoreTests",
+        "name" : "MothCoreTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages/MothImport",
+        "identifier" : "MothImportTests",
+        "name" : "MothImportTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages/PostmanKit",
+        "identifier" : "PostmanKitTests",
+        "name" : "PostmanKitTests"
+      }
     }
   ],
   "version" : 1
