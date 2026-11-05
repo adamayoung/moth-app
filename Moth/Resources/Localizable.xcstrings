@@ -1,0 +1,127 @@
+{
+  "sourceLanguage" : "en-GB",
+  "strings" : {
+    "REQUEST_EDITOR_EMPTY_DESCRIPTION" : {
+      "comment" : "Editor pane guidance when no request is open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a request from the sidebar to edit and send it."
+          }
+        }
+      }
+    },
+    "REQUEST_EDITOR_EMPTY_TITLE" : {
+      "comment" : "Editor pane title when no request is open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Request Open"
+          }
+        }
+      }
+    },
+    "RESPONSE_EMPTY_DESCRIPTION" : {
+      "comment" : "Response pane guidance before a request is sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a request to see its response here."
+          }
+        }
+      }
+    },
+    "RESPONSE_EMPTY_TITLE" : {
+      "comment" : "Response pane title before a request is sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Response"
+          }
+        }
+      }
+    },
+    "SIDEBAR_COLLECTIONS_EMPTY" : {
+      "comment" : "Sidebar empty state when there are no collections.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Collections"
+          }
+        }
+      }
+    },
+    "SIDEBAR_COLLECTIONS_SECTION" : {
+      "comment" : "Sidebar section heading for saved collections.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collections"
+          }
+        }
+      }
+    },
+    "SIDEBAR_ENVIRONMENTS_EMPTY" : {
+      "comment" : "Sidebar empty state when there are no environments.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Environments"
+          }
+        }
+      }
+    },
+    "SIDEBAR_ENVIRONMENTS_SECTION" : {
+      "comment" : "Sidebar section heading for environments.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Environments"
+          }
+        }
+      }
+    },
+    "SIDEBAR_HISTORY_EMPTY" : {
+      "comment" : "Sidebar empty state when no request has been sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No History"
+          }
+        }
+      }
+    },
+    "SIDEBAR_HISTORY_SECTION" : {
+      "comment" : "Sidebar section heading for sent requests.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
+    },
+    "TAB_STRIP_LABEL" : {
+      "comment" : "VoiceOver label for the strip of open request tabs.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request Tabs"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
