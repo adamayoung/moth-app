@@ -7,6 +7,7 @@ import Foundation
 
 public protocol HTTPTransport: Sendable {
 
+    @concurrent
     func send(_ request: URLRequest) async throws -> HTTPResponse
 
 }

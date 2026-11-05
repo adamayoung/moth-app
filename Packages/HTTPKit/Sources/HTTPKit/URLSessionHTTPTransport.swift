@@ -13,6 +13,7 @@ public struct URLSessionHTTPTransport: HTTPTransport {
         self.session = session
     }
 
+    @concurrent
     public func send(_ request: URLRequest) async throws -> HTTPResponse {
         let (body, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {

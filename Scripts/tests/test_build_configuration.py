@@ -48,6 +48,13 @@ def build_settings(target, configuration, *overrides):
     return settings
 
 
+def app_target_section():
+    section = re.search(r'"name": "Moth",.*?(?="name": "MothTests")', PROJECT_FILE.read_text(), re.DOTALL)
+    if section is None:
+        raise AssertionError("found no Moth target before MothTests in the project file")
+    return section.group(0)
+
+
 def app_settings(*overrides):
     return build_settings("Moth", "Debug", *overrides)
 
@@ -123,8 +130,12 @@ class PackageIntegrationTests(unittest.TestCase):
     def test_no_package_is_a_dependency_reference(self):
         self.assertNotIn('"packages"', PROJECT_FILE.read_text())
 
+    def test_the_app_section_stops_before_the_test_targets(self):
+        self.assertIn('"id": "66385399309BDC9600B9519C"', app_target_section())
+        self.assertNotIn("663853A8309BDC9700B9519C", app_target_section())
+
     def test_the_app_links_only_the_packages_the_boundaries_table_allows(self):
-        linked = re.findall(r'"product-name": "(\w+)"', PROJECT_FILE.read_text())
+        linked = re.findall(r'"product-name": "(\w+)"', app_target_section())
         self.assertEqual(sorted(linked), ["HTTPKit", "MothCore", "MothImport"])
 
     def test_the_unit_plan_runs_every_package_s_tests(self):

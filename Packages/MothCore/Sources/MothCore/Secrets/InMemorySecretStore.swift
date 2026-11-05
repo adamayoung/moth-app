@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public final class InMemorySecretStore: SecretStore {
+public actor InMemorySecretStore: SecretStore {
 
     private var values: [String: String] = [:]
 

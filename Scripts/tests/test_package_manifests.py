@@ -28,9 +28,10 @@ UPCOMING_FEATURES = {
     "NonisolatedNonsendingByDefault",
 }
 APP_DEPENDENCIES = {"HTTPKit", "MothCore", "MothImport"}
-UI_MODULES = {"SwiftUI", "AppKit"}
+UI_MODULES = {"AppKit", "Cocoa", "SwiftUI", "SwiftUICore", "UIKit"}
 IMPORT = re.compile(
-    r"^[ \t]*(?:@\w+[ \t]+)*(?:(?:public|package|internal|fileprivate|private)[ \t]+)?import[ \t]+"
+    r"^[ \t]*(?:@\w+(?:\([^)\n]*\))?[ \t]+)*"
+    r"(?:(?:public|package|internal|fileprivate|private)[ \t]+)?import[ \t]+"
     r"(?:(?:class|enum|func|let|protocol|struct|typealias|var)[ \t]+)?(\w+)",
     re.MULTILINE,
 )
@@ -149,17 +150,27 @@ class ImportTests(unittest.TestCase):
             "import struct SwiftUI.Color": "SwiftUI",
             "public import HTTPKit": "HTTPKit",
             "@preconcurrency internal import PostmanKit": "PostmanKit",
+            "@_spi(Internal) import AppKit": "AppKit",
         }
         for line, module in forms.items():
             with self.subTest(line=line):
                 self.assertEqual(imports(line), {module})
 
-    def test_no_package_imports_swiftui_or_appkit(self):
+    def test_the_ui_modules_cover_the_ones_that_bring_in_appkit_or_swiftui(self):
+        self.assertLessEqual({"AppKit", "Cocoa", "SwiftUI", "SwiftUICore", "UIKit"}, UI_MODULES)
+
+    def test_no_package_imports_a_ui_module(self):
         sources = swift_files(PACKAGES)
         self.assertTrue(sources, "found no package sources to check")
         for path in sources:
             with self.subTest(path=path.relative_to(REPOSITORY)):
                 self.assertFalse(imports(path.read_text()) & UI_MODULES)
+
+    def test_the_kits_do_not_import_swiftdata(self):
+        for package in ("HTTPKit", "PostmanKit"):
+            for path in swift_files(PACKAGES / package):
+                with self.subTest(path=path.relative_to(REPOSITORY)):
+                    self.assertNotIn("SwiftData", imports(path.read_text()))
 
     # SwiftPM compiles an import of a transitive dependency, even with
     # --explicit-target-dependency-import-check error, so the compiler alone cannot hold the table.
@@ -169,6 +180,13 @@ class ImportTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(REPOSITORY)):
                     local = imports(path.read_text()) & set(ALLOWED_DEPENDENCIES)
                     self.assertLessEqual(local, allowed)
+
+    def test_each_test_target_imports_only_its_library_and_the_table_s_dependencies(self):
+        for package, allowed in ALLOWED_DEPENDENCIES.items():
+            for path in swift_files(PACKAGES / package / "Tests"):
+                with self.subTest(path=path.relative_to(REPOSITORY)):
+                    local = imports(path.read_text()) & set(ALLOWED_DEPENDENCIES)
+                    self.assertLessEqual(local, allowed | {package})
 
     def test_the_app_imports_only_the_table_s_dependencies(self):
         sources = swift_files(REPOSITORY / "Moth")

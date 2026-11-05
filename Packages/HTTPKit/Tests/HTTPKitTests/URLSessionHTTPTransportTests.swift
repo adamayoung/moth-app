@@ -11,7 +11,11 @@ import Testing
 @Suite(.serialized)
 struct URLSessionHTTPTransportTests {
 
-    private let request = URLRequest(url: URL(filePath: "/resource"))
+    private let request: URLRequest
+
+    init() throws {
+        self.request = try URLRequest(url: #require(URL(string: "https://example.test/resource")))
+    }
 
     @Test("Sending a request returns the response's status, headers and body")
     func returnsTheResponse() async throws {

@@ -17,4 +17,8 @@ public struct HTTPResponse: Equatable, Sendable {
         self.body = body
     }
 
+    public func value(forHeader name: String) -> String? {
+        headers.first { $0.key.caseInsensitiveCompare(name) == .orderedSame }?.value
+    }
+
 }

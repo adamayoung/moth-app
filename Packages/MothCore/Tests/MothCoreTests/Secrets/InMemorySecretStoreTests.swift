@@ -8,57 +8,53 @@ import Testing
 
 struct InMemorySecretStoreTests {
 
-    private let store = InMemorySecretStore()
+    private let store: any SecretStore = InMemorySecretStore()
 
     @Test("A saved value is returned by its identifier")
-    func returnsASavedValue() {
-        store.save("s3cret", for: "api-key")
+    func returnsASavedValue() async throws {
+        try await store.save("s3cret", for: "api-key")
 
-        #expect(store.value(for: "api-key") == "s3cret")
+        #expect(try await store.value(for: "api-key") == "s3cret")
     }
 
     @Test("Saving again replaces the value")
-    func replacesAValue() {
-        store.save("old", for: "api-key")
+    func replacesAValue() async throws {
+        try await store.save("old", for: "api-key")
 
-        store.save("new", for: "api-key")
+        try await store.save("new", for: "api-key")
 
-        #expect(store.value(for: "api-key") == "new")
+        #expect(try await store.value(for: "api-key") == "new")
     }
 
     @Test("A missing identifier returns nothing rather than an error")
-    func returnsNothingForAMissingIdentifier() throws {
-        let store: any SecretStore = store
-
-        #expect(try store.value(for: "missing") == nil)
+    func returnsNothingForAMissingIdentifier() async throws {
+        #expect(try await store.value(for: "missing") == nil)
     }
 
     @Test("A removed value is no longer returned")
-    func removesAValue() {
-        store.save("s3cret", for: "api-key")
+    func removesAValue() async throws {
+        try await store.save("s3cret", for: "api-key")
 
-        store.removeValue(for: "api-key")
+        try await store.removeValue(for: "api-key")
 
-        #expect(store.value(for: "api-key") == nil)
+        #expect(try await store.value(for: "api-key") == nil)
     }
 
     @Test("Removing a missing identifier does not throw")
-    func removesAMissingIdentifier() {
-        let store: any SecretStore = store
-
-        #expect(throws: Never.self) {
-            try store.removeValue(for: "missing")
+    func removesAMissingIdentifier() async {
+        await #expect(throws: Never.self) {
+            try await store.removeValue(for: "missing")
         }
     }
 
     @Test("Removing one identifier leaves another")
-    func removesOnlyTheNamedValue() {
-        store.save("first", for: "one")
-        store.save("second", for: "two")
+    func removesOnlyTheNamedValue() async throws {
+        try await store.save("first", for: "one")
+        try await store.save("second", for: "two")
 
-        store.removeValue(for: "one")
+        try await store.removeValue(for: "one")
 
-        #expect(store.value(for: "two") == "second")
+        #expect(try await store.value(for: "two") == "second")
     }
 
 }

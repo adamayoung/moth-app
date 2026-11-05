@@ -8,7 +8,7 @@ import PostmanKit
 
 public struct PostmanImporter {
 
-    public let secretStore: any SecretStore
+    private let secretStore: any SecretStore
 
     public init(secretStore: any SecretStore) {
         self.secretStore = secretStore

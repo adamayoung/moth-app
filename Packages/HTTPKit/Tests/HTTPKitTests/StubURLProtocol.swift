@@ -48,10 +48,15 @@ final class StubURLProtocol: URLProtocol {
 
         switch reply {
         case .http(let status, let headers, let body):
-            let response = HTTPURLResponse(
-                url: requestURL, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers
-            )
-            finish(response ?? URLResponse(), body: body)
+            guard
+                let response = HTTPURLResponse(
+                    url: requestURL, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers
+                )
+            else {
+                client?.urlProtocol(self, didFailWithError: URLError(.cannotParseResponse))
+                return
+            }
+            finish(response, body: body)
 
         case .notHTTP(let body):
             let response = URLResponse(
