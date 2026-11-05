@@ -25,7 +25,8 @@ enum LaunchConfigurationError: Error, Equatable {
         case .invalidDefault(let key, let value):
             "The \(key) default doesn’t accept “\(value)”. Set it to a boolean or delete it."
         case .cloudKitSchemaNeedsContainer:
-            "-InitializeCloudKitSchema needs an iCloud container. Set MOTH_ICLOUD_CONTAINER in Local.xcconfig."
+            "-InitializeCloudKitSchema needs an entitled iCloud container. "
+                + "Set DEVELOPMENT_TEAM and MOTH_ICLOUD_CONTAINER in Local.xcconfig."
         case .storeUnavailable(let detail):
             "The data store didn’t open: \(detail)"
         }
