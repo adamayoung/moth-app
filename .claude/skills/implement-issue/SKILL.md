@@ -84,9 +84,12 @@ The rules of a worktree run, and the first is absolute:
      filesystem paths, so none of the Xcode tools' project-organisation path
      juggling (see `--here` below) applies.
    - The `PostToolUse` hook formats the Swift you write with `Edit`/`Write`,
-     and `make lint` checks the worktree's files. Never run `make format` by
-     hand. A worktree `make lint` reporting "1 file skipped" checked nothing
-     (rule 4's guide says why): tell the user.
+     so prefer those. It skips Swift changed any other way: after a scripted
+     change, pass every changed path to `swiftlint --fix`, then to
+     `swiftformat`. `make lint` checks the worktree's files, so the checks stay
+     with the runner. Never run `make format` by hand. A worktree `make lint`
+     reporting "1 file skipped" checked nothing (rule 4's guide says why): tell
+     the user.
    - Use the workspace for `XcodeRefreshCodeIssuesInFile` on each edited
      Swift file before a full build, and `RenderPreview` for any `#Preview`
      you add or whose environment you changed. Builds and tests still go
