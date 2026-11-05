@@ -47,7 +47,7 @@ struct MainWindowScreen {
     }
 
     func sidebarRow(_ name: String) -> XCUIElement {
-        sidebar.outlineRows.containing(.staticText, identifier: name).firstMatch
+        sidebar.outlineRows.containing(NSPredicate(format: "label == %@ OR value == %@", name, name)).firstMatch
     }
 
     func expand(_ name: String) {
@@ -99,7 +99,10 @@ struct MainWindowScreen {
     }
 
     func waitForRowToDisappear(_ name: String) -> Bool {
-        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: sidebarText(name))
+        let gone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: sidebarText(name)
+        )
         return XCTWaiter.wait(for: [gone], timeout: 10) == .completed
     }
 
