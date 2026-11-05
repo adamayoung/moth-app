@@ -49,7 +49,7 @@ struct PostmanCollectionTests {
     @Test("Fields PostmanKit doesn't know are ignored, in a real file that holds them")
     func ignoresUnknownFields() throws {
         let path = "openapi-to-postman/collection.json"
-        let text = try String(decoding: Fixture.data(path), as: UTF8.self)
+        let text = try Fixture.text(path)
         #expect(text.contains("_exporter_id"))
         #expect(text.contains("_postman_previewlanguage"))
 

@@ -31,12 +31,9 @@ struct PostmanEventTests {
         let item = try #require(collection.items.requestItems.first { $0.name == "test bearer auth success" })
 
         let exec = try #require(item.events.only?.script?.exec)
-        #expect(
-            exec ==
-                [
-                    "var response = JSON.parse(responseBody); tests['Bearer auth should pass'] = response.status === 'pass';"
-                ]
-        )
+        let script = "var response = JSON.parse(responseBody); " +
+            "tests['Bearer auth should pass'] = response.status === 'pass';"
+        #expect(exec == [script])
     }
 
 }

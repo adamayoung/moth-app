@@ -13,6 +13,10 @@ enum Fixture {
         try Data(contentsOf: url(path))
     }
 
+    static func text(_ path: String) throws -> String {
+        try #require(String(bytes: data(path), encoding: .utf8))
+    }
+
     static func url(_ path: String) throws -> URL {
         let resources = try #require(Bundle.module.resourceURL)
         return resources.appending(path: "Fixtures/\(path)")

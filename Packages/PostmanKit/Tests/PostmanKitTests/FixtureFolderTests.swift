@@ -10,7 +10,7 @@ struct FixtureFolderTests {
 
     @Test("The fixture folder holds the Apache-2.0 licence text")
     func holdsTheLicence() throws {
-        let licence = try String(decoding: Fixture.data("LICENSE"), as: UTF8.self)
+        let licence = try Fixture.text("LICENSE")
 
         #expect(licence.contains("Apache License"))
         #expect(licence.contains("Version 2.0, January 2004"))
@@ -18,7 +18,7 @@ struct FixtureFolderTests {
 
     @Test("The sources note names every fixture and each repository's copyright notice")
     func notesEveryFixture() throws {
-        let sources = try String(decoding: Fixture.data("SOURCES.md"), as: UTF8.self)
+        let sources = try Fixture.text("SOURCES.md")
         let fixtures = try fixturePaths()
 
         #expect(fixtures.count == 16)
