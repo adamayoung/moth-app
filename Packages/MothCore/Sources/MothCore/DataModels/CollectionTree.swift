@@ -37,6 +37,39 @@ public nonisolated struct CollectionTree: Hashable, Sendable {
 
     public let roots: [TreeNode]
 
+    init(roots: [TreeNode]) {
+        self.roots = roots
+    }
+
+    /// Moves a selection only on its transition out of the tree, so a row made a moment ago keeps its selection until
+    /// the query delivers it.
+    public func selection(_ selection: TreeNodeID?, carriedTo newTree: CollectionTree) -> TreeNodeID? {
+        guard let selection, let path = path(to: selection), !newTree.contains(selection) else {
+            return selection
+        }
+        return path.dropLast().last(where: newTree.contains)
+    }
+
+    public func contains(_ id: TreeNodeID) -> Bool {
+        path(to: id) != nil
+    }
+
+    private func path(to id: TreeNodeID) -> [TreeNodeID]? {
+        Self.path(to: id, in: roots)
+    }
+
+    private static func path(to id: TreeNodeID, in nodes: [TreeNode]) -> [TreeNodeID]? {
+        for node in nodes {
+            if node.id == id {
+                return [id]
+            }
+            if let descendants = path(to: id, in: node.children) {
+                return [node.id] + descendants
+            }
+        }
+        return nil
+    }
+
     /// Takes flat rows, not a collection's arrays: a to-many array held by the main context goes stale once the writer
     /// saves, while a fetch brings each row's parent up to date. Walking down from the collections leaves an orphan, or
     /// a folder cycle two Macs made between them, out of the tree.
