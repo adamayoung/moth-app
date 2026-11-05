@@ -13,6 +13,9 @@ struct LaunchOutcomeTests {
 
     private struct OpenFailure: Error {}
 
+    private static let expectedMessage =
+        "Quit, then open Moth again. If this keeps happening, the data may come from a newer version of Moth."
+
     private let adHoc = AppSignature(teamIdentifier: nil, keychainAccessGroup: nil)
 
     @Test("A live store that will not open gives the alert, with its exact title and message")
@@ -24,10 +27,7 @@ struct LaunchOutcomeTests {
             return
         }
         #expect(alert.title == "Moth can’t open your data.")
-        #expect(
-            alert.message
-                == "Quit, then open Moth again. If this keeps happening, the data may come from a newer version of Moth."
-        )
+        #expect(alert.message == Self.expectedMessage)
         #expect(alert.quitButton == "Quit")
     }
 

@@ -9,7 +9,8 @@ import SwiftUI
 /// A SwiftUI `.alert` needs a window to attach to, and this alert appears before any window.
 struct StoreFailureApp: App {
 
-    @NSApplicationDelegateAdaptor(StoreFailureAppDelegate.self) private var appDelegate
+    @NSApplicationDelegateAdaptor(StoreFailureAppDelegate.self)
+    private var appDelegate
 
     var body: some Scene {
         Settings {
