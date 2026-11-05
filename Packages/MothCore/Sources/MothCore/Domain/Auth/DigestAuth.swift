@@ -4,7 +4,7 @@
 //  Copyright © 2026 Adam Young.
 
 /// Holds no realm or nonce, because the server's 401 challenge supplies them.
-public nonisolated struct DigestAuth: Sendable, Hashable {
+public nonisolated struct DigestAuth: Sendable, Hashable, Codable {
 
     public var username: String
     public var password: SecretReference

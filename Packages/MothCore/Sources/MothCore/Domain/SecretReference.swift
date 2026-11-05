@@ -6,7 +6,7 @@
 import Foundation
 
 /// Our own identifier, never a Keychain persistent reference, which Apple says not to use for synchronizable items.
-public nonisolated struct SecretReference: Sendable, Hashable {
+public nonisolated struct SecretReference: Sendable, Hashable, Codable {
 
     public let identifier: String
 

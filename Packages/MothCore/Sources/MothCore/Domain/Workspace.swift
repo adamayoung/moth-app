@@ -11,17 +11,20 @@ public nonisolated struct Workspace: Identifiable, Sendable, Hashable {
     public var collections: [RequestCollection]
     public var environments: [WorkspaceEnvironment]
     public var globals: [Variable]
+    public var activeEnvironmentID: UUID?
 
     public init(
         id: UUID = UUID(),
         collections: [RequestCollection] = [],
         environments: [WorkspaceEnvironment] = [],
-        globals: [Variable] = []
+        globals: [Variable] = [],
+        activeEnvironmentID: UUID? = nil
     ) {
         self.id = id
         self.collections = collections
         self.environments = environments
         self.globals = globals
+        self.activeEnvironmentID = activeEnvironmentID
     }
 
 }

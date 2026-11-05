@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public nonisolated struct OAuth2Auth: Sendable, Hashable {
+public nonisolated struct OAuth2Auth: Sendable, Hashable, Codable {
 
     public var grantType: OAuth2GrantType
     public var authorizationURL: String
@@ -45,7 +45,7 @@ public nonisolated struct OAuth2Auth: Sendable, Hashable {
 
 }
 
-public nonisolated enum OAuth2GrantType: Sendable, Hashable {
+public nonisolated enum OAuth2GrantType: Sendable, Hashable, Codable {
 
     case authorizationCode
     case authorizationCodeWithPKCE

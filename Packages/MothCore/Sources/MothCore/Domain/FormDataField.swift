@@ -5,7 +5,7 @@
 
 import Foundation
 
-public nonisolated struct FormDataField: Identifiable, Sendable, Hashable {
+public nonisolated struct FormDataField: Identifiable, Sendable, Hashable, Codable {
 
     public let id: UUID
     public var key: String
@@ -29,7 +29,7 @@ public nonisolated struct FormDataField: Identifiable, Sendable, Hashable {
 
 }
 
-public nonisolated enum FormDataValue: Sendable, Hashable {
+public nonisolated enum FormDataValue: Sendable, Hashable, Codable {
 
     case text(String)
     case file(paths: [String])

@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public nonisolated struct APIKeyAuth: Sendable, Hashable {
+public nonisolated struct APIKeyAuth: Sendable, Hashable, Codable {
 
     public var name: String
     public var value: SecretReference
@@ -17,7 +17,7 @@ public nonisolated struct APIKeyAuth: Sendable, Hashable {
 
 }
 
-public nonisolated enum APIKeyLocation: Sendable, Hashable {
+public nonisolated enum APIKeyLocation: Sendable, Hashable, Codable {
 
     case header
     case query

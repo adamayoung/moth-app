@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public nonisolated struct AWSSigV4Auth: Sendable, Hashable {
+public nonisolated struct AWSSigV4Auth: Sendable, Hashable, Codable {
 
     public var accessKeyID: SecretReference
     public var secretAccessKey: SecretReference

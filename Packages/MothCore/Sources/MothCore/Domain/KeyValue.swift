@@ -5,7 +5,7 @@
 
 import Foundation
 
-public nonisolated struct KeyValue: Identifiable, Sendable, Hashable {
+public nonisolated struct KeyValue: Identifiable, Sendable, Hashable, Codable {
 
     public let id: UUID
     public var key: String

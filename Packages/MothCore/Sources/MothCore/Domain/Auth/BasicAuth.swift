@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public nonisolated struct BasicAuth: Sendable, Hashable {
+public nonisolated struct BasicAuth: Sendable, Hashable, Codable {
 
     public var username: String
     public var password: SecretReference
