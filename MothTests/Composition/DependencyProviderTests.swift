@@ -14,6 +14,9 @@ struct DependencyProviderTests {
     private nonisolated static let seededModes: [AppLaunchMode] = [.uiTesting, .demo, .testHost]
     private nonisolated static let allModes: [AppLaunchMode] = [.live] + seededModes
 
+    private let adHoc = AppSignature(teamIdentifier: nil, keychainAccessGroup: nil)
+    private let teamSigned = AppSignature(teamIdentifier: "ABCDE12345", keychainAccessGroup: nil)
+
     @Test("A live launch gets the live graph")
     func liveLaunchGetsLiveGraph() {
         #expect(dependencies(for: .live) is LiveAppDependencies)
@@ -34,9 +37,20 @@ struct DependencyProviderTests {
         #expect(dependencies(for: mode).transport is StubHTTPTransport)
     }
 
-    @Test("Every graph keeps secrets in memory until the Keychain store arrives", arguments: allModes)
-    func everyGraphUsesInMemorySecretStore(mode: AppLaunchMode) {
-        #expect(dependencies(for: mode).secretStore is InMemorySecretStore)
+    @Test("A team-signed live launch keeps secrets in the Keychain")
+    func teamSignedLiveLaunchUsesKeychain() {
+        let dependencies = DependencyProvider(launchMode: .live, infoDictionary: [:], signature: teamSigned)
+            .dependencies
+
+        #expect(dependencies.secretStore is KeychainSecretStore)
+    }
+
+    @Test("A seeded launch keeps secrets in memory, however the build is signed", arguments: seededModes)
+    func seededLaunchUsesInMemorySecretStore(mode: AppLaunchMode) {
+        let dependencies = DependencyProvider(launchMode: mode, infoDictionary: [:], signature: teamSigned)
+            .dependencies
+
+        #expect(dependencies.secretStore is InMemorySecretStore)
     }
 
     @Test("A seeded graph has no iCloud container", arguments: seededModes)
@@ -46,7 +60,7 @@ struct DependencyProviderTests {
 
     @Test("A provider returns one graph across reads", arguments: allModes)
     func providerKeepsItsGraph(mode: AppLaunchMode) {
-        let provider = DependencyProvider(launchMode: mode, infoDictionary: [:])
+        let provider = DependencyProvider(launchMode: mode, infoDictionary: [:], signature: adHoc)
 
         #expect(provider.dependencies === provider.dependencies)
     }
@@ -76,7 +90,7 @@ struct DependencyProviderTests {
     }
 
     private func dependencies(for mode: AppLaunchMode) -> any AppDependencies {
-        DependencyProvider(launchMode: mode, infoDictionary: [:]).dependencies
+        DependencyProvider(launchMode: mode, infoDictionary: [:], signature: adHoc).dependencies
     }
 
 }
