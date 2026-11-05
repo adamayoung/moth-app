@@ -7,14 +7,14 @@ public nonisolated struct AWSSigV4Auth: Sendable, Hashable {
 
     public var accessKeyID: SecretReference
     public var secretAccessKey: SecretReference
-    public var sessionToken: SecretReference
+    public var sessionToken: SecretReference?
     public var region: String
     public var service: String
 
     public init(
         accessKeyID: SecretReference,
         secretAccessKey: SecretReference,
-        sessionToken: SecretReference,
+        sessionToken: SecretReference? = nil,
         region: String,
         service: String
     ) {

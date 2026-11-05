@@ -10,12 +10,12 @@ public nonisolated struct OAuth2Auth: Sendable, Hashable {
     public var accessTokenURL: String
     public var callbackURL: String
     public var clientID: String
-    public var clientSecret: SecretReference
+    public var clientSecret: SecretReference?
     public var scope: String
     public var username: String
-    public var password: SecretReference
-    public var accessToken: SecretReference
-    public var refreshToken: SecretReference
+    public var password: SecretReference?
+    public var accessToken: SecretReference?
+    public var refreshToken: SecretReference?
 
     public init(
         grantType: OAuth2GrantType,
@@ -23,12 +23,12 @@ public nonisolated struct OAuth2Auth: Sendable, Hashable {
         accessTokenURL: String,
         callbackURL: String,
         clientID: String,
-        clientSecret: SecretReference,
+        clientSecret: SecretReference? = nil,
         scope: String,
-        username: String,
-        password: SecretReference,
-        accessToken: SecretReference,
-        refreshToken: SecretReference
+        username: String = "",
+        password: SecretReference? = nil,
+        accessToken: SecretReference? = nil,
+        refreshToken: SecretReference? = nil
     ) {
         self.grantType = grantType
         self.authorizationURL = authorizationURL

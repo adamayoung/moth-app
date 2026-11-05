@@ -23,6 +23,7 @@ public nonisolated struct CollectionItem: Identifiable, Sendable, Hashable {
     }
 
     /// Ties fall back to `id` because a sync can give two children one `sortOrder`, and devices must agree.
+    /// Sorted only when a whole array is set: sorting on each element write would move an index mid-edit.
     static func inOrder(_ items: [CollectionItem]) -> [CollectionItem] {
         items.sorted { ($0.sortOrder, $0.id) < ($1.sortOrder, $1.id) }
     }

@@ -12,11 +12,7 @@ public nonisolated struct RequestCollection: Identifiable, Sendable, Hashable {
     public var name: String
     public var auth: Auth
     public var variables: [Variable]
-    public var children: [CollectionItem] {
-        didSet {
-            children = CollectionItem.inOrder(children)
-        }
-    }
+    public private(set) var children: [CollectionItem]
 
     public init(
         id: UUID = UUID(),
@@ -29,6 +25,10 @@ public nonisolated struct RequestCollection: Identifiable, Sendable, Hashable {
         self.name = name
         self.auth = auth
         self.variables = variables
+        self.children = CollectionItem.inOrder(children)
+    }
+
+    public mutating func setChildren(_ children: [CollectionItem]) {
         self.children = CollectionItem.inOrder(children)
     }
 

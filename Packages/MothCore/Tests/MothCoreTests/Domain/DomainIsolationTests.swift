@@ -33,7 +33,7 @@ struct DomainIsolationTests {
         request.method = .post
         let folder = Folder(name: "Users", children: [CollectionItem(sortOrder: 0, node: .request(request))])
         var collection = RequestCollection(name: "API")
-        collection.children.append(CollectionItem(sortOrder: 0, node: CollectionNode.folder(folder)))
+        collection.setChildren([CollectionItem(sortOrder: 0, node: CollectionNode.folder(folder))])
         let environment = WorkspaceEnvironment(name: "Staging", variables: [plain, secret])
         let workspace = Workspace(collections: [collection], environments: [environment], globals: [secret])
 

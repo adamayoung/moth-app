@@ -107,6 +107,36 @@ struct AuthTests {
         #expect(kept.refreshToken == refreshToken)
     }
 
+    @Test("A public OAuth2 client has no client secret, password or tokens yet")
+    func oauth2CredentialsCanBeAbsent() {
+        let oauth2 = OAuth2Auth(
+            grantType: .authorizationCodeWithPKCE,
+            authorizationURL: "https://example.com/authorize",
+            accessTokenURL: "https://example.com/token",
+            callbackURL: "moth://callback",
+            clientID: "moth",
+            scope: "read"
+        )
+
+        #expect(oauth2.clientSecret == nil)
+        #expect(oauth2.username.isEmpty)
+        #expect(oauth2.password == nil)
+        #expect(oauth2.accessToken == nil)
+        #expect(oauth2.refreshToken == nil)
+    }
+
+    @Test("Long-lived AWS keys have no session token")
+    func awsSessionTokenCanBeAbsent() {
+        let sigV4 = AWSSigV4Auth(
+            accessKeyID: SecretReference(),
+            secretAccessKey: SecretReference(),
+            region: "eu-west-2",
+            service: "execute-api"
+        )
+
+        #expect(sigV4.sessionToken == nil)
+    }
+
     @Test("AWS SigV4 keeps its region, service and references to its keys")
     func awsSigV4KeepsItsFields() {
         let accessKeyID = SecretReference(identifier: "access-key-id")

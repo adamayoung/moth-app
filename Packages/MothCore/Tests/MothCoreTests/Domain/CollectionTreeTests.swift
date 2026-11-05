@@ -46,22 +46,55 @@ struct CollectionTreeTests {
         #expect(names(of: folder.children) == ["First", "Second"])
     }
 
-    @Test("Adding a child to a collection keeps the children in order")
-    func addingToACollectionKeepsTheOrder() {
+    @Test("Setting a collection's children keeps them in order")
+    func settingACollectionsChildrenKeepsTheOrder() {
         var collection = RequestCollection(name: "API", children: [requestItem("Second", sortOrder: 1)])
 
-        collection.children.append(requestItem("First", sortOrder: 0))
+        collection.setChildren(collection.children + [requestItem("First", sortOrder: 0)])
 
         #expect(names(of: collection.children) == ["First", "Second"])
     }
 
-    @Test("Adding a child to a folder keeps the children in order")
-    func addingToAFolderKeepsTheOrder() {
+    @Test("Setting a folder's children keeps them in order")
+    func settingAFoldersChildrenKeepsTheOrder() {
         var folder = Folder(name: "Users", children: [requestItem("Second", sortOrder: 1)])
 
-        folder.children.append(requestItem("First", sortOrder: 0))
+        folder.setChildren(folder.children + [requestItem("First", sortOrder: 0)])
 
         #expect(names(of: folder.children) == ["First", "Second"])
+    }
+
+    @Test("Renumbering every child at once changes each one exactly once")
+    func renumberingChildrenChangesEachOnce() {
+        var collection = RequestCollection(
+            name: "API",
+            children: [
+                requestItem("A", sortOrder: 0),
+                requestItem("B", sortOrder: 1),
+                requestItem("C", sortOrder: 2)
+            ]
+        )
+
+        var renumbered = collection.children
+        for index in renumbered.indices {
+            renumbered[index].sortOrder = 10 - index
+        }
+        collection.setChildren(renumbered)
+
+        #expect(names(of: collection.children) == ["C", "B", "A"])
+        #expect(collection.children.map(\.sortOrder) == [8, 9, 10])
+    }
+
+    @Test("The same children are equal whatever order they arrive in, as a store's unordered relationship gives them")
+    func equalityIgnoresArrivalOrder() {
+        let first = requestItem("First", sortOrder: 0)
+        let second = requestItem("Second", sortOrder: 1)
+        let id = UUID()
+
+        let forwards = RequestCollection(id: id, name: "API", children: [first, second])
+        let backwards = RequestCollection(id: id, name: "API", children: [second, first])
+
+        #expect(forwards == backwards)
     }
 
     @Test("Equal sort orders fall back to the id, so every device agrees after a sync")
