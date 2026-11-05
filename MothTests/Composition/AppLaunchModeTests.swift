@@ -95,7 +95,7 @@ struct AppLaunchModeTests {
     }
 
     @Test("The test host beats UI testing, demo and a stored demo default")
-    func testHostBeatsOtherModes() throws {
+    func hostBeatsOtherModes() throws {
         let defaults = emptyDefaults()
         defaults.set(true, forKey: "DemoMode")
 
@@ -120,7 +120,7 @@ struct AppLaunchModeTests {
     }
 
     @Test("Any value but 1 for the test host variable stops the launch", arguments: ["0", "true", ""])
-    func testHostVariableOtherThanOneStopsLaunch(value: String) {
+    func hostVariableOtherThanOneStopsLaunch(value: String) {
         let expected = LaunchConfigurationError.invalidEnvironment(key: "MOTH_TEST_HOST", value: value)
 
         #expect(throws: expected) {

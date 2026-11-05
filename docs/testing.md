@@ -62,6 +62,11 @@ plans, not their targets, so it needs no entry. A package's plan entry uses
 `container:Packages/<Name>` as its `containerPath`, and the target's name as
 both `identifier` and `name`.
 
+`UnitTests.xctestplan` sets `MOTH_TEST_HOST=1`, which launches the app as its
+windowless test host. XCTest's `XCTestConfigurationFilePath` selects the same
+mode for a run without the plan. Xcode 27.2 sets that variable empty in a hosted
+run, so its presence counts, not its value.
+
 The project's `Packages` folder entry belongs to no target and already covers a
 new package. Do not use `xcrun xcodeproj pkg add-local`: it writes the project's
 `packages` array, and with the packages there `make test` passed having run none
