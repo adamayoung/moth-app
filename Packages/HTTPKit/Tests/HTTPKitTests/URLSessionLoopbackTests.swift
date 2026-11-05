@@ -22,12 +22,14 @@ struct URLSessionLoopbackTests {
         ""
     ].joined(separator: "\r\n")
 
+    private let session: URLSession
     private let transport: URLSessionHTTPTransport
 
     init() {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = nil
-        self.transport = URLSessionHTTPTransport(session: URLSession(configuration: configuration))
+        self.session = URLSession(configuration: configuration)
+        self.transport = URLSessionHTTPTransport(session: session)
     }
 
     @Test("A real response reports its protocol, every byte of it, and no TLS phase over plain HTTP")
@@ -63,13 +65,14 @@ struct URLSessionLoopbackTests {
         let server = try await LoopbackServer(routes: ["/hello": Self.hello])
         let request = try URLRequest(url: server.url(path: "/hello"))
 
-        _ = try await transport.send(request)
-        let response = try await transport.send(request)
+        let first = try #require(await transport.send(request).metrics)
+        let second = try #require(await transport.send(request).metrics)
 
-        let metrics = try #require(response.metrics)
-        #expect(metrics.dns == nil)
-        #expect(metrics.connect == nil)
-        #expect(metrics.firstByte != nil)
+        #expect(first.dns != nil)
+        #expect(first.connect != nil)
+        #expect(second.dns == nil)
+        #expect(second.connect == nil)
+        #expect(second.firstByte != nil)
     }
 
     @Test("URLSession merges a repeated header name, comma-separated, and that is what comes back")
@@ -90,31 +93,40 @@ struct URLSessionLoopbackTests {
 
         let error = try await thrownError(sending: request)
 
-        #expect(try error == .timedOut(description: #require(error.errorDescription)))
+        #expect(try await error == .timedOut(description: systemDescription(sending: request)))
     }
 
     @Test("A refused connection is a connection failure, with the system's description")
     func aRealConnectionFailure() async throws {
-        let url = try #require(URL(string: "http://127.0.0.1:1/"))
+        let request = try URLRequest(url: #require(URL(string: "http://127.0.0.1:1/")))
 
-        let error = try await thrownError(sending: URLRequest(url: url))
+        let error = try await thrownError(sending: request)
 
-        #expect(try error == .connectionFailed(description: #require(error.errorDescription)))
+        #expect(try await error == .connectionFailed(description: systemDescription(sending: request)))
     }
 
     @Test("HTTPS to a plain HTTP server is a TLS failure, with the system's description")
     func aRealTLSFailure() async throws {
         let server = try await LoopbackServer(routes: [:], fallback: Self.hello)
 
-        let error = try await thrownError(sending: URLRequest(url: server.url(path: "/hello", scheme: "https")))
+        let request = try URLRequest(url: server.url(path: "/hello", scheme: "https"))
 
-        #expect(try error == .tlsFailed(description: #require(error.errorDescription)))
+        let error = try await thrownError(sending: request)
+
+        #expect(try await error == .tlsFailed(description: systemDescription(sending: request)))
     }
 
     private func thrownError(sending request: URLRequest) async throws -> HTTPTransportError {
         try await #require(throws: HTTPTransportError.self) {
             try await transport.send(request)
         }
+    }
+
+    private func systemDescription(sending request: URLRequest) async throws -> String {
+        let error = try await #require(throws: URLError.self) {
+            try await session.data(for: request)
+        }
+        return error.localizedDescription
     }
 
 }

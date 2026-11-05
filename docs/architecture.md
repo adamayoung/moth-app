@@ -295,8 +295,10 @@ cover the whole task.
 
 The phases run end to end: `dns`, `connect`, `tls`, `firstByte` and `download`.
 `connect` stops where the TLS handshake starts, because URLSession's connect end
-date includes it. `firstByte` starts with the request, so it includes any upload.
-A phase that did not happen, such as on a reused connection, is `nil`.
+date includes it. Over QUIC, which handshakes as it connects, `connect` is close
+to zero and `tls` holds the handshake. `firstByte` starts with the request, so it
+includes any upload. A phase that did not happen, such as on a reused connection,
+is `nil`.
 `bytesReceived` counts the final response's header and body bytes on the wire.
 
 `metrics` is optional because URLSession does not say when it delivers them

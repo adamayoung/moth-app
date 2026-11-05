@@ -7,7 +7,7 @@ import Foundation
 import Network
 
 /// Writes raw responses on 127.0.0.1, for what `StubURLProtocol` cannot show: wire bytes, protocol, redirects
-/// and repeated header names. A path with no route gets `fallback`, or no answer at all.
+/// and repeated header names.
 final class LoopbackServer: Sendable {
 
     private let listener: NWListener
