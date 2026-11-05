@@ -1,0 +1,57 @@
+//  MultipartFormData.swift
+//  MothCore
+//
+//  Copyright © 2026 Adam Young.
+
+import Foundation
+
+nonisolated struct MultipartFormData {
+
+    let boundary: String
+    let fields: [FormDataField]
+
+    var encoded: EncodedBody {
+        var body = ""
+        var notices: [RequestBuildNotice] = []
+
+        for field in fields where field.isEnabled && !field.key.isEmpty {
+            switch field.value {
+            case .text(let text):
+                body += part(for: field, text: text)
+            case .file:
+                notices.append(.unsupportedFormDataFile(key: field.key))
+            }
+        }
+
+        body += "--\(boundary)--\r\n"
+
+        return EncodedBody(
+            data: Data(body.utf8),
+            contentType: "multipart/form-data; boundary=\(boundary)",
+            notices: notices
+        )
+    }
+
+    private func part(for field: FormDataField, text: String) -> String {
+        var headers = [#"Content-Disposition: form-data; name="\#(Self.escapedName(field.key))""#]
+
+        if let contentType = field.contentType, !contentType.isEmpty {
+            headers.append("Content-Type: \(contentType.components(separatedBy: .newlines).joined())")
+        }
+
+        return "--\(boundary)\r\n\(headers.joined(separator: "\r\n"))\r\n\r\n\(text)\r\n"
+    }
+
+    /// The WHATWG form encoding's escapes. Works on scalars, because `\r\n` is one `Character`.
+    private static func escapedName(_ name: String) -> String {
+        name.unicodeScalars.reduce(into: "") { escaped, scalar in
+            switch scalar {
+            case "\"": escaped += "%22"
+            case "\r": escaped += "%0D"
+            case "\n": escaped += "%0A"
+            default: escaped.unicodeScalars.append(scalar)
+            }
+        }
+    }
+
+}
