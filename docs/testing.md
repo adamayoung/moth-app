@@ -85,14 +85,18 @@ on a `packages` array. To link a product, add it to the target's
 - Use `#expect` for assertions and `try #require` to unwrap prerequisites.
 - Use parameterized `arguments:` when several inputs prove the same claim.
 - Prefer focused fakes that record calls or return deterministic values. Avoid
-  real network, Keychain or iCloud access.
+  real network, Keychain or iCloud access. The exception is
+  `KeychainSecretStoreHostedTests`, which uses the login keychain under a new
+  service name for each test, so that no later build reads its items and prompts.
 - For SwiftData tests, create an isolated in-memory container, hold it for the
   life of any context you read from, and validate persisted results through a
   fresh context when cache behaviour matters.
 - Cover cancellation, errors, empty results, repeated calls, and late async
   callbacks when they are meaningful parts of the contract.
 - Use real exported Postman files as fixtures. A fixture you invented tests your
-  belief, not the format.
+  belief, not the format. They live in
+  `Packages/PostmanKit/Tests/PostmanKitTests/Fixtures/` under Apache-2.0, so
+  record each new file's repository, commit and kind in `SOURCES.md` there.
 
 ## Verification Expectations
 
