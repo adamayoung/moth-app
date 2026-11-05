@@ -101,7 +101,14 @@ struct DependencyProvider {
                 guard let containerIdentifier else {
                     throw LaunchConfigurationError.cloudKitSchemaNeedsContainer
                 }
-                try CloudKitSchemaInitialiser.initialise(containerIdentifier: containerIdentifier, directory: directory)
+                do {
+                    try CloudKitSchemaInitialiser.initialise(
+                        containerIdentifier: containerIdentifier,
+                        directory: directory
+                    )
+                } catch {
+                    throw LaunchConfigurationError.storeUnavailable(detail: String(describing: error))
+                }
             }
         #endif
         return try DataModel(location: .directory(directory), containerIdentifier: containerIdentifier)

@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct StoreFailureAlert: Equatable {
+struct StoreFailureAlert {
 
     let title = String(localized: "STORE_FAILURE_ALERT_TITLE")
     let message = String(localized: "STORE_FAILURE_ALERT_MESSAGE")

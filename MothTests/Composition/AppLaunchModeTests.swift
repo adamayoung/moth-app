@@ -54,6 +54,15 @@ final class AppLaunchModeTests {
         }
     }
 
+    @Test("Both UI test launch pairs together stop the launch")
+    func conflictingUITestPairsStopLaunch() {
+        let arguments = ["Moth", "-UITesting", "1", "-UITestICloudSync", "1", "-UITestStoreFailure", "1"]
+
+        #expect(throws: LaunchConfigurationError.conflictingUITestPairs) {
+            try AppLaunchMode(arguments: arguments, defaults: defaults, environment: [:])
+        }
+    }
+
     @Test("Arguments the system adds for itself are ignored")
     func foreignArgumentsAreIgnored() throws {
         let arguments = ["Moth", "-NSDocumentRevisionsDebugMode", "YES", "-ApplePersistenceIgnoreState", "YES"]
@@ -224,6 +233,7 @@ final class AppLaunchModeTests {
             (LaunchConfigurationError.invalidEnvironment(key: "MOTH_TEST_HOST", value: "0"), "MOTH_TEST_HOST=1"),
             (LaunchConfigurationError.invalidDefault(key: "DemoMode", value: "sometimes"), "DemoMode"),
             (LaunchConfigurationError.needsUITesting(flag: "-UITestStoreFailure"), "-UITesting 1"),
+            (LaunchConfigurationError.conflictingUITestPairs, "-UITestICloudSync 1 or -UITestStoreFailure 1"),
             (LaunchConfigurationError.cloudKitSchemaNeedsContainer, "MOTH_ICLOUD_CONTAINER"),
             (LaunchConfigurationError.storeUnavailable(detail: "disk full"), "disk full")
         ]

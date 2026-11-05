@@ -31,7 +31,7 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .accessibilityIdentifier("sidebar")
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .safeAreaBar(edge: .bottom, spacing: 0) {
             if !isSyncedToICloud {
                 ICloudSyncOffFooter()
             }

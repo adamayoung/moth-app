@@ -329,10 +329,13 @@ the settled answers, and fail if an OS or SDK update changes them.
 - **A second context as a second writer: settled.** A stale save reverts the other
   context's change, as [Writing to the Store](#writing-to-the-store) describes.
   This holds for a second `ModelContext` on one container, in memory and on disk.
-- **Opening a store from a newer schema: characterised, not handled.** It opens
-  with no error, keeps its rows and drops the columns this build does not know, so
-  an older build loses a newer build's data and shows no alert. Nothing stops this
-  yet. The check would have to ship in the older build, before any `SchemaV2`.
+- **Opening a store from a newer schema: characterised, not handled.** While
+  `MothMigrationPlan.stages` is empty, such a store opens with no error, keeps its
+  rows and drops the columns this build does not know, so an older build loses a
+  newer build's data and shows no alert. With a stage in the plan, SwiftData
+  refuses the store and leaves it intact, and the launch shows the store failure
+  alert. A build with no stages needs a check of its own, which has to ship in that
+  older build, before any `SchemaV2`.
 - **CloudKit as a second writer: unverified.** Sync imports write outside
   `StoreActor`, and the tests above use no iCloud account, so they show the
   mechanism and not what an import does. Whether a stale context's save can revert

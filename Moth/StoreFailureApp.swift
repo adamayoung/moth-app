@@ -34,6 +34,7 @@ final class StoreFailureAppDelegate: NSObject, NSApplicationDelegate {
         modalAlert.messageText = alert.title
         modalAlert.informativeText = alert.message
         modalAlert.addButton(withTitle: alert.quitButton)
+        NSApp.activate()
         modalAlert.runModal()
     }
 

@@ -8,6 +8,7 @@ enum LaunchConfigurationError: Error, Equatable {
     case invalidValue(flag: String, value: String)
     case conflictingModes
     case needsUITesting(flag: String)
+    case conflictingUITestPairs
     case invalidEnvironment(key: String, value: String)
     case invalidDefault(key: String, value: String)
     case cloudKitSchemaNeedsContainer
@@ -23,6 +24,8 @@ enum LaunchConfigurationError: Error, Equatable {
             "Moth starts in one mode. Pass -UITesting 1 or -DemoMode 1, not both."
         case .needsUITesting(let flag):
             "\(flag) needs -UITesting 1."
+        case .conflictingUITestPairs:
+            "A UI test launch simulates one state. Pass -UITestICloudSync 1 or -UITestStoreFailure 1, not both."
         case .invalidEnvironment(let key, let value):
             "\(key) doesn’t accept “\(value)”. Set \(key)=1 or unset it."
         case .invalidDefault(let key, let value):

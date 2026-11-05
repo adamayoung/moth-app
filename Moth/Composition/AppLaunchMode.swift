@@ -68,6 +68,9 @@ enum AppLaunchMode: Equatable {
             return nil
         }
 
+        if simulatesStoreFailure, simulatesICloudSync {
+            throw .conflictingUITestPairs
+        }
         if simulatesStoreFailure {
             return .uiTestingStoreFailure
         }

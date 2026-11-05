@@ -44,9 +44,8 @@ itself. A `List` is queried through `app.outlines`. A view with no children of
 its own, such as the empty tab strip, reaches the tree only through
 `.accessibilityElement()` and needs a label for VoiceOver. A
 `ContentUnavailableView` title is a static text's value rather than its label,
-and `staticTexts[…]` matches both. A `Label` under
-`.accessibilityElement(children: .combine)` reaches it the same way. A `.help`
-tooltip reaches the tree only after `hover()`, as
+and `staticTexts[…]` matches both. A `.help` tooltip reaches the tree only after
+`hover()`, as
 `descendants(matching: .helpTag)`, and carries no text at all, so a test can prove
 that one appears and not what it says. A view whose tooltip text must be checked
 also sets it as `.accessibilityValue` and adds the `.isStaticText` trait, because
