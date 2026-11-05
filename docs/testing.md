@@ -23,6 +23,8 @@ canonical Make equivalents for direct terminal use and fallback execution:
 
 ```bash
 make build
+make build-for-testing            # the app and both test plans' targets, unsigned
+make build-packages-ios           # every local package for iOS, unsigned
 ```
 
 ## Running Tests
@@ -34,6 +36,7 @@ execution:
 ```bash
 make test                         # UnitTests: app plus all package targets
 make test-unit                    # MothTests only
+make test-unit-unsigned           # MothTests only, unsigned, as CI runs them
 make test-packages                # swift test in every local package
 make test TESTS=AppLaunchModeTests
 make test TESTS='AppLaunchModeTests/noArgumentsIsLive()'
@@ -112,14 +115,31 @@ can do:
 | `xcodebuild build-for-testing` | Succeeds |
 | `xcodebuild test` | Refused: "Cannot test target … on My Mac" |
 
-So pull requests run lint, `swift test` in every package, `build-for-testing`
-for the scheme, and an iOS build of the packages. `MothTests` and `MothUITests`
-run only on a developer's Mac until the image reaches macOS 27.2. Until then the
-workflow reports that they did not run, so a green check is not read as covering
-them, and `make test` before a pull request is the only run of those tests.
-
 This table was measured locally, with a 27.2.1 minimum on macOS 27.2. A package
 that calls an API added in 27.2 could still fail at run time on 27.0.1.
+
+So `.github/workflows/ci.yml` runs these jobs on every pull request to `main`:
+
+| Job | Runs |
+| --- | --- |
+| Lint | `make lint`, with SwiftLint and SwiftFormat at the versions and checksums the workflow pins |
+| Package tests | `make test-packages`, which names each package and its test count in the job summary |
+| App build | `make build-for-testing` |
+| iOS package build | `make build-packages-ios` |
+| App tests (not run below macOS 27.2) | `Scripts/ci-app-tests.sh` |
+
+The app tests job compares the runner's macOS with `MACOSX_DEPLOYMENT_TARGET` in
+`Configs/Shared.xcconfig`. While the runner is older, the job warns, says so in
+its summary and passes, so a green check is not read as covering `MothTests`, and
+`make test` before a pull request is the only run of those tests. Once the runner
+reaches the target, the job runs `make test-unit-unsigned` with no change to the
+workflow. Changing the deployment target also means changing that job's name, and
+a script test fails until you do.
+
+`MothUITests` never run on CI, because of their runner minutes. No workflow uses
+a repository secret or a self-hosted runner, so a fork's pull request can run
+them. Bumping a pinned tool means changing its version and its SHA-256 together;
+take the checksum from the release asset's `digest` in the GitHub API.
 
 ## The Build Lock
 

@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
+  SWIFTLINT_VERSION: 0.65.1
+  SWIFTLINT_SHA256: c1e429b0599cf1b516f369a2d9ec04eaf0e436f3c12b637df8851fa52ff694d0
+  SWIFTFORMAT_VERSION: 0.64.5
+  SWIFTFORMAT_SHA256: ec017c91fdd46233e5a22dc43ff9564a3cc4b37023d3b4681b6c7d7b781de113
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: xcode-27
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned SwiftLint and SwiftFormat
+        run: |
+          tools="$RUNNER_TEMP/lint-tools"
+          mkdir -p "$tools"
+          cd "$tools"
+          curl -fsSL -o swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/$SWIFTLINT_VERSION/portable_swiftlint.zip"
+          curl -fsSL -o swiftformat.zip \
+            "https://github.com/nicklockwood/SwiftFormat/releases/download/$SWIFTFORMAT_VERSION/swiftformat.zip"
+          shasum -a 256 -c <<CHECKSUMS
+          $SWIFTLINT_SHA256  swiftlint.zip
+          $SWIFTFORMAT_SHA256  swiftformat.zip
+          CHECKSUMS
+          unzip -q -o swiftlint.zip
+          unzip -q -o swiftformat.zip
+          chmod +x swiftlint swiftformat
+          echo "$tools" >> "$GITHUB_PATH"
+      - name: Check the pinned versions are the ones on the path
+        run: |
+          test "$(swiftlint version)" = "$SWIFTLINT_VERSION"
+          test "$(swiftformat --version)" = "$SWIFTFORMAT_VERSION"
+      - run: make lint
+
+  package-tests:
+    name: Package tests
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: make test-packages
+
+  app-build:
+    name: App build
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: make build-for-testing
+
+  ios-packages:
+    name: iOS package build
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: make build-packages-ios
+
+  app-tests:
+    name: App tests (not run below macOS 27.2)
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: Scripts/ci-app-tests.sh
