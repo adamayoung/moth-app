@@ -25,6 +25,15 @@ struct KeychainSecretStoreHostedTests {
         }
     }
 
+    @Test("An empty value reads back empty, not as a failure or a missing value")
+    func readsAnEmptyValue() async throws {
+        try await removingItemAfterwards {
+            try await store.save("", for: identifier)
+
+            #expect(try await store.value(for: identifier) == "")
+        }
+    }
+
     @Test("Saving again replaces the value")
     func replacesAValue() async throws {
         try await removingItemAfterwards {

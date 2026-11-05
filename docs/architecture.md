@@ -175,7 +175,7 @@ Keychain turned off. A missing secret is a normal state the UI must handle.
 ### Which Store a Build Uses
 
 `AppSignature` reads the running app's own signature, and `LiveAppDependencies`
-chooses from it:
+chooses from it, so the entitlement decides and a build setting cannot disagree:
 
 | Build | Secret store |
 | --- | --- |
@@ -195,6 +195,8 @@ Only the iCloud entitlements carry `keychain-access-groups`, so a team-signed
 build with no container uses the login keychain. Its identity is stable, so a
 rebuild reads and replaces an item with no prompt. Removing an item an earlier
 build saved fails with `errSecInvalidOwnerEdit`, and reports that as an error.
+The service name holds the team, so one team's build never queries another's
+items, which would prompt.
 
 ## Configs and Signing
 

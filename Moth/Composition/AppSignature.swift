@@ -6,15 +6,14 @@
 import Foundation
 import Security
 
-struct AppSignature: Equatable {
+struct AppSignature {
 
     let teamIdentifier: String?
     let keychainAccessGroup: String?
 
-    init(teamIdentifier: String?, keychainAccessGroup: String?) {
-        self.teamIdentifier = teamIdentifier
-        self.keychainAccessGroup = keychainAccessGroup
-    }
+}
+
+extension AppSignature {
 
     init(signingInformation: [String: Any]) {
         let entitlements = signingInformation[kSecCodeInfoEntitlementsDict as String] as? [String: Any]
@@ -27,23 +26,24 @@ struct AppSignature: Equatable {
 
     /// A signature that cannot be read counts as ad hoc, the mode that needs nothing from the Keychain.
     static func current() -> AppSignature {
+        AppSignature(signingInformation: runningSigningInformation())
+    }
+
+    static func runningSigningInformation() -> [String: Any] {
         var code: SecCode?
         var staticCode: SecStaticCode?
         var information: CFDictionary?
+        let flags = SecCSFlags(rawValue: kSecCSSigningInformation)
         guard
             SecCodeCopySelf([], &code) == errSecSuccess,
             let code,
             SecCodeCopyStaticCode(code, [], &staticCode) == errSecSuccess,
             let staticCode,
-            SecCodeCopySigningInformation(
-                staticCode,
-                SecCSFlags(rawValue: kSecCSSigningInformation | kSecCSRequirementInformation),
-                &information
-            ) == errSecSuccess
+            SecCodeCopySigningInformation(staticCode, flags, &information) == errSecSuccess
         else {
-            return AppSignature(signingInformation: [:])
+            return [:]
         }
-        return AppSignature(signingInformation: information as? [String: Any] ?? [:])
+        return information as? [String: Any] ?? [:]
     }
 
 }

@@ -33,6 +33,18 @@ struct AppSignatureTests {
         #expect(signature.keychainAccessGroup == nil)
     }
 
+    @Test("The running app's signing information agrees with the entitlements the system gives it")
+    func runningSigningInformationHoldsEntitlements() {
+        let sandbox = "com.apple.security.app-sandbox"
+        let task = SecTaskCreateFromSelf(nil)
+        let granted = task.flatMap { SecTaskCopyValueForEntitlement($0, sandbox as CFString, nil) } as? Bool
+
+        let information = AppSignature.runningSigningInformation()
+        let entitlements = information[kSecCodeInfoEntitlementsDict as String] as? [String: Any]
+
+        #expect(entitlements?[sandbox] as? Bool == granted)
+    }
+
     @Test("Empty signing information has no team or access group")
     func emptyHasNeither() {
         let signature = AppSignature(signingInformation: [:])

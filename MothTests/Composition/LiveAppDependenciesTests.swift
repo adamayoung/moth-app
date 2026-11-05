@@ -13,7 +13,11 @@ import Testing
 struct LiveAppDependenciesTests {
 
     private let adHoc = AppSignature(teamIdentifier: nil, keychainAccessGroup: nil)
-    private let teamSigned = AppSignature(teamIdentifier: "ABCDE12345", keychainAccessGroup: "ABCDE12345.moth")
+    private let teamSigned = AppSignature(teamIdentifier: "ABCDE12345", keychainAccessGroup: nil)
+    private let teamSignedForICloud = AppSignature(
+        teamIdentifier: "ABCDE12345",
+        keychainAccessGroup: "ABCDE12345.moth"
+    )
 
     @Test("The live session carries no cached response, cookie or credential from one request to the next")
     func liveSessionKeepsNoState() throws {
@@ -82,7 +86,7 @@ struct LiveAppDependenciesTests {
     func teamSignedBuildWithContainerSynchronises() throws {
         let dependencies = LiveAppDependencies(
             infoDictionary: ["MothICloudContainer": "iCloud.moth"],
-            signature: teamSigned
+            signature: teamSignedForICloud
         )
 
         let store = try #require(dependencies.secretStore as? KeychainSecretStore)
@@ -90,13 +94,13 @@ struct LiveAppDependenciesTests {
         #expect(store.mode == .synchronised(accessGroup: "ABCDE12345.moth"))
     }
 
-    @Test("Every signed build keeps its secrets under one service name")
-    func keychainServiceIsStable() throws {
+    @Test("A signed build's service name holds its team, because reading another team's item would prompt")
+    func keychainServiceHoldsTheTeam() throws {
         let dependencies = LiveAppDependencies(infoDictionary: [:], signature: teamSigned)
 
         let store = try #require(dependencies.secretStore as? KeychainSecretStore)
 
-        #expect(store.service == "uk.co.adam-young.Moth.secrets")
+        #expect(store.service == "uk.co.adam-young.Moth.secrets.ABCDE12345")
     }
 
 }
