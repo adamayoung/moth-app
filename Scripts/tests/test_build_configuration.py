@@ -18,7 +18,7 @@ CONFIGS = REPOSITORY / "Configs"
 PROJECT_FILE = REPOSITORY / "Moth.xcodeproj" / "project.xcproj"
 TEST_PLANS = REPOSITORY / "TestPlans"
 
-PACKAGES = ("HTTPKit", "MothCore", "MothImport", "PostmanKit")
+PACKAGES = sorted(path.parent.name for path in (REPOSITORY / "Packages").glob("*/Package.swift"))
 TARGETS = ("Moth", "MothTests", "MothUITests")
 CONFIGURATIONS = ("Debug", "Release")
 EXAMPLE_CONTAINER = "iCloud.example.Moth"

@@ -57,7 +57,17 @@ so trust the final `Ran N test(s).` line rather than only `** TEST SUCCEEDED **`
 
 `TestPlans/UnitTests.xctestplan` contains the app and package unit targets.
 `UITests.xctestplan` contains the full UI target. A new target must be added to
-the relevant plan and the scheme.
+the relevant plan, or `make test` will not run it. The `Moth` scheme lists the
+plans, not their targets, so it needs no entry. A package's plan entry uses
+`container:Packages/<Name>` as its `containerPath`, and the target's name as
+both `identifier` and `name`.
+
+The project's `Packages` folder entry belongs to no target and already covers a
+new package. Do not use `xcrun xcodeproj pkg add-local`: it writes the project's
+`packages` array, and with the packages there `make test` passed having run none
+of their tests, its count kept above zero by `MothTests`. The script tests fail
+on a `packages` array. To link a product, add it to the target's
+`package-product-members` by hand, with no `package` key.
 
 ## Writing Swift Tests
 
