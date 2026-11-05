@@ -4,38 +4,70 @@
 //  Copyright © 2026 Adam Young.
 
 import Foundation
+import MothCore
 
 struct DependencyProvider {
 
     /// `App.main()` calls a parameterless `init()`, so the launcher and the `App` can only share one graph here.
-    static let current = DependencyProvider(
-        launchMode: resolveLaunchMode(),
-        infoDictionary: Bundle.main.infoDictionary ?? [:],
-        signature: .current()
-    )
+    static let current = makeCurrent()
 
     let launchMode: AppLaunchMode
     let dependencies: any AppDependencies
 
-    init(launchMode: AppLaunchMode, infoDictionary: [String: Any], signature: AppSignature) {
+    init(
+        launchMode: AppLaunchMode,
+        infoDictionary: [String: Any],
+        signature: AppSignature,
+        openLiveDataModel: (_ containerIdentifier: String?) throws -> DataModel
+    ) throws {
         self.launchMode = launchMode
         self.dependencies = switch launchMode {
-        case .live: LiveAppDependencies(infoDictionary: infoDictionary, signature: signature)
-        case .uiTesting, .demo, .testHost: SeededAppDependencies()
+        case .live:
+            try LiveAppDependencies(
+                infoDictionary: infoDictionary,
+                signature: signature,
+                openDataModel: openLiveDataModel
+            )
+        case .uiTesting, .demo: try SeededAppDependencies(seed: SeedData.workspace)
+        case .testHost: try SeededAppDependencies(seed: nil)
         }
     }
 
-    private static func resolveLaunchMode() -> AppLaunchMode {
-        let process = ProcessInfo.processInfo
+    private static func makeCurrent() -> DependencyProvider {
         do {
-            return try AppLaunchMode(
-                arguments: process.arguments,
-                defaults: .standard,
-                environment: process.environment
+            return try DependencyProvider(
+                launchMode: resolveLaunchMode(),
+                infoDictionary: Bundle.main.infoDictionary ?? [:],
+                signature: .current(),
+                openLiveDataModel: openLiveDataModel
             )
-        } catch {
+        } catch let error as LaunchConfigurationError {
             stopLaunch(error)
+        } catch {
+            stopLaunch(.storeUnavailable(detail: String(describing: error)))
         }
+    }
+
+    private static func resolveLaunchMode() throws(LaunchConfigurationError) -> AppLaunchMode {
+        let process = ProcessInfo.processInfo
+        return try AppLaunchMode(
+            arguments: process.arguments,
+            defaults: .standard,
+            environment: process.environment
+        )
+    }
+
+    private static func openLiveDataModel(containerIdentifier: String?) throws -> DataModel {
+        let directory = URL.applicationSupportDirectory.appending(path: "Moth", directoryHint: .isDirectory)
+        #if DEBUG
+            if try AppLaunchMode.initialisesCloudKitSchema(arguments: ProcessInfo.processInfo.arguments) {
+                guard let containerIdentifier else {
+                    throw LaunchConfigurationError.cloudKitSchemaNeedsContainer
+                }
+                try CloudKitSchemaInitialiser.initialise(containerIdentifier: containerIdentifier, directory: directory)
+            }
+        #endif
+        return try DataModel(location: .directory(directory), containerIdentifier: containerIdentifier)
     }
 
     /// `fatalError` would leave a crash dialog on screen, which blocks every UI test run on the machine.

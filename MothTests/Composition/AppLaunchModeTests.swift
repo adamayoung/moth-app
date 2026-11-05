@@ -210,11 +210,41 @@ final class AppLaunchModeTests {
             (LaunchConfigurationError.invalidValue(flag: "-DemoMode", value: "2"), "-DemoMode 1"),
             (LaunchConfigurationError.conflictingModes, "-UITesting 1 or -DemoMode 1"),
             (LaunchConfigurationError.invalidEnvironment(key: "MOTH_TEST_HOST", value: "0"), "MOTH_TEST_HOST=1"),
-            (LaunchConfigurationError.invalidDefault(key: "DemoMode", value: "sometimes"), "DemoMode")
+            (LaunchConfigurationError.invalidDefault(key: "DemoMode", value: "sometimes"), "DemoMode"),
+            (LaunchConfigurationError.cloudKitSchemaNeedsContainer, "MOTH_ICLOUD_CONTAINER"),
+            (LaunchConfigurationError.storeUnavailable(detail: "disk full"), "disk full")
         ]
     )
     func errorMessageNamesTheFix(error: LaunchConfigurationError, fix: String) {
         #expect(error.message.contains(fix))
+    }
+
+    @Test("-InitializeCloudKitSchema 1 asks for the CloudKit schema")
+    func schemaFlagIsRead() throws {
+        let arguments = ["Moth", "-InitializeCloudKitSchema", "1"]
+
+        #expect(try AppLaunchMode.initialisesCloudKitSchema(arguments: arguments))
+    }
+
+    @Test("With no flag, nothing touches the CloudKit schema")
+    func noSchemaFlag() throws {
+        #expect(try !AppLaunchMode.initialisesCloudKitSchema(arguments: ["Moth"]))
+    }
+
+    @Test("A bare schema flag stops the launch")
+    func bareSchemaFlagStopsLaunch() {
+        #expect(throws: LaunchConfigurationError.missingValue(flag: "-InitializeCloudKitSchema")) {
+            try AppLaunchMode.initialisesCloudKitSchema(arguments: ["Moth", "-InitializeCloudKitSchema"])
+        }
+    }
+
+    @Test("Any schema flag value but 1 stops the launch")
+    func schemaFlagValueOtherThanOneStopsLaunch() {
+        let expected = LaunchConfigurationError.invalidValue(flag: "-InitializeCloudKitSchema", value: "0")
+
+        #expect(throws: expected) {
+            try AppLaunchMode.initialisesCloudKitSchema(arguments: ["Moth", "-InitializeCloudKitSchema", "0"])
+        }
     }
 
     enum StoredDemoValue: CaseIterable {

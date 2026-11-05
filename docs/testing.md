@@ -91,6 +91,10 @@ on a `packages` array. To link a product, add it to the target's
 - For SwiftData tests, create an isolated in-memory container, hold it for the
   life of any context you read from, and validate persisted results through a
   fresh context when cache behaviour matters.
+- Never open a `ModelContainer` on a `.private` configuration in a test. In
+  `swift test`, which CI's Package tests job runs, it opens and then crashes the
+  process on teardown, because CloudKit needs a bundle identifier. Inspect the
+  `ModelConfiguration` instead, as `StoreConfigurationsTests` does.
 - Cover cancellation, errors, empty results, repeated calls, and late async
   callbacks when they are meaningful parts of the contract.
 - Use real exported Postman files as fixtures. A fixture you invented tests your

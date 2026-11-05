@@ -12,6 +12,8 @@ protocol AppDependencies: AnyObject {
 
     var secretStore: any SecretStore { get }
 
+    var dataModel: DataModel { get }
+
     var iCloudContainerIdentifier: String? { get }
 
 }

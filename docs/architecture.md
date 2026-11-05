@@ -82,6 +82,12 @@ with no container.
 Anything the app does with no window open belongs to an owner that lives as
 long as the app, never to a `.task` on a view.
 
+`LiveAppDependencies` takes the function that opens its store, and that function
+has no default, so a test cannot reach the real store or CloudKit by leaving it
+out. A store that will not open stops the launch through `stopLaunch`, which
+prints the reason and exits, because `fatalError` would leave a crash dialog on
+screen.
+
 ## Domain Model
 
 Postman-shaped:
@@ -125,6 +131,41 @@ The container holds two `ModelConfiguration`s:
 A model belongs to exactly one store. `HistoryEntry` refers to its request by
 identifier, not by `@Relationship`.
 
+`DataModel` owns both stores, and `StoreConfigurations` builds them. A container
+identifier selects `.private`, and no identifier selects `.none`. Each store has
+its own file in the directory `DataModel` is given.
+
+### Rows and Stored JSON
+
+Each workspace, collection, folder, request, environment and variable is a row,
+so two Macs changing different rows keep both changes. A variable is one model
+with an owner relationship for each scope.
+
+A request's parameters, headers, body, auth and settings, and a collection's or
+folder's auth, are JSON in `Data` attributes, encoded by `StoredJSON` with sorted
+keys. Two Macs changing one of these on the same row can overwrite each other.
+That JSON is part of the frozen schema, and `StoredJSONTests` pins it. A secret is
+stored as its reference. Stored JSON a build cannot read throws, because a
+default would hide the value and the next save would overwrite it.
+
+### The Implicit Workspace
+
+There is one workspace, with no switcher. No launch creates it: the first
+collection or environment does, so a fresh install on two Macs seeds nothing to
+duplicate.
+
+Two Macs can still each create one. `StoreWriter` reconciles after every write
+batch, in that batch's save, and `LiveAppDependencies` reconciles at launch. The
+lowest `id` survives, because every Mac makes that choice alone and they must
+agree. Every collection, environment and global not already on the survivor
+moves to it, and the other workspaces are deleted.
+
+A workspace's relationships nullify rather than cascade. A merge's delete reaches
+other Macs, where a cascade would delete a child that has not synced yet. A
+nullified child is an orphan, and reconcile adopts it. `VariableModel.isGlobal`
+tells an orphaned global from a variable whose owner has not been imported yet,
+which reconcile leaves alone.
+
 ### CloudKit Model Rules
 
 Every model in the synced store follows these from its first version. Apple's
@@ -166,6 +207,15 @@ runs on `StoreActor` or through `StoreWriter`: fetch rows by identifier with a
 and call `rollback()` if the save throws, which clears the pending changes so the
 next fetch refreshes the row. The main context reads only, with autosave off. An
 editor edits a value-type draft and commits it through the writer.
+
+Models are `public` for `@Query`, but only `MothCore` can make one or set a
+property, and `StoreWriter`'s commands take domain values. `WriteBoundaryTests`
+holds this. It covers `MothCore`'s surface: anyone holding a context can still
+call SwiftData's own `delete` and `save`.
+
+A seed is the one write outside `StoreWriter`. `DataModel.inMemory(seed:)` writes
+it into a new in-memory store before any reader exists, so a seeded launch has its
+data at the first frame.
 
 ## Secrets
 
