@@ -125,8 +125,7 @@ class PackageIntegrationTests(unittest.TestCase):
     def test_packages_is_a_folder_outside_every_target(self):
         self.assertRegex(PROJECT_FILE.read_text(), r'\{ "kind": "folder", "path": "Packages" \}')
 
-    # xcodebuild silently skips the test targets of a package in the project's `packages`
-    # array, because it treats that package as a dependency rather than as workspace code.
+    # With the packages in the project's `packages` array, make test passed and ran none of their tests.
     def test_no_package_is_a_dependency_reference(self):
         self.assertNotIn('"packages"', PROJECT_FILE.read_text())
 
