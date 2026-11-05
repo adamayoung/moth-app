@@ -157,7 +157,7 @@ struct StoredJSONTests {
     }
 
     private static func text(of value: some Encodable) throws -> String {
-        try String(decoding: StoredJSON.encode(value), as: UTF8.self)
+        try #require(String(bytes: StoredJSON.encode(value), encoding: .utf8))
     }
 
 }

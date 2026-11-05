@@ -6,7 +6,7 @@
 import Foundation
 import SwiftData
 
-/// Owns the stores. `mainContext` is for reading, with autosave off; every write goes through ``writer``.
+/// `mainContext` only reads, with autosave off: every write goes through ``writer``.
 public final class DataModel {
 
     public let container: ModelContainer
