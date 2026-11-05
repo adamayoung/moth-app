@@ -5,13 +5,6 @@ the relevant page before changing that area, then verify its claims against the
 current code. Source code, test plans, and tool configuration are authoritative
 when documentation has drifted.
 
-## Status
-
-The design comes first: the app is the composition root and an empty window.
-`Moth.xcodeproj` has not been restructured, and the packages in `Packages/` hold
-only their first boundary types. These guides describe them as they will be.
-Delete this section when they land.
-
 ## Guide Index
 
 | Document | Read before |

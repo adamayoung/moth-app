@@ -11,9 +11,10 @@ struct MacScene: Scene {
 
     var body: some Scene {
         WindowGroup {
-            Color.clear
-                .frame(minWidth: 480, minHeight: 320)
+            MainWindowView()
         }
+        .defaultSize(width: 1100, height: 720)
+        .windowResizability(.contentMinSize)
     }
 
 }

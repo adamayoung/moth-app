@@ -9,7 +9,7 @@ final class AppLaunchTests: MothTestCase {
 
     @MainActor
     func testUITestingLaunchOpensAWindow() {
-        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(MainWindowScreen(app: app).window.waitForExistence(timeout: 10))
     }
 
 }
