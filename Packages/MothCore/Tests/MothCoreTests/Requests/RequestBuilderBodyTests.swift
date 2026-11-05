@@ -151,7 +151,7 @@ struct RequestBuilderBodyTests {
     }
 
     private func text(of built: BuiltRequest) -> String? {
-        built.urlRequest.httpBody.map { String(decoding: $0, as: UTF8.self) }
+        built.urlRequest.httpBody.flatMap { String(bytes: $0, encoding: .utf8) }
     }
 
 }
