@@ -6,7 +6,6 @@
 import Foundation
 import Testing
 
-// swiftformat:disable swiftTestingTestCaseNames
 struct AppBundleConfigurationTests {
 
     private let appInfo = Bundle.main.infoDictionary ?? [:]
