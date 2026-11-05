@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import CoreData
 import Foundation
 @testable import MothCore
 import SwiftData
@@ -47,10 +48,22 @@ struct DataModelTests {
         #expect(try dataModel.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).isEmpty)
     }
 
+    /// `CloudKitSchemaInitialiser` needs a real container, so this covers its hand-off with the same model and URL.
+    @Test("A store Core Data made from the synced models opens as SchemaV1, as after the CloudKit schema flag")
+    func storeMadeByCoreDataOpens() throws {
+        let directory = try Self.makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = StoreConfigurations(location: .directory(directory), containerIdentifier: nil).synced.url
+        try Self.makeCoreDataStore(at: url)
+
+        let dataModel = try DataModel(location: .directory(directory), containerIdentifier: nil)
+
+        #expect(try dataModel.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).isEmpty)
+    }
+
     @Test("A data model reads back what it wrote after reopening on disk")
     func onDiskStoresPersist() async throws {
-        let directory = FileManager.default.temporaryDirectory
-            .appending(path: "DataModelTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        let directory = try Self.makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let collection = DomainFixtures.collection()
         let entry = DomainFixtures.historyEntry()
@@ -68,6 +81,32 @@ struct DataModelTests {
         #expect(try history.map { try $0.asDomain() } == [entry])
         #expect(FileManager.default.fileExists(atPath: directory.appending(path: "Synced.store").path()))
         #expect(FileManager.default.fileExists(atPath: directory.appending(path: "Local.store").path()))
+    }
+
+    private static func makeDirectory() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "DataModelTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    private static func makeCoreDataStore(at url: URL) throws {
+        let model = try #require(NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.syncedModels))
+        let description = NSPersistentStoreDescription(url: url)
+        description.shouldAddStoreAsynchronously = false
+        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        let container = NSPersistentContainer(name: "Synced", managedObjectModel: model)
+        container.persistentStoreDescriptions = [description]
+        var loadError: any Error?
+        container.loadPersistentStores { _, error in
+            loadError = error
+        }
+        if let loadError {
+            throw loadError
+        }
+        if let store = container.persistentStoreCoordinator.persistentStores.first {
+            try container.persistentStoreCoordinator.remove(store)
+        }
     }
 
 }

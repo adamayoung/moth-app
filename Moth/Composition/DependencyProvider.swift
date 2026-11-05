@@ -5,6 +5,7 @@
 
 import Foundation
 import MothCore
+import OSLog
 
 struct DependencyProvider {
 
@@ -70,8 +71,10 @@ struct DependencyProvider {
         return try DataModel(location: .directory(directory), containerIdentifier: containerIdentifier)
     }
 
-    /// `fatalError` would leave a crash dialog on screen, which blocks every UI test run on the machine.
+    /// `fatalError` would leave a crash dialog on screen, which blocks every UI test run on the machine. A launch from
+    /// Finder has no stderr, so the reason is logged as well.
     private static func stopLaunch(_ error: LaunchConfigurationError) -> Never {
+        Logger.composition.fault("Moth stopped at launch: \(error.message, privacy: .public)")
         FileHandle.standardError.write(Data("Moth: \(error.message)\n".utf8))
         exit(EX_USAGE)
     }

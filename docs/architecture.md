@@ -85,8 +85,8 @@ long as the app, never to a `.task` on a view.
 `LiveAppDependencies` takes the function that opens its store, and that function
 has no default, so a test cannot reach the real store or CloudKit by leaving it
 out. A store that will not open stops the launch through `stopLaunch`, which
-prints the reason and exits, because `fatalError` would leave a crash dialog on
-screen.
+logs and prints the reason and exits, because `fatalError` would leave a crash
+dialog on screen.
 
 ## Domain Model
 
@@ -133,7 +133,9 @@ identifier, not by `@Relationship`.
 
 `DataModel` owns both stores, and `StoreConfigurations` builds them. A container
 identifier selects `.private`, and no identifier selects `.none`. Each store has
-its own file in the directory `DataModel` is given.
+its own file in the directory `DataModel` is given. `LiveAppDependencies` passes
+the container only if the running app is entitled to it, so an unsigned build
+stays off CloudKit whatever its Info.plist says.
 
 ### Rows and Stored JSON
 
@@ -265,8 +267,8 @@ items, which would prompt.
 `Configs/Debug.xcconfig` and `Configs/Release.xcconfig` set warnings as errors.
 Each ends with `#include? "Local.xcconfig"`, a gitignored file where a contributor
 sets their own team. The iCloud container comes from a build setting. A build
-without one runs on `cloudKitDatabase: .none`, so a contributor can build Moth
-without the owner's signing identity. Local builds sign, ad hoc until a team is
+without one, or without its entitlement, runs on `cloudKitDatabase: .none`, so a
+contributor can build Moth without the owner's signing identity. Local builds sign, ad hoc until a team is
 set, and an ad hoc build keeps secrets in memory. CI builds with `CODE_SIGNING_ALLOWED=NO`, which has neither iCloud nor
 Keychain entitlements, so it uses `.none` stores and an in-memory secret store.
 

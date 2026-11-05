@@ -25,11 +25,20 @@ final class LiveAppDependencies: AppDependencies {
         let configuredIdentifier = infoDictionary["MothICloudContainer"] as? String ?? ""
         let identifier = configuredIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let containerIdentifier = identifier.isEmpty ? nil : identifier
-        let dataModel = try openDataModel(containerIdentifier)
+        let dataModel = try openDataModel(Self.syncedContainer(containerIdentifier, signature: signature))
         self.iCloudContainerIdentifier = containerIdentifier
         self.secretStore = Self.makeSecretStore(signature: signature)
         self.dataModel = dataModel
         self.launchReconcile = Self.reconcileAtLaunch(dataModel.writer)
+    }
+
+    /// The entitlement decides, as for the secret store: an unsigned build still has the setting in its Info.plist.
+    private static func syncedContainer(_ identifier: String?, signature: AppSignature) -> String? {
+        guard let identifier, signature.iCloudContainers.contains(identifier) else {
+            return nil
+        }
+
+        return identifier
     }
 
     /// Lives on the graph, not a view's `.task`, because it must run with no window open. A failure is logged and
@@ -39,8 +48,9 @@ final class LiveAppDependencies: AppDependencies {
             do {
                 try await writer.reconcileWorkspaces()
             } catch {
-                Logger(subsystem: "uk.co.adam-young.Moth", category: "Persistence")
-                    .error("Reconciling workspaces at launch failed: \(error)")
+                Logger.composition.error(
+                    "Reconciling workspaces at launch failed: \(String(describing: error), privacy: .public)"
+                )
             }
         }
     }

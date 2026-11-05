@@ -10,6 +10,7 @@ struct AppSignature {
 
     let teamIdentifier: String?
     let keychainAccessGroup: String?
+    var iCloudContainers: [String] = []
 
 }
 
@@ -18,9 +19,11 @@ extension AppSignature {
     init(signingInformation: [String: Any]) {
         let entitlements = signingInformation[kSecCodeInfoEntitlementsDict as String] as? [String: Any]
         let accessGroups = entitlements?["keychain-access-groups"] as? [String]
+        let containers = entitlements?["com.apple.developer.icloud-container-identifiers"] as? [String]
         self.init(
             teamIdentifier: signingInformation[kSecCodeInfoTeamIdentifier as String] as? String,
-            keychainAccessGroup: accessGroups?.first
+            keychainAccessGroup: accessGroups?.first,
+            iCloudContainers: containers ?? []
         )
     }
 

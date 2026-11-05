@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// `request` is the unresolved request, so a secret stays a reference and no secret value reaches the local store.
+/// `request` is the unresolved request, so a secret in it stays a reference. A response is stored as received.
 public nonisolated struct HistoryEntry: Identifiable, Sendable, Hashable {
 
     public let id: UUID

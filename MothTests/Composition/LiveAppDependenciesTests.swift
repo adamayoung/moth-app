@@ -19,7 +19,8 @@ struct LiveAppDependenciesTests {
     private let teamSigned = AppSignature(teamIdentifier: "ABCDE12345", keychainAccessGroup: nil)
     private let teamSignedForICloud = AppSignature(
         teamIdentifier: "ABCDE12345",
-        keychainAccessGroup: "ABCDE12345.moth"
+        keychainAccessGroup: "ABCDE12345.moth",
+        iCloudContainers: ["iCloud.moth"]
     )
 
     @Test("The live session carries no cached response, cookie or credential from one request to the next")
@@ -106,23 +107,34 @@ struct LiveAppDependenciesTests {
         #expect(store.service == "uk.co.adam-young.Moth.secrets.ABCDE12345")
     }
 
-    @Test("The stores open with the configured iCloud container", arguments: [
-        ("iCloud.moth", "iCloud.moth"),
-        ("", nil)
-    ] as [(String, String?)])
-    func storesOpenWithTheContainer(configured: String, expected: String?) throws {
-        var opened: [String?] = []
+    @Test("A configured container that the build is entitled to opens the synced store")
+    func storesOpenWithAnEntitledContainer() throws {
+        let opened = try containerOpened(configured: "iCloud.moth", signature: teamSignedForICloud)
 
-        _ = try LiveAppDependencies(
-            infoDictionary: ["MothICloudContainer": configured],
-            signature: adHoc,
-            openDataModel: { identifier in
-                opened.append(identifier)
-                return try .inMemory()
-            }
+        #expect(opened == "iCloud.moth")
+    }
+
+    @Test("With no configured container, the stores open with none")
+    func storesOpenWithNoContainer() throws {
+        let opened = try containerOpened(configured: "", signature: teamSignedForICloud)
+
+        #expect(opened == nil)
+    }
+
+    @Test(
+        "A build not entitled to the container stays off CloudKit, whatever the Info.plist says",
+        arguments: [[], ["iCloud.other"]] as [[String]]
+    )
+    func storesStayOffCloudKitWithoutTheEntitlement(entitledContainers: [String]) throws {
+        let signature = AppSignature(
+            teamIdentifier: "ABCDE12345",
+            keychainAccessGroup: nil,
+            iCloudContainers: entitledContainers
         )
 
-        #expect(opened == [expected])
+        let opened = try containerOpened(configured: "iCloud.moth", signature: signature)
+
+        #expect(opened == nil)
     }
 
     @Test("A store that will not open is an error")
@@ -153,6 +165,22 @@ struct LiveAppDependenciesTests {
 
         let workspaces = try ModelContext(dataModel.container).fetch(FetchDescriptor<WorkspaceModel>())
         #expect(workspaces.count == 1)
+    }
+
+    private func containerOpened(configured: String, signature: AppSignature) throws -> String? {
+        var opened: [String?] = []
+
+        _ = try LiveAppDependencies(
+            infoDictionary: ["MothICloudContainer": configured],
+            signature: signature,
+            openDataModel: { identifier in
+                opened.append(identifier)
+                return try .inMemory()
+            }
+        )
+
+        #expect(opened.count == 1)
+        return opened.first ?? nil
     }
 
     private func makeDependencies(

@@ -35,6 +35,4 @@ nonisolated extension Optional where Wrapped: Sequence, Wrapped.Element: SortedR
 
 nonisolated extension CollectionModel: SortedRow {}
 nonisolated extension EnvironmentModel: SortedRow {}
-nonisolated extension FolderModel: SortedRow {}
-nonisolated extension RequestModel: SortedRow {}
 nonisolated extension VariableModel: SortedRow {}
