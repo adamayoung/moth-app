@@ -140,19 +140,3 @@ private nonisolated struct ChildIndex {
     }
 
 }
-
-private nonisolated extension FolderModel {
-
-    var container: TreeContainerID? {
-        parent.map { .folder($0.id) } ?? collection.map { .collection($0.id) }
-    }
-
-}
-
-private nonisolated extension RequestModel {
-
-    var container: TreeContainerID? {
-        folder.map { .folder($0.id) } ?? collection.map { .collection($0.id) }
-    }
-
-}
