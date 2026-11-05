@@ -149,10 +149,17 @@ schema before release.
 
 A SwiftData save writes back the whole row as its context last read it, and
 SwiftData has no merge policy, so two contexts saving one row out of step revert
-each other's change. Every write runs on `StoreActor` or through `StoreWriter`,
-fetching rows by identifier and saving in one synchronous step. The main context
-reads only, with autosave off. An editor edits a value-type draft and commits it
-through the writer.
+each other's change. The save does not fail: a stale context that changes one
+property puts the row's other properties back to the values it read, and `save()`
+returns normally.
+
+A fetch prevents this. It brings a row up to date even in a long-lived context
+that still holds an instance of the row, so `StoreActor` can keep one context and
+needs no new one per write. An edit to an instance held since an earlier fetch
+is the unsafe case. So every write runs on `StoreActor` or through `StoreWriter`,
+fetching rows by identifier immediately before changing them and saving in one
+synchronous step. The main context reads only, with autosave off. An editor edits
+a value-type draft and commits it through the writer.
 
 ## Secrets
 
@@ -205,9 +212,23 @@ outside its own container, and never touches another tool's configuration.
 ## Open Questions
 
 Settle each with a test before the code that depends on it.
+`SwiftDataCharacterisationTests` in `MothCoreTests` holds the tests behind the
+settled answers, and fails if an SDK changes them.
 
-- **Cross-store relationships.** We believe a relationship cannot cross the two
-  stores. Apple's sync article does not say so.
-- **CloudKit as a second writer.** Sync imports write outside `StoreActor`.
-  Whether a stale context's save can revert an imported change is unknown, and
-  it decides whether the writer rule above is enough.
+- **Cross-store relationships: settled.** A relationship cannot cross the two
+  stores. A configuration's schema takes in every model its models relate to, so
+  two related models belong to both configurations, and SwiftData puts both rows
+  in one store with no error. Listing order does not choose that store, so a
+  relationship from a local model to a synced one could put local rows in the
+  synced store. Relating rows that are already in different stores is a fatal
+  error at the assignment, before any save, and no `catch` can handle it.
+- **A second context as a second writer: settled.** A stale save reverts the other
+  context's change, as [Writing to the Store](#writing-to-the-store) describes.
+  This holds for a second `ModelContext` on one container, in memory and on disk.
+- **CloudKit as a second writer: unverified.** Sync imports write outside
+  `StoreActor`, and the tests above use no iCloud account, so they show the
+  mechanism and not what an import does. Whether a stale context's save can revert
+  an imported change, and whether an import can land between a writer's fetch and
+  its save, stay unknown until the manual two-Mac check in
+  [#20](https://github.com/adamayoung/moth-app/issues/20). They decide whether the
+  writer rule is enough.
