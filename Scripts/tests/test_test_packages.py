@@ -102,6 +102,14 @@ class TestPackagesTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.ran.read_text().split(), ["HTTPKit", "MothCore"])
 
+    def test_names_every_package_and_count_in_the_step_summary(self):
+        self.add_package("HTTPKit", SWIFT_TESTING_SUMMARY.format(2))
+        self.add_package("MothCore", SWIFT_TESTING_SUMMARY.format(3))
+        summary = self.directory / "summary"
+        self.environment["GITHUB_STEP_SUMMARY"] = str(summary)
+        self.run_script()
+        self.assertEqual(summary.read_text().splitlines(), ["- HTTPKit: ran 2 test(s)", "- MothCore: ran 3 test(s)"])
+
 
 if __name__ == "__main__":
     unittest.main()

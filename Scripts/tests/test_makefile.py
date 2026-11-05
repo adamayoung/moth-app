@@ -105,7 +105,7 @@ class UIAllowanceTests(unittest.TestCase):
 
 class BuildLockTests(unittest.TestCase):
     def test_every_xcodebuild_recipe_goes_through_the_lock(self):
-        for target in ("build", "test", "test-unit", "test-ui"):
+        for target in ("build", "build-for-testing", "build-packages-ios", "test", "test-unit", "test-unit-unsigned", "test-ui"):
             with self.subTest(target=target):
                 self.assertIn("Scripts/build-lock.sh", dry_run(target).stdout)
 
@@ -116,6 +116,32 @@ class BuildLockTests(unittest.TestCase):
     def test_test_ui_clears_a_stale_app_while_holding_the_lock(self):
         output = dry_run("test-ui").stdout
         self.assertRegex(output, r"build-lock\.sh Scripts/clear-stale-moth\.sh Scripts/run-xcode-tests\.sh")
+
+
+class ContinuousIntegrationTargetTests(unittest.TestCase):
+    def test_build_for_testing_compiles_each_test_plan(self):
+        output = dry_run("build-for-testing").stdout
+        for plan in ("UnitTests", "UITests"):
+            with self.subTest(plan=plan):
+                self.assertRegex(output, rf"xcodebuild build-for-testing .*-testPlan {plan}\b")
+
+    def test_build_for_testing_is_unsigned_for_each_plan(self):
+        lines = dry_run("build-for-testing").stdout.splitlines()
+        self.assertEqual(len(lines), 2)
+        for line in lines:
+            self.assertIn("CODE_SIGNING_ALLOWED=NO", line)
+
+    def test_test_unit_unsigned_covers_only_the_app_tests_unsigned(self):
+        output = dry_run("test-unit-unsigned").stdout
+        self.assertIn("-testPlan UnitTests", output)
+        self.assertIn("-only-testing:MothTests", output)
+        self.assertIn("CODE_SIGNING_ALLOWED=NO", output)
+
+    def test_build_packages_ios_runs_the_script(self):
+        self.assertIn("Scripts/build-packages-ios.sh", dry_run("build-packages-ios").stdout)
+
+    def test_test_unit_stays_signed(self):
+        self.assertNotIn("CODE_SIGNING_ALLOWED=NO", dry_run("test-unit").stdout)
 
 
 class LintTests(unittest.TestCase):

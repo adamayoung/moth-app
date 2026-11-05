@@ -42,6 +42,7 @@ for manifest in "${manifests[@]}"; do
         failed=1
     else
         echo "$name: ran $count test(s)"
+        echo "- $name: ran $count test(s)" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
     fi
 done
 
