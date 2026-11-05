@@ -8,8 +8,8 @@ cd "$(dirname "$0")/.." || exit 1
 
 manifests=(Packages/*/Package.swift)
 if [ ${#manifests[@]} -eq 0 ]; then
-    echo "no packages to test"
-    exit 0
+    echo "error: no packages to test" >&2
+    exit 1
 fi
 
 log=$(mktemp)
@@ -24,6 +24,10 @@ count_tests() {
     echo $((xctest + swift_testing))
 }
 
+report() {
+    echo "- $1" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+}
+
 failed=0
 for manifest in "${manifests[@]}"; do
     package=$(dirname "$manifest")
@@ -32,6 +36,7 @@ for manifest in "${manifests[@]}"; do
 
     if ! swift test --package-path "$package" 2>&1 | tee "$log"; then
         echo "error: $name failed" >&2
+        report "$name: failed"
         failed=1
         continue
     fi
@@ -39,9 +44,11 @@ for manifest in "${manifests[@]}"; do
     count=$(count_tests)
     if [ "$count" -eq 0 ]; then
         echo "error: $name ran no tests" >&2
+        report "$name: ran no tests"
         failed=1
     else
         echo "$name: ran $count test(s)"
+        report "$name: ran $count test(s)"
     fi
 done
 

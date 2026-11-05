@@ -8,6 +8,7 @@ RESULT_BUNDLE := $(DERIVED_DATA)/Result.xcresult
 
 XCODEBUILD_FLAGS ?= -scheme Moth -destination 'platform=macOS' -parallelizeTargets -skipMacroValidation -derivedDataPath '$(DERIVED_DATA)'
 RUN_XCODE_TESTS = Scripts/run-xcode-tests.sh '$(RESULT_BUNDLE)' $(XCODEBUILD_FLAGS)
+UNSIGNED := CODE_SIGNING_ALLOWED=NO
 
 TEST_TARGET ?= MothTests
 TESTS ?=
@@ -27,16 +28,27 @@ endif
 # exclusion. See docs/testing.md, "Working in a Worktree", for SwiftFormat's.
 SWIFTFORMAT_EXCLUDES := --exclude .claude/worktrees
 
-.PHONY: build test test-unit test-ui test-packages test-all lint format clean-spm
+.PHONY: build build-for-testing build-packages-ios test test-unit test-unit-unsigned test-ui test-packages test-all lint format clean-spm
 
 build:
 	@MOTH_BUILD_LOCK_LABEL="build Moth" Scripts/build-lock.sh xcodebuild build $(XCODEBUILD_FLAGS)
+
+# Each plan needs its own run: the scheme's default plan leaves out MothUITests.
+build-for-testing:
+	@MOTH_BUILD_LOCK_LABEL="build-for-testing UnitTests" Scripts/build-lock.sh xcodebuild build-for-testing $(XCODEBUILD_FLAGS) -testPlan UnitTests $(UNSIGNED)
+	@MOTH_BUILD_LOCK_LABEL="build-for-testing UITests" Scripts/build-lock.sh xcodebuild build-for-testing $(XCODEBUILD_FLAGS) -testPlan UITests $(UNSIGNED)
+
+build-packages-ios:
+	@MOTH_BUILD_LOCK_LABEL="build-packages-ios" Scripts/build-lock.sh Scripts/build-packages-ios.sh
 
 test:
 	@MOTH_BUILD_LOCK_LABEL="test UnitTests" Scripts/build-lock.sh $(RUN_XCODE_TESTS) -testPlan UnitTests $(ONLY_TESTING_FLAG)
 
 test-unit:
 	@MOTH_BUILD_LOCK_LABEL="test-unit UnitTests" Scripts/build-lock.sh $(RUN_XCODE_TESTS) -testPlan UnitTests $(or $(ONLY_TESTING_FLAG),-only-testing:MothTests)
+
+test-unit-unsigned: XCODEBUILD_FLAGS += $(UNSIGNED)
+test-unit-unsigned: test-unit
 
 test-ui: override TEST_TARGET = MothUITests
 test-ui:
