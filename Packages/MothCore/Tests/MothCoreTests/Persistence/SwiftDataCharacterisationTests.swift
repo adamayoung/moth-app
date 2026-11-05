@@ -130,7 +130,8 @@ struct SwiftDataCharacterisationTests {
             try await SwiftDataCharacterisationTests.relateRowsInTwoStores(in: directory)
         }
 
-        let standardError = try String(decoding: #require(result).standardErrorContent, as: UTF8.self)
+        let exit = try #require(result)
+        let standardError = try #require(String(bytes: exit.standardErrorContent, encoding: .utf8))
         #expect(standardError.contains("Illegal attempt to relate"))
         #expect(standardError.contains("to a model in another store"))
     }
