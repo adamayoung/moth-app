@@ -92,7 +92,9 @@ on a `packages` array. To link a product, add it to the target's
 - Cover cancellation, errors, empty results, repeated calls, and late async
   callbacks when they are meaningful parts of the contract.
 - Use real exported Postman files as fixtures. A fixture you invented tests your
-  belief, not the format.
+  belief, not the format. They live in
+  `Packages/PostmanKit/Tests/PostmanKitTests/Fixtures/` under Apache-2.0, so
+  record each new file's repository, commit and kind in `SOURCES.md` there.
 
 ## Verification Expectations
 

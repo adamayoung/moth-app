@@ -22,4 +22,21 @@ enum Fixture {
         try JSONDecoder().decode(PostmanCollection.self, from: data(path))
     }
 
+    static func environment(_ path: String) throws -> PostmanEnvironment {
+        try JSONDecoder().decode(PostmanEnvironment.self, from: data(path))
+    }
+
+    static func nonV21Contents(_ path: String) throws -> NonV21Contents {
+        try JSONDecoder().decode(NonV21Contents.self, from: data(path))
+    }
+
+    /// Reads a file past `PostmanCollection`'s schema check. The only object-form description Postman
+    /// publishes under Apache-2.0 sits in a v2.0.0 file, and the form is the same in v2.1.
+    struct NonV21Contents: Decodable {
+
+        let info: PostmanInfo
+        let item: [PostmanItem]
+
+    }
+
 }

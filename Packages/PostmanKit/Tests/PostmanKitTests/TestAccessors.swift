@@ -23,6 +23,31 @@ extension PostmanItem {
 
 }
 
+extension [PostmanItem] {
+
+    var requestItems: [PostmanRequestItem] {
+        flatMap { item -> [PostmanRequestItem] in
+            switch item {
+            case .folder(let folder): folder.items.requestItems
+            case .request(let request): [request]
+            }
+        }
+    }
+
+    func request(named name: String) -> PostmanRequest? {
+        requestItems.first { $0.name == name }?.request
+    }
+
+}
+
+extension PostmanCollection {
+
+    func request(named name: String) -> PostmanRequest? {
+        items.request(named: name)
+    }
+
+}
+
 extension Array {
 
     var only: Element? {

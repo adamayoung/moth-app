@@ -6,6 +6,7 @@
 public struct PostmanInfo: Decodable, Sendable, Equatable {
 
     public let name: String
+    public let description: PostmanDescription?
     public let schema: String
 
 }
