@@ -23,6 +23,17 @@
         }
       }
     },
+    "REQUEST_EDITOR_PANE_LABEL" : {
+      "comment" : "VoiceOver label for the pane that edits the open request.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request Editor"
+          }
+        }
+      }
+    },
     "RESPONSE_EMPTY_DESCRIPTION" : {
       "comment" : "Response pane guidance before a request is sent.",
       "localizations" : {
@@ -41,6 +52,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Response"
+          }
+        }
+      }
+    },
+    "RESPONSE_PANE_LABEL" : {
+      "comment" : "VoiceOver label for the pane that shows a request's response.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Response"
           }
         }
       }

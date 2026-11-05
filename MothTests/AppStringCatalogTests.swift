@@ -23,7 +23,9 @@ struct AppStringCatalogTests {
             ("REQUEST_EDITOR_EMPTY_DESCRIPTION", "Open a request from the sidebar to edit and send it."),
             ("RESPONSE_EMPTY_TITLE", "No Response"),
             ("RESPONSE_EMPTY_DESCRIPTION", "Send a request to see its response here."),
-            ("TAB_STRIP_LABEL", "Request Tabs")
+            ("TAB_STRIP_LABEL", "Request Tabs"),
+            ("REQUEST_EDITOR_PANE_LABEL", "Request Editor"),
+            ("RESPONSE_PANE_LABEL", "Response")
         ]
     )
     func catalogHoldsEnglishValue(key: String, expected: String) throws {

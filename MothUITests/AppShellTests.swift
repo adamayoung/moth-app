@@ -18,7 +18,7 @@ final class AppShellTests: MothTestCase {
             "Environments", "No Environments",
             "History", "No History"
         ] {
-            XCTAssertTrue(screen.sidebar.staticTexts[text].exists, "Sidebar is missing \"\(text)\"")
+            XCTAssertTrue(screen.sidebarText(text).exists, "Sidebar is missing \"\(text)\"")
         }
     }
 
@@ -28,13 +28,22 @@ final class AppShellTests: MothTestCase {
 
         XCTAssertTrue(screen.tabStrip.waitForExistence(timeout: 10))
 
-        let editor = screen.requestEditorPane
-        XCTAssertTrue(editor.staticTexts["No Request Open"].exists)
-        XCTAssertTrue(editor.staticTexts["Open a request from the sidebar to edit and send it."].exists)
+        XCTAssertTrue(screen.requestEditorText("No Request Open").exists)
+        XCTAssertTrue(screen.requestEditorText("Open a request from the sidebar to edit and send it.").exists)
 
-        let response = screen.responsePane
-        XCTAssertTrue(response.staticTexts["No Response"].exists)
-        XCTAssertTrue(response.staticTexts["Send a request to see its response here."].exists)
+        XCTAssertTrue(screen.responseText("No Response").exists)
+        XCTAssertTrue(screen.responseText("Send a request to see its response here.").exists)
+    }
+
+    @MainActor
+    func testEachDetailRegionHasAnAccessibilityLabel() {
+        let screen = MainWindowScreen(app: app)
+
+        XCTAssertTrue(screen.tabStrip.waitForExistence(timeout: 10))
+
+        XCTAssertEqual(screen.tabStrip.label, "Request Tabs")
+        XCTAssertEqual(screen.requestEditorPane.label, "Request Editor")
+        XCTAssertEqual(screen.responsePane.label, "Response")
     }
 
     @MainActor

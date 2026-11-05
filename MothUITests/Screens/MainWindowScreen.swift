@@ -19,7 +19,7 @@ struct MainWindowScreen {
     }
 
     var sidebar: XCUIElement {
-        app.outlines["sidebar"]
+        window.outlines["sidebar"]
     }
 
     var tabStrip: XCUIElement {
@@ -34,8 +34,20 @@ struct MainWindowScreen {
         region("responsePane")
     }
 
+    func sidebarText(_ text: String) -> XCUIElement {
+        sidebar.staticTexts[text]
+    }
+
+    func requestEditorText(_ text: String) -> XCUIElement {
+        requestEditorPane.staticTexts[text]
+    }
+
+    func responseText(_ text: String) -> XCUIElement {
+        responsePane.staticTexts[text]
+    }
+
     private func region(_ identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        window.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
 }

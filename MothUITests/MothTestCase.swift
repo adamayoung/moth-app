@@ -17,7 +17,11 @@ class MothTestCase: XCTestCase {
     @MainActor
     private func launchApp() {
         let app = XCUIApplication()
-        app.launchArguments = ["-UITesting", "1", "-ApplePersistenceIgnoreState", "YES"]
+        app.launchArguments = [
+            "-UITesting", "1",
+            "-ApplePersistenceIgnoreState", "YES",
+            "-NSShowNonLocalizedStrings", "YES"
+        ]
         app.launch()
         self.app = app
     }

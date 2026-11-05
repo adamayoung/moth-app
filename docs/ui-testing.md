@@ -11,8 +11,10 @@ Every launch argument is a `-key value` pair. A bare `-Flag` swallows whatever
 follows it as its value, and AppKit can read the stray argument as a file to
 open, so the app comes up with no window. So a bare `-UITesting`, or any value
 but `1`, stops the launch: Moth prints the fix to stderr and exits with code 64.
-`MothTestCase` also passes `-ApplePersistenceIgnoreState YES`, so no test starts
-from a window restored from an earlier run.
+`MothTestCase` also passes `-ApplePersistenceIgnoreState YES`, which turns off
+window restoration. It doesn't clear a saved `NSWindow Frame`, so a test can't
+assume the window's size. `-NSShowNonLocalizedStrings YES` capitalises any text
+missing from the catalog, so a hardcoded string fails the assertion on its copy.
 
 Demo mode uses the same seeded graph. `-DemoMode 1` or a stored `DemoMode`
 default selects it.

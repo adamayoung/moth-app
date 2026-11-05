@@ -15,6 +15,7 @@ struct RequestEditorPane: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
+        .accessibilityLabel("REQUEST_EDITOR_PANE_LABEL")
         .accessibilityIdentifier("requestEditorPane")
     }
 

@@ -15,6 +15,7 @@ struct ResponsePane: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
+        .accessibilityLabel("RESPONSE_PANE_LABEL")
         .accessibilityIdentifier("responsePane")
     }
 
