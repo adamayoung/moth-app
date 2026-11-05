@@ -11,21 +11,27 @@ enum AppLaunchMode: Equatable {
     case demo
     case testHost
 
-    init(arguments: [String], defaults: UserDefaults, environment: [String: String]) throws(LaunchConfigurationError) {
+    init(
+        arguments: [String],
+        defaults: UserDefaults,
+        environment: [String: String]
+    ) throws(LaunchConfigurationError) {
         let launchArguments = Array(arguments.dropFirst())
         let isUITesting = try Self.selects("-UITesting", in: launchArguments)
         let isDemo = try Self.selects("-DemoMode", in: launchArguments)
 
-        if try Self.isTestHost(environment) {
-            self = .testHost
-            return
+        if isUITesting, isDemo {
+            throw .conflictingModes
         }
 
-        switch (isUITesting, isDemo) {
-        case (true, true): throw LaunchConfigurationError.conflictingModes
-        case (true, false): self = .uiTesting
-        case (false, true): self = .demo
-        case (false, false): self = try Self.storesDemoMode(defaults) ? .demo : .live
+        if try Self.isTestHost(environment) {
+            self = .testHost
+        } else if isUITesting {
+            self = .uiTesting
+        } else if isDemo {
+            self = .demo
+        } else {
+            self = try Self.storesDemoMode(defaults) ? .demo : .live
         }
     }
 
@@ -41,10 +47,15 @@ enum AppLaunchMode: Equatable {
     }
 
     private static func storesDemoMode(_ defaults: UserDefaults) throws(LaunchConfigurationError) -> Bool {
-        switch defaults.string(forKey: "DemoMode") {
-        case nil, "0": false
-        case "1": true
-        case let value?: throw LaunchConfigurationError.invalidDefault(key: "DemoMode", value: value)
+        guard let stored = defaults.object(forKey: "DemoMode") else {
+            return false
+        }
+
+        let value = String(describing: stored)
+        switch value.lowercased() {
+        case "1", "yes", "true": return true
+        case "0", "no", "false": return false
+        default: throw .invalidDefault(key: "DemoMode", value: value)
         }
     }
 

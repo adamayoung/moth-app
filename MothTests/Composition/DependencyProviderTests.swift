@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-import HTTPKit
+@testable import HTTPKit
 @testable import Moth
 import MothCore
 import Testing

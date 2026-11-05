@@ -8,11 +8,22 @@ import Foundation
 import Testing
 
 @MainActor
-struct AppLaunchModeTests {
+final class AppLaunchModeTests {
+
+    private let suiteName = "AppLaunchModeTests.\(UUID().uuidString)"
+    private let defaults: UserDefaults
+
+    init() throws {
+        self.defaults = try #require(UserDefaults(suiteName: suiteName))
+    }
+
+    isolated deinit {
+        defaults.removePersistentDomain(forName: suiteName)
+    }
 
     @Test("A launch with no arguments is live")
     func noArgumentsIsLive() throws {
-        let mode = try AppLaunchMode(arguments: ["Moth"], defaults: emptyDefaults(), environment: [:])
+        let mode = try AppLaunchMode(arguments: ["Moth"], defaults: defaults, environment: [:])
 
         #expect(mode == .live)
     }
@@ -26,7 +37,7 @@ struct AppLaunchModeTests {
         ]
     )
     func argumentPairSelectsMode(arguments: [String], expected: AppLaunchMode) throws {
-        let mode = try AppLaunchMode(arguments: arguments, defaults: emptyDefaults(), environment: [:])
+        let mode = try AppLaunchMode(arguments: arguments, defaults: defaults, environment: [:])
 
         #expect(mode == expected)
     }
@@ -35,7 +46,7 @@ struct AppLaunchModeTests {
     func foreignArgumentsAreIgnored() throws {
         let arguments = ["Moth", "-NSDocumentRevisionsDebugMode", "YES", "-ApplePersistenceIgnoreState", "YES"]
 
-        let mode = try AppLaunchMode(arguments: arguments, defaults: emptyDefaults(), environment: [:])
+        let mode = try AppLaunchMode(arguments: arguments, defaults: defaults, environment: [:])
 
         #expect(mode == .live)
     }
@@ -51,7 +62,7 @@ struct AppLaunchModeTests {
     )
     func bareFlagStopsLaunch(arguments: [String], flag: String) {
         #expect(throws: LaunchConfigurationError.missingValue(flag: flag)) {
-            try AppLaunchMode(arguments: arguments, defaults: emptyDefaults(), environment: [:])
+            try AppLaunchMode(arguments: arguments, defaults: defaults, environment: [:])
         }
     }
 
@@ -65,7 +76,7 @@ struct AppLaunchModeTests {
     )
     func flagValueOtherThanOneStopsLaunch(flag: String, value: String) {
         #expect(throws: LaunchConfigurationError.invalidValue(flag: flag, value: value)) {
-            try AppLaunchMode(arguments: ["Moth", flag, value], defaults: emptyDefaults(), environment: [:])
+            try AppLaunchMode(arguments: ["Moth", flag, value], defaults: defaults, environment: [:])
         }
     }
 
@@ -74,7 +85,7 @@ struct AppLaunchModeTests {
         #expect(throws: LaunchConfigurationError.conflictingModes) {
             try AppLaunchMode(
                 arguments: ["Moth", "-UITesting", "1", "-DemoMode", "1"],
-                defaults: emptyDefaults(),
+                defaults: defaults,
                 environment: [:]
             )
         }
@@ -89,14 +100,13 @@ struct AppLaunchModeTests {
         ]
     )
     func environmentSelectsTestHost(environment: [String: String]) throws {
-        let mode = try AppLaunchMode(arguments: ["Moth"], defaults: emptyDefaults(), environment: environment)
+        let mode = try AppLaunchMode(arguments: ["Moth"], defaults: defaults, environment: environment)
 
         #expect(mode == .testHost)
     }
 
     @Test("The test host beats UI testing, demo and a stored demo default")
     func hostBeatsOtherModes() throws {
-        let defaults = emptyDefaults()
         defaults.set(true, forKey: "DemoMode")
 
         let mode = try AppLaunchMode(
@@ -113,7 +123,7 @@ struct AppLaunchModeTests {
         #expect(throws: LaunchConfigurationError.missingValue(flag: "-UITesting")) {
             try AppLaunchMode(
                 arguments: ["Moth", "-UITesting"],
-                defaults: emptyDefaults(),
+                defaults: defaults,
                 environment: ["MOTH_TEST_HOST": "1"]
             )
         }
@@ -124,13 +134,12 @@ struct AppLaunchModeTests {
         let expected = LaunchConfigurationError.invalidEnvironment(key: "MOTH_TEST_HOST", value: value)
 
         #expect(throws: expected) {
-            try AppLaunchMode(arguments: ["Moth"], defaults: emptyDefaults(), environment: ["MOTH_TEST_HOST": value])
+            try AppLaunchMode(arguments: ["Moth"], defaults: defaults, environment: ["MOTH_TEST_HOST": value])
         }
     }
 
     @Test("A stored demo default selects demo", arguments: StoredDemoValue.allCases)
     func storedDemoDefaultSelectsDemo(stored: StoredDemoValue) throws {
-        let defaults = emptyDefaults()
         defaults.set(stored.value, forKey: "DemoMode")
 
         let mode = try AppLaunchMode(arguments: ["Moth"], defaults: defaults, environment: [:])
@@ -140,7 +149,6 @@ struct AppLaunchModeTests {
 
     @Test("A stored demo default of false is live")
     func storedFalseDemoDefaultIsLive() throws {
-        let defaults = emptyDefaults()
         defaults.set(false, forKey: "DemoMode")
 
         let mode = try AppLaunchMode(arguments: ["Moth"], defaults: defaults, environment: [:])
@@ -150,7 +158,6 @@ struct AppLaunchModeTests {
 
     @Test("A stored demo default that is not a boolean stops the launch")
     func storedNonBooleanDemoDefaultStopsLaunch() {
-        let defaults = emptyDefaults()
         defaults.set("sometimes", forKey: "DemoMode")
 
         #expect(throws: LaunchConfigurationError.invalidDefault(key: "DemoMode", value: "sometimes")) {
@@ -158,9 +165,37 @@ struct AppLaunchModeTests {
         }
     }
 
+    @Test("A stored demo default of false or no is live", arguments: ["0", "NO", "no", "false"])
+    func storedFalseStringDemoDefaultIsLive(value: String) throws {
+        defaults.set(value, forKey: "DemoMode")
+
+        let mode = try AppLaunchMode(arguments: ["Moth"], defaults: defaults, environment: [:])
+
+        #expect(mode == .live)
+    }
+
+    @Test("A stored demo default of a type UserDefaults can't read as a boolean stops the launch")
+    func storedNonScalarDemoDefaultStopsLaunch() {
+        defaults.set(["1"], forKey: "DemoMode")
+
+        #expect(throws: LaunchConfigurationError.self) {
+            try AppLaunchMode(arguments: ["Moth"], defaults: defaults, environment: [:])
+        }
+    }
+
+    @Test("UI testing and demo together stop the launch even in a test host")
+    func conflictingFlagsStopTestHostLaunch() {
+        #expect(throws: LaunchConfigurationError.conflictingModes) {
+            try AppLaunchMode(
+                arguments: ["Moth", "-UITesting", "1", "-DemoMode", "1"],
+                defaults: defaults,
+                environment: ["MOTH_TEST_HOST": "1"]
+            )
+        }
+    }
+
     @Test("A launch argument beats a stored demo default")
     func uiTestingArgumentBeatsStoredDemoDefault() throws {
-        let defaults = emptyDefaults()
         defaults.set(true, forKey: "DemoMode")
 
         let mode = try AppLaunchMode(arguments: ["Moth", "-UITesting", "1"], defaults: defaults, environment: [:])
@@ -182,20 +217,20 @@ struct AppLaunchModeTests {
         #expect(error.message.contains(fix))
     }
 
-    private func emptyDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "AppLaunchModeTests.\(UUID().uuidString)") ?? .standard
-    }
-
     enum StoredDemoValue: CaseIterable {
         case boolean
         case number
         case string
+        case yes
+        case trueWord
 
         var value: Any {
             switch self {
             case .boolean: true
             case .number: 1
             case .string: "1"
+            case .yes: "YES"
+            case .trueWord: "true"
             }
         }
     }

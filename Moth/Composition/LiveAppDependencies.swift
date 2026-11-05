@@ -9,8 +9,7 @@ import MothCore
 
 final class LiveAppDependencies: AppDependencies {
 
-    // Ephemeral, so nothing a request returns is written to disk.
-    let transport: any HTTPTransport = URLSessionHTTPTransport(session: URLSession(configuration: .ephemeral))
+    let transport: any HTTPTransport = URLSessionHTTPTransport(session: makeSession())
     let secretStore: any SecretStore = InMemorySecretStore()
     let iCloudContainerIdentifier: String?
 
@@ -18,6 +17,16 @@ final class LiveAppDependencies: AppDependencies {
         let configuredIdentifier = infoDictionary["MothICloudContainer"] as? String ?? ""
         let identifier = configuredIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
         self.iCloudContainerIdentifier = identifier.isEmpty ? nil : identifier
+    }
+
+    /// An API client shows what the server sent, so no cached response or cookie carries between requests.
+    private static func makeSession() -> URLSession {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.httpCookieStorage = nil
+        configuration.httpShouldSetCookies = false
+        return URLSession(configuration: configuration)
     }
 
 }
