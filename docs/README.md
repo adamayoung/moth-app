@@ -7,7 +7,7 @@ when documentation has drifted.
 
 ## Status
 
-The design comes first: the repository still holds Xcode's template app.
+The design comes first: the app is the composition root and an empty window.
 `Moth.xcodeproj` has not been restructured, and the packages in `Packages/` hold
 only their first boundary types. These guides describe them as they will be.
 Delete this section when they land.

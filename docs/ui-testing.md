@@ -9,7 +9,11 @@ secret store, with no iCloud or network access.
 
 Every launch argument is a `-key value` pair. A bare `-Flag` swallows whatever
 follows it as its value, and AppKit can read the stray argument as a file to
-open, so the app comes up with no window.
+open, so the app comes up with no window. So a bare `-UITesting`, or any value
+but `1`, stops the launch: Moth prints the fix to stderr and exits with code 64.
+
+Demo mode uses the same seeded graph. `-DemoMode 1` or a stored `DemoMode`
+default selects it.
 
 The UI test bundle cannot import the app target, so a value it shares with the
 app's seed data is mirrored by hand. Change both sides together.
