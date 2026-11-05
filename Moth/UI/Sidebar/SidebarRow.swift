@@ -17,18 +17,22 @@ struct SidebarRow: View {
                 ForEach(node.children) { child in
                     SidebarRow(node: child, model: model)
                 }
-                .reorderable(collectionID: SidebarParent.container(container))
+                .dropDestination(for: SidebarDragItem.self) { items, offset in
+                    drop(items, into: .container(container), atOffset: offset)
+                }
             } label: {
                 SidebarRowLabel(node: node, model: model)
                     .contextMenu { containerMenu(for: container) }
+                    .draggable(SidebarDragItem(id: node.id))
                     .dropDestination(for: SidebarDragItem.self, isEnabled: true) { items, _ in
-                        drop(items, into: container)
+                        drop(items, into: .container(container), atOffset: node.children.count)
                     }
             }
             .tag(node.id)
         } else {
             SidebarRowLabel(node: node, model: model)
                 .contextMenu { itemMenu }
+                .draggable(SidebarDragItem(id: node.id))
                 .tag(node.id)
         }
     }
@@ -67,12 +71,8 @@ struct SidebarRow: View {
         }
     }
 
-    private func drop(_ items: [SidebarDragItem], into container: TreeContainerID) {
-        Task {
-            for item in items {
-                await model.move(item.id, to: .container(container), before: nil)
-            }
-        }
+    private func drop(_ items: [SidebarDragItem], into parent: SidebarParent, atOffset offset: Int) {
+        Task { await model.drop(items.map(\.id), on: parent, atOffset: offset) }
     }
 
 }

@@ -32,7 +32,9 @@ struct SidebarView: View {
                     ForEach(tree.roots) { node in
                         SidebarRow(node: node, model: model)
                     }
-                    .reorderable(collectionID: SidebarParent.root)
+                    .dropDestination(for: SidebarDragItem.self) { items, offset in
+                        Task { await model.drop(items.map(\.id), on: .root, atOffset: offset) }
+                    }
                 }
             }
 
@@ -50,16 +52,6 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .accessibilityIdentifier("sidebar")
-        .reorderContainer(for: SidebarDragItem.self, in: SidebarParent.self) { difference in
-            let before: TreeNodeID? = switch difference.destination.position {
-            case .before(let id): id
-            case .end: nil
-            }
-            move(difference.sources, to: difference.destination.collectionID, before: before)
-        }
-        .dragContainer(for: SidebarDragItem.self) { (id: TreeNodeID) in
-            [SidebarDragItem(id: id)]
-        }
         .alert(deletionTitle, item: $model.pendingDeletion) { deletion in
             Button("SIDEBAR_DELETE_CONFIRM", role: .destructive) {
                 Task { await model.confirmDeletion(deletion) }
@@ -83,14 +75,6 @@ struct SidebarView: View {
 
     private var deletionTitle: String {
         String(localized: "SIDEBAR_DELETE_TITLE_\(model.pendingDeletion?.name ?? "")")
-    }
-
-    private func move(_ sources: [TreeNodeID], to parent: SidebarParent, before: TreeNodeID?) {
-        Task {
-            for id in sources {
-                await model.move(id, to: parent, before: before)
-            }
-        }
     }
 
 }

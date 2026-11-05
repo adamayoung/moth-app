@@ -113,9 +113,9 @@ final class SidebarEditingTests: MothTestCase {
 
         screen.chooseFromContextMenu(on: "Renamed", "Rename")
         XCTAssertTrue(screen.renameField.waitForExistence(timeout: 10))
-        screen.renameField.typeKey("a", modifierFlags: .command)
-        screen.renameField.typeKey(.delete, modifierFlags: [])
-        screen.renameField.typeText("\n")
+        app.typeKey("a", modifierFlags: .command)
+        app.typeKey(.delete, modifierFlags: [])
+        app.typeText("\n")
 
         XCTAssertTrue(screen.sidebarText("Renamed").waitForExistence(timeout: 10))
     }

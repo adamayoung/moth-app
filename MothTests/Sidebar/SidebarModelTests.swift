@@ -296,4 +296,30 @@ struct SidebarModelTests {
         #expect(model.tree == before)
     }
 
+    @Test("A drop lands ahead of the row at its offset")
+    func dropLandsAtItsOffset() async throws {
+        await model.drop([.request(top.id)], on: .container(.folder(folder.id)), atOffset: 1)
+        try deliverTree()
+
+        let children = try #require(model.tree.node(.folder(folder.id))).children
+        #expect(children.map(\.name) == ["Inner", "Top", "Shallow"])
+    }
+
+    @Test("A drop at the end of a parent goes last")
+    func dropAtTheEndGoesLast() async throws {
+        await model.drop([.folder(empty.id)], on: .container(.collection(collection.id)), atOffset: 3)
+        try deliverTree()
+
+        let children = try #require(model.tree.node(.collection(collection.id))).children
+        #expect(children.map(\.name) == ["Folder", "Top", "Empty"])
+    }
+
+    @Test("A collection dropped at the top of the collections goes first")
+    func dropReordersCollections() async throws {
+        await model.drop([.collection(other.id)], on: .root, atOffset: 0)
+        try deliverTree()
+
+        #expect(model.tree.roots.map(\.name) == ["Other", "API"])
+    }
+
 }

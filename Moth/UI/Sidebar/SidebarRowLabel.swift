@@ -53,6 +53,8 @@ struct SidebarRowLabel: View {
             .accessibilityIdentifier("sidebar.renameField")
             .onAppear {
                 draft = node.name
+            }
+            .task {
                 isFieldFocused = true
             }
             .onSubmit(commit)

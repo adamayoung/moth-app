@@ -35,7 +35,7 @@ struct MainWindowScreen {
     }
 
     var renameField: XCUIElement {
-        sidebar.textFields["sidebar.renameField"]
+        sidebar.descendants(matching: .any).matching(identifier: "sidebar.renameField").firstMatch
     }
 
     var deleteAlert: XCUIElement {
@@ -86,8 +86,8 @@ struct MainWindowScreen {
 
     func finishRename(typing name: String) {
         XCTAssertTrue(renameField.waitForExistence(timeout: 10))
-        renameField.typeKey("a", modifierFlags: .command)
-        renameField.typeText(name + "\n")
+        app.typeKey("a", modifierFlags: .command)
+        app.typeText(name + "\n")
     }
 
     func alertText(_ text: String) -> XCUIElement {

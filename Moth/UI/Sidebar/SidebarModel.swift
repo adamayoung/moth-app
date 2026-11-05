@@ -111,6 +111,17 @@ final class SidebarModel {
         }
     }
 
+    func drop(_ ids: [TreeNodeID], on parent: SidebarParent, atOffset offset: Int) async {
+        let siblings: [TreeNode] = switch parent {
+        case .root: tree.roots
+        case .container(let container): tree.node(TreeNodeID(container))?.children ?? []
+        }
+        let before = siblings.indices.contains(offset) ? siblings[offset].id : nil
+        for id in ids {
+            await move(id, to: parent, before: before)
+        }
+    }
+
     private func reveal(_ id: TreeNodeID, in container: TreeContainerID?) {
         if let container {
             let parent = TreeNodeID(container)
