@@ -1,6 +1,72 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "DEFAULT_COLLECTION_NAME" : {
+      "comment" : "Name a new collection starts with.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Collection"
+          }
+        }
+      }
+    },
+    "DEFAULT_FOLDER_NAME" : {
+      "comment" : "Name a new folder starts with.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Folder"
+          }
+        }
+      }
+    },
+    "DEFAULT_REQUEST_NAME" : {
+      "comment" : "Name a new request starts with.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Request"
+          }
+        }
+      }
+    },
+    "MENU_NEW_COLLECTION" : {
+      "comment" : "File menu command that adds a collection.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Collection"
+          }
+        }
+      }
+    },
+    "MENU_NEW_FOLDER" : {
+      "comment" : "Menu command that adds a folder to the selected collection or folder.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Folder"
+          }
+        }
+      }
+    },
+    "MENU_NEW_REQUEST" : {
+      "comment" : "Menu command that adds a request to the selected collection or folder.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Request"
+          }
+        }
+      }
+    },
     "REQUEST_EDITOR_EMPTY_DESCRIPTION" : {
       "comment" : "Editor pane guidance when no request is open.",
       "localizations" : {
@@ -89,6 +155,84 @@
         }
       }
     },
+    "SIDEBAR_DELETE" : {
+      "comment" : "Context menu command that asks before deleting a sidebar row.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete…"
+          }
+        }
+      }
+    },
+    "SIDEBAR_DELETE_CANCEL" : {
+      "comment" : "Cancel button of the delete alert.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "SIDEBAR_DELETE_CONFIRM" : {
+      "comment" : "Destructive button of the delete alert.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "SIDEBAR_DELETE_CONTAINER_MESSAGE_%lld" : {
+      "comment" : "Message of the alert that confirms deleting a collection or folder. The argument is how many requests the delete removes.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "This deletes its %lld request. You can’t undo this."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "This deletes its %lld requests. You can’t undo this."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "SIDEBAR_DELETE_MESSAGE" : {
+      "comment" : "Message of the delete alert when there are no requests to count.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can’t undo this."
+          }
+        }
+      }
+    },
+    "SIDEBAR_DELETE_TITLE_%@" : {
+      "comment" : "Title of the alert that confirms a delete. The argument is the item's name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete “%@”?"
+          }
+        }
+      }
+    },
     "SIDEBAR_ENVIRONMENTS_EMPTY" : {
       "comment" : "Sidebar empty state when there are no environments.",
       "localizations" : {
@@ -129,6 +273,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "History"
+          }
+        }
+      }
+    },
+    "SIDEBAR_RENAME" : {
+      "comment" : "Context menu command that edits a sidebar row's name in place.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
+          }
+        }
+      }
+    },
+    "SIDEBAR_RENAME_FIELD_LABEL" : {
+      "comment" : "VoiceOver label for the field that edits a sidebar row's name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
           }
         }
       }

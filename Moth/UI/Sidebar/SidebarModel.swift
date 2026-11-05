@@ -1,0 +1,124 @@
+//  SidebarModel.swift
+//  Moth
+//
+//  Copyright © 2026 Adam Young.
+
+import Foundation
+import MothCore
+import Observation
+import OSLog
+
+/// One window's sidebar state, naming rows by identifier so a sync that removes a row leaves nothing dangling.
+@Observable
+final class SidebarModel {
+
+    var selection: TreeNodeID?
+    var expanded: Set<TreeNodeID> = []
+    var pendingDeletion: PendingDeletion?
+    private(set) var renaming: TreeNodeID?
+    private(set) var tree = CollectionTree.empty
+
+    private let writer: StoreWriter
+
+    init(writer: StoreWriter) {
+        self.writer = writer
+    }
+
+    /// Where File > New Folder and New Request put their item. A selected request's parent is the target, because a
+    /// new item takes the selection and a second New Request would otherwise be disabled.
+    var newItemContainer: TreeContainerID? {
+        guard let selection else {
+            return nil
+        }
+        if let container = TreeContainerID(selection) {
+            return container
+        }
+        return tree.ancestors(of: selection).last.flatMap(TreeContainerID.init)
+    }
+
+    func treeDidChange(_ newTree: CollectionTree) {
+        selection = tree.selection(selection, carriedTo: newTree)
+        if let renaming, tree.contains(renaming), !newTree.contains(renaming) {
+            self.renaming = nil
+        }
+        tree = newTree
+    }
+
+    func newCollection() async {
+        let collection = RequestCollection(name: String(localized: "DEFAULT_COLLECTION_NAME"))
+        if await perform({ [writer] in try await writer.createCollection(collection) }) {
+            reveal(.collection(collection.id), in: nil)
+        }
+    }
+
+    func newFolder(in container: TreeContainerID) async {
+        let folder = Folder(name: String(localized: "DEFAULT_FOLDER_NAME"))
+        if await perform({ [writer] in try await writer.createFolder(folder, in: container) }) {
+            reveal(.folder(folder.id), in: container)
+        }
+    }
+
+    func newRequest(in container: TreeContainerID) async {
+        let request = Request(name: String(localized: "DEFAULT_REQUEST_NAME"))
+        if await perform({ [writer] in try await writer.createRequest(request, in: container) }) {
+            reveal(.request(request.id), in: container)
+        }
+    }
+
+    func beginRename(of id: TreeNodeID) {
+        renaming = id
+    }
+
+    /// Both Return and the field losing focus arrive here, so only the first of them ends the edit.
+    func commitRename(of id: TreeNodeID, to draft: String) async {
+        guard renaming == id else {
+            return
+        }
+        renaming = nil
+
+        let name = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            return
+        }
+        await perform { [writer] in try await writer.rename(id, to: name) }
+    }
+
+    func cancelRename() {
+        renaming = nil
+    }
+
+    func requestDeletion(of node: TreeNode) {
+        pendingDeletion = PendingDeletion(
+            id: node.id,
+            name: node.name,
+            requestsToMention: node.method == nil && node.requestCount > 0 ? node.requestCount : nil
+        )
+    }
+
+    /// The selection moves when the query delivers the tree without this row.
+    func confirmDeletion(_ deletion: PendingDeletion) async {
+        await perform { [writer] in try await writer.delete(deletion.id) }
+    }
+
+    private func reveal(_ id: TreeNodeID, in container: TreeContainerID?) {
+        if let container {
+            let parent = TreeNodeID(container)
+            expanded.formUnion(tree.ancestors(of: parent) + [parent])
+        }
+        selection = id
+        renaming = id
+    }
+
+    /// A row that failed to change stays as it was on screen, so the sidebar shows the truth.
+    @discardableResult
+    private func perform(_ write: () async throws -> Void) async -> Bool {
+        do {
+            try await write()
+            return true
+        } catch {
+            Logger.sidebar.error("A sidebar write failed: \(error)")
+            return false
+        }
+    }
+
+}
