@@ -105,6 +105,15 @@ Postman-shaped:
 `{{name}}` resolves request, then collection, then environment, then globals.
 Dynamic variables are `{{$guid}}`, `{{$timestamp}}` and `{{$randomInt}}`.
 
+A value can hold further references, up to ten variables in a chain. A reference
+that is undefined, part of a cycle, too deep or a missing secret stays as written
+and is reported.
+
+`VariableResolver` returns a `ResolvedRequest`. It holds plaintext secrets, so it
+is not a `Request` and nothing that persists a request can take one. Its `auth`
+keeps its references, and `credentials` holds their values, expanded, because an
+import stores a credential as written and that is often `{{token}}`.
+
 ### Auth
 
 An auth provider is a protocol that mutates a `URLRequest`. Its requirement must
