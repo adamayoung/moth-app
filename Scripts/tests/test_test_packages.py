@@ -56,10 +56,10 @@ class TestPackagesTests(unittest.TestCase):
             timeout=30,
         )
 
-    def test_succeeds_and_says_so_with_no_packages(self):
+    def test_no_packages_is_an_error(self):
         result = self.run_script()
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("no packages", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("error: no packages", result.stdout)
 
     def test_finds_the_packages_from_any_directory(self):
         self.add_package("HTTPKit", SWIFT_TESTING_SUMMARY.format(2))
@@ -109,6 +109,14 @@ class TestPackagesTests(unittest.TestCase):
         self.environment["GITHUB_STEP_SUMMARY"] = str(summary)
         self.run_script()
         self.assertEqual(summary.read_text().splitlines(), ["- HTTPKit: ran 2 test(s)", "- MothCore: ran 3 test(s)"])
+
+    def test_names_a_failed_package_and_an_empty_one_in_the_step_summary(self):
+        self.add_package("HTTPKit", "", status=1)
+        self.add_package("MothCore", XCTEST_SUMMARY.format(0))
+        summary = self.directory / "summary"
+        self.environment["GITHUB_STEP_SUMMARY"] = str(summary)
+        self.run_script()
+        self.assertEqual(summary.read_text().splitlines(), ["- HTTPKit: failed", "- MothCore: ran no tests"])
 
 
 if __name__ == "__main__":

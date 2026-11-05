@@ -47,8 +47,8 @@ test:
 test-unit:
 	@MOTH_BUILD_LOCK_LABEL="test-unit UnitTests" Scripts/build-lock.sh $(RUN_XCODE_TESTS) -testPlan UnitTests $(or $(ONLY_TESTING_FLAG),-only-testing:MothTests)
 
-test-unit-unsigned:
-	@MOTH_BUILD_LOCK_LABEL="test-unit-unsigned UnitTests" Scripts/build-lock.sh $(RUN_XCODE_TESTS) -testPlan UnitTests -only-testing:MothTests $(UNSIGNED)
+test-unit-unsigned: XCODEBUILD_FLAGS += $(UNSIGNED)
+test-unit-unsigned: test-unit
 
 test-ui: override TEST_TARGET = MothUITests
 test-ui:

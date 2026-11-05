@@ -32,9 +32,9 @@ jobs:
           tools="$RUNNER_TEMP/lint-tools"
           mkdir -p "$tools"
           cd "$tools"
-          curl -fsSL -o swiftlint.zip \
+          curl -fsSL --retry 3 --retry-all-errors -o swiftlint.zip \
             "https://github.com/realm/SwiftLint/releases/download/$SWIFTLINT_VERSION/portable_swiftlint.zip"
-          curl -fsSL -o swiftformat.zip \
+          curl -fsSL --retry 3 --retry-all-errors -o swiftformat.zip \
             "https://github.com/nicklockwood/SwiftFormat/releases/download/$SWIFTFORMAT_VERSION/swiftformat.zip"
           shasum -a 256 -c <<CHECKSUMS
           $SWIFTLINT_SHA256  swiftlint.zip
@@ -49,6 +49,16 @@ jobs:
           test "$(swiftlint version)" = "$SWIFTLINT_VERSION"
           test "$(swiftformat --version)" = "$SWIFTFORMAT_VERSION"
       - run: make lint
+
+  script-tests:
+    name: Script tests
+    runs-on: xcode-27
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s Scripts/tests -p 'test_*.py'
 
   package-tests:
     name: Package tests

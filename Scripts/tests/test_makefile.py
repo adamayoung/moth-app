@@ -137,6 +137,11 @@ class ContinuousIntegrationTargetTests(unittest.TestCase):
         self.assertIn("-only-testing:MothTests", output)
         self.assertIn("CODE_SIGNING_ALLOWED=NO", output)
 
+    def test_test_unit_unsigned_honours_a_filter(self):
+        output = dry_run("test-unit-unsigned", "TESTS=AppLaunchModeTests").stdout
+        self.assertIn("-only-testing:'MothTests/AppLaunchModeTests'", output)
+        self.assertIn("CODE_SIGNING_ALLOWED=NO", output)
+
     def test_build_packages_ios_runs_the_script(self):
         self.assertIn("Scripts/build-packages-ios.sh", dry_run("build-packages-ios").stdout)
 

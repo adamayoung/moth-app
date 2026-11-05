@@ -41,8 +41,11 @@ class TriggerTests(unittest.TestCase):
 
 
 class RunnerTests(unittest.TestCase):
-    def test_has_the_five_jobs(self):
-        self.assertEqual(set(job_blocks()), {"lint", "package-tests", "app-build", "ios-packages", "app-tests"})
+    def test_has_the_six_jobs(self):
+        self.assertEqual(
+            set(job_blocks()),
+            {"lint", "script-tests", "package-tests", "app-build", "ios-packages", "app-tests"},
+        )
 
     def test_every_job_uses_the_hosted_image(self):
         for name, block in job_blocks().items():
@@ -72,6 +75,7 @@ class JobCommandTests(unittest.TestCase):
     def test_each_job_runs_its_target(self):
         expected = {
             "lint": "make lint",
+            "script-tests": "python3 -m unittest discover -s Scripts/tests -p 'test_*.py'",
             "package-tests": "make test-packages",
             "app-build": "make build-for-testing",
             "ios-packages": "make build-packages-ios",
@@ -106,6 +110,9 @@ class LintToolTests(unittest.TestCase):
     def test_the_download_is_verified_before_it_is_unpacked(self):
         lint = job_blocks()["lint"]
         self.assertLess(lint.index("shasum -a 256 -c"), lint.index("unzip"))
+
+    def test_the_download_retries_a_transient_failure(self):
+        self.assertEqual(job_blocks()["lint"].count("curl -fsSL --retry 3 --retry-all-errors"), 2)
 
     def test_the_pinned_tools_go_ahead_of_the_images_own(self):
         self.assertIn('>> "$GITHUB_PATH"', job_blocks()["lint"])

@@ -123,7 +123,8 @@ So `.github/workflows/ci.yml` runs these jobs on every pull request to `main`:
 | Job | Runs |
 | --- | --- |
 | Lint | `make lint`, with SwiftLint and SwiftFormat at the versions and checksums the workflow pins |
-| Package tests | `make test-packages`, which names each package and its test count in the job summary |
+| Script tests | The `Scripts/tests` suite |
+| Package tests | `make test-packages`, which names each package and its result in the job summary |
 | App build | `make build-for-testing` |
 | iOS package build | `make build-packages-ios` |
 | App tests (not run below macOS 27.2) | `Scripts/ci-app-tests.sh` |
