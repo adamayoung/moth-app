@@ -10,6 +10,11 @@ final class SeededAppDependencies: AppDependencies {
 
     let transport: any HTTPTransport = StubHTTPTransport()
     let secretStore: any SecretStore = InMemorySecretStore()
+    let dataModel: DataModel
     let iCloudContainerIdentifier: String? = nil
+
+    init(seed: Workspace?) throws {
+        self.dataModel = try .inMemory(seed: seed)
+    }
 
 }

@@ -23,6 +23,24 @@ struct AppSignatureTests {
         #expect(signature.keychainAccessGroup == "ABCDE12345.uk.co.adam-young.Moth")
     }
 
+    @Test("Entitled iCloud containers are read from signing information")
+    func readsICloudContainers() {
+        let signature = AppSignature(signingInformation: [
+            kSecCodeInfoEntitlementsDict as String: [
+                "com.apple.developer.icloud-container-identifiers": ["iCloud.moth"]
+            ]
+        ])
+
+        #expect(signature.iCloudContainers == ["iCloud.moth"])
+    }
+
+    @Test("Signing information with no iCloud entitlement has no containers")
+    func noICloudEntitlementHasNoContainers() {
+        let signature = AppSignature(signingInformation: [:])
+
+        #expect(signature.iCloudContainers.isEmpty)
+    }
+
     @Test("Ad hoc signing information has no team or access group")
     func adHocHasNeither() {
         let signature = AppSignature(signingInformation: [

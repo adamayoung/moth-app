@@ -5,7 +5,7 @@
 
 import Foundation
 
-public nonisolated struct Variable: Identifiable, Sendable, Hashable {
+public nonisolated struct Variable: Identifiable, Sendable, Hashable, Codable {
 
     public let id: UUID
     public var name: String
@@ -50,7 +50,7 @@ public nonisolated struct Variable: Identifiable, Sendable, Hashable {
 }
 
 /// A secret has one value, held in the Keychain, so it has no initial and current pair.
-public nonisolated enum VariableValue: Sendable, Hashable {
+public nonisolated enum VariableValue: Sendable, Hashable, Codable {
 
     case plain(initial: String, current: String)
     case secret(SecretReference)

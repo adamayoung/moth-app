@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public nonisolated struct RequestSettings: Sendable, Hashable {
+public nonisolated struct RequestSettings: Sendable, Hashable, Codable {
 
     public var timeout: Duration
     public var followsRedirects: Bool

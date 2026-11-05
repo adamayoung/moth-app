@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public nonisolated enum RequestBody: Sendable, Hashable {
+public nonisolated enum RequestBody: Sendable, Hashable, Codable {
 
     case none
     case formData([FormDataField])

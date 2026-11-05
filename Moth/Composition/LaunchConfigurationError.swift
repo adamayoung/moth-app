@@ -9,6 +9,8 @@ enum LaunchConfigurationError: Error, Equatable {
     case conflictingModes
     case invalidEnvironment(key: String, value: String)
     case invalidDefault(key: String, value: String)
+    case cloudKitSchemaNeedsContainer
+    case storeUnavailable(detail: String)
 
     var message: String {
         switch self {
@@ -22,6 +24,11 @@ enum LaunchConfigurationError: Error, Equatable {
             "\(key) doesn’t accept “\(value)”. Set \(key)=1 or unset it."
         case .invalidDefault(let key, let value):
             "The \(key) default doesn’t accept “\(value)”. Set it to a boolean or delete it."
+        case .cloudKitSchemaNeedsContainer:
+            "-InitializeCloudKitSchema needs an entitled iCloud container. "
+                + "Set DEVELOPMENT_TEAM and MOTH_ICLOUD_CONTAINER in Local.xcconfig."
+        case .storeUnavailable(let detail):
+            "The data store didn’t open: \(detail)"
         }
     }
 

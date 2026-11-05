@@ -3,7 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
-public nonisolated struct BearerAuth: Sendable, Hashable {
+public nonisolated struct BearerAuth: Sendable, Hashable, Codable {
 
     public var token: SecretReference
 

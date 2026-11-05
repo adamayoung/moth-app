@@ -5,7 +5,7 @@
 
 import Foundation
 
-public nonisolated struct Request: Identifiable, Sendable, Hashable {
+public nonisolated struct Request: Identifiable, Sendable, Hashable, Codable {
 
     public let id: UUID
     public var name: String

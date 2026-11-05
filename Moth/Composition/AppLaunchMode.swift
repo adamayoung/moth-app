@@ -35,6 +35,10 @@ enum AppLaunchMode: Equatable {
         }
     }
 
+    static func initialisesCloudKitSchema(arguments: [String]) throws(LaunchConfigurationError) -> Bool {
+        try selects("-InitializeCloudKitSchema", in: Array(arguments.dropFirst()))
+    }
+
     private static func isTestHost(_ environment: [String: String]) throws(LaunchConfigurationError) -> Bool {
         if let value = environment["MOTH_TEST_HOST"] {
             guard value == "1" else {
