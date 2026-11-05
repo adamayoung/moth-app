@@ -12,7 +12,12 @@ struct MothApp: App {
         let schema = Schema([
             Item.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        // .automatic syncs as soon as a build has iCloud entitlements, and Item is not CloudKit-compatible.
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
