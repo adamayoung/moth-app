@@ -11,12 +11,14 @@ final class StubURLProtocol: URLProtocol {
     enum Reply {
         case http(status: Int, headers: [String: String], body: Data)
         case notHTTP(body: Data)
-        case failure(URLError)
+        case failure(any Error)
+        case neverFinishes
     }
 
     private struct State {
         var reply: Reply?
         var requests: [URLRequest] = []
+        var loadsStarted = AsyncStream<Void>.makeStream()
     }
 
     private static let state = Mutex(State())
@@ -32,6 +34,10 @@ final class StubURLProtocol: URLProtocol {
         state.withLock(\.requests)
     }
 
+    static var loadsStarted: AsyncStream<Void> {
+        state.withLock(\.loadsStarted.stream)
+    }
+
     override static func canInit(with request: URLRequest) -> Bool {
         true
     }
@@ -43,6 +49,7 @@ final class StubURLProtocol: URLProtocol {
     override func startLoading() {
         let reply = Self.state.withLock { state in
             state.requests.append(request)
+            state.loadsStarted.continuation.yield()
             return state.reply
         }
 
@@ -66,6 +73,9 @@ final class StubURLProtocol: URLProtocol {
 
         case .failure(let error):
             client?.urlProtocol(self, didFailWithError: error)
+
+        case .neverFinishes:
+            break
 
         case nil:
             client?.urlProtocol(self, didFailWithError: URLError(.resourceUnavailable))

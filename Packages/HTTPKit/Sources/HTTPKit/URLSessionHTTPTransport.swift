@@ -15,12 +15,25 @@ public struct URLSessionHTTPTransport: HTTPTransport {
 
     @concurrent
     public func send(_ request: URLRequest) async throws -> HTTPResponse {
-        let (body, response) = try await session.data(for: request)
+        let recorder = TaskMetricsRecorder()
+        let body: Data
+        let response: URLResponse
+        do {
+            (body, response) = try await session.data(for: request, delegate: recorder)
+        } catch {
+            throw HTTPTransportError.translating(error)
+        }
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw HTTPTransportError.notHTTP
         }
 
-        return HTTPResponse(status: httpResponse.statusCode, headers: Self.headers(of: httpResponse), body: body)
+        return HTTPResponse(
+            status: httpResponse.statusCode,
+            headers: Self.headers(of: httpResponse),
+            body: body,
+            metrics: recorder.metrics
+        )
     }
 
     private static func headers(of response: HTTPURLResponse) -> [String: String] {
