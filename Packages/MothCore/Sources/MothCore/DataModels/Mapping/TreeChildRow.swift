@@ -12,6 +12,16 @@ nonisolated enum TreeContainerRow {
 
 }
 
+nonisolated protocol NamedTreeRow: PersistentModel {
+
+    var name: String { get set }
+
+}
+
+nonisolated extension CollectionModel: NamedTreeRow {}
+nonisolated extension FolderModel: NamedTreeRow {}
+nonisolated extension RequestModel: NamedTreeRow {}
+
 /// A folder or request under a collection or folder. The two kinds share one `sortOrder` sequence within a parent.
 nonisolated protocol TreeChildRow: PersistentModel, SortedRow {
 

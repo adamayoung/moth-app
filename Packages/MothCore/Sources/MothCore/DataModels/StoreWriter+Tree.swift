@@ -31,6 +31,31 @@ extension StoreWriter {
         }
     }
 
+    public func rename(_ id: TreeNodeID, to name: String) throws {
+        try write { context in
+            for row in try Self.rows(id, in: context) where row.name != name {
+                row.name = name
+            }
+        }
+    }
+
+    public func delete(_ id: TreeNodeID) throws {
+        try write { context in
+            for row in try Self.rows(id, in: context) {
+                context.delete(row)
+            }
+        }
+    }
+
+    /// Every row with this id, because sync can duplicate one, and a delete that left a twin would bring the item back.
+    private static func rows(_ id: TreeNodeID, in context: ModelContext) throws -> [any NamedTreeRow] {
+        switch id {
+        case .collection(let id): try context.fetch(CollectionModel.withID(id))
+        case .folder(let id): try context.fetch(FolderModel.withID(id))
+        case .request(let id): try context.fetch(RequestModel.withID(id))
+        }
+    }
+
     private static func containerRow(
         _ id: TreeContainerID,
         in context: ModelContext
