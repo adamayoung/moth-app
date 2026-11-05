@@ -38,8 +38,12 @@ def build_settings(target, configuration, *overrides):
         ],
         capture_output=True,
         text=True,
+        check=True,
     ).stdout
-    return dict(re.findall(r"^\s+(\w+) = (.*)$", output, re.MULTILINE))
+    settings = dict(re.findall(r"^\s+(\w+) = (.*)$", output, re.MULTILINE))
+    if not settings:
+        raise AssertionError(f"xcodebuild reported no settings for {target} {configuration}")
+    return settings
 
 
 def app_settings(*overrides):
@@ -71,6 +75,7 @@ class ConfigurationFileTests(unittest.TestCase):
             ["xcodebuild", "-project", str(REPOSITORY / "Moth.xcodeproj"), "-list", "-json"],
             capture_output=True,
             text=True,
+            check=True,
         ).stdout
         self.assertEqual(sorted(json.loads(listing)["project"]["configurations"]), list(CONFIGURATIONS))
 

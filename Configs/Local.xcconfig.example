@@ -2,4 +2,4 @@
 // ad hoc and runs local-only. The iCloud entitlements need a team, so set the two together.
 
 DEVELOPMENT_TEAM = ABCDE12345
-MOTH_ICLOUD_CONTAINER = iCloud.uk.co.adam-young.Moth
+MOTH_ICLOUD_CONTAINER = iCloud.com.example.Moth

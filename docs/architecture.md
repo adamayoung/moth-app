@@ -179,8 +179,7 @@ sets their own team. The iCloud container comes from a build setting. A build
 without one runs on `cloudKitDatabase: .none`, so a contributor can build Moth
 without the owner's signing identity. Local builds sign, ad hoc until a team is
 set. CI builds with `CODE_SIGNING_ALLOWED=NO`, which has neither iCloud nor
-Keychain entitlements, so CI and tests use `.none` stores and an in-memory secret
-store.
+Keychain entitlements, so it uses `.none` stores and an in-memory secret store.
 
 The app is sandboxed with outgoing network connections allowed. It carries an
 App Transport Security exception because an API client has to reach plain-HTTP
