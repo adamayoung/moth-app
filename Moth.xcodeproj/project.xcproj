@@ -24,6 +24,7 @@
       ],
     },
     { "kind": "folder", "path": "Moth", "target-membership": [ "Moth" ] },
+    { "kind": "folder", "path": "Packages" },
     {
       "kind": "folder",
       "path": "MothTests",
@@ -72,6 +73,18 @@
         "compile-sources",
         "frameworks",
         "resources",
+      ],
+      "package-product-members": [
+        {
+          "product-name": "HTTPKit",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "product-name": "MothCore",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "product-name": "MothImport",
+          "build-phase": { "build-phase": "frameworks" },
+        },
       ],
       "build-settings": {
         "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",

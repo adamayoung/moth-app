@@ -16,7 +16,9 @@ import unittest
 REPOSITORY = Path(__file__).resolve().parent.parent.parent
 CONFIGS = REPOSITORY / "Configs"
 PROJECT_FILE = REPOSITORY / "Moth.xcodeproj" / "project.xcproj"
+TEST_PLANS = REPOSITORY / "TestPlans"
 
+PACKAGES = ("HTTPKit", "MothCore", "MothImport", "PostmanKit")
 TARGETS = ("Moth", "MothTests", "MothUITests")
 CONFIGURATIONS = ("Debug", "Release")
 EXAMPLE_CONTAINER = "iCloud.example.Moth"
@@ -110,6 +112,29 @@ class ConfigurationFileTests(unittest.TestCase):
         self.assertIsNotNone(entry)
         self.assertIn('"kind": "group"', entry.group(0))
         self.assertNotIn("target-membership", entry.group(0))
+
+
+class PackageIntegrationTests(unittest.TestCase):
+    def test_packages_is_a_folder_outside_every_target(self):
+        self.assertRegex(PROJECT_FILE.read_text(), r'\{ "kind": "folder", "path": "Packages" \}')
+
+    # xcodebuild silently skips the test targets of a package in the project's `packages`
+    # array, because it treats that package as a dependency rather than as workspace code.
+    def test_no_package_is_a_dependency_reference(self):
+        self.assertNotIn('"packages"', PROJECT_FILE.read_text())
+
+    def test_the_app_links_only_the_packages_the_boundaries_table_allows(self):
+        linked = re.findall(r'"product-name": "(\w+)"', PROJECT_FILE.read_text())
+        self.assertEqual(sorted(linked), ["HTTPKit", "MothCore", "MothImport"])
+
+    def test_the_unit_plan_runs_every_package_s_tests(self):
+        plan = json.loads((TEST_PLANS / "UnitTests.xctestplan").read_text())
+        containers = {
+            entry["target"]["containerPath"]: entry["target"]["name"] for entry in plan["testTargets"]
+        }
+        for package in PACKAGES:
+            with self.subTest(package=package):
+                self.assertEqual(containers.get(f"container:Packages/{package}"), f"{package}Tests")
 
 
 class EntitlementTests(unittest.TestCase):
