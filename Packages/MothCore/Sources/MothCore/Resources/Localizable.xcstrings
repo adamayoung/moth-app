@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "en-GB",
+  "strings" : {
+    "REQUEST_BUILD_INVALID_URL" : {
+      "comment" : "Shown when a request cannot be sent because its URL is empty or invalid.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This URL isn’t valid."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
