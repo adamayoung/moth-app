@@ -19,13 +19,13 @@ final class LiveAppDependencies: AppDependencies {
         self.iCloudContainerIdentifier = identifier.isEmpty ? nil : identifier
     }
 
-    /// An API client shows what the server sent, so no cached response or cookie carries between requests.
+    /// An API client shows what the server sent, so no cached response, cookie or credential carries between requests.
     private static func makeSession() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.httpCookieStorage = nil
         configuration.httpShouldSetCookies = false
+        configuration.urlCredentialStorage = nil
         return URLSession(configuration: configuration)
     }
 

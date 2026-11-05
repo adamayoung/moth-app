@@ -11,7 +11,7 @@ import Testing
 @MainActor
 struct LiveAppDependenciesTests {
 
-    @Test("The live session carries no cached response or cookie from one request to the next")
+    @Test("The live session carries no cached response, cookie or credential from one request to the next")
     func liveSessionKeepsNoState() throws {
         let dependencies = LiveAppDependencies(infoDictionary: [:])
         let transport = try #require(dependencies.transport as? URLSessionHTTPTransport)
@@ -19,9 +19,9 @@ struct LiveAppDependenciesTests {
         let configuration = transport.session.configuration
 
         #expect(configuration.urlCache == nil)
-        #expect(configuration.requestCachePolicy == .reloadIgnoringLocalCacheData)
         #expect(configuration.httpCookieStorage == nil)
         #expect(!configuration.httpShouldSetCookies)
+        #expect(configuration.urlCredentialStorage == nil)
     }
 
     @Test("A configured iCloud container identifier is read from the Info.plist")
