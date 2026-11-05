@@ -14,7 +14,9 @@ struct DependencyProviderTests {
 
     private struct OpenFailure: Error {}
 
-    private nonisolated static let seededModes: [AppLaunchMode] = [.uiTesting, .demo, .testHost]
+    private nonisolated static let seededModes: [AppLaunchMode] = [
+        .uiTesting, .uiTestingWithICloudSync, .demo, .testHost
+    ]
     private nonisolated static let allModes: [AppLaunchMode] = [.live] + seededModes
 
     private let adHoc = AppSignature(teamIdentifier: nil, keychainAccessGroup: nil)
@@ -57,6 +59,16 @@ struct DependencyProviderTests {
     @Test("A seeded graph has no iCloud container", arguments: seededModes)
     func seededGraphHasNoICloudContainer(mode: AppLaunchMode) throws {
         #expect(try dependencies(for: mode).iCloudContainerIdentifier == nil)
+    }
+
+    @Test("A seeded graph does not sync", arguments: [AppLaunchMode.uiTesting, .demo, .testHost])
+    func seededGraphDoesNotSync(mode: AppLaunchMode) throws {
+        #expect(try !dependencies(for: mode).isSyncedToICloud)
+    }
+
+    @Test("The UI test launch with iCloud sync reports it as on")
+    func uiTestingWithICloudSyncIsSynced() throws {
+        #expect(try dependencies(for: .uiTestingWithICloudSync).isSyncedToICloud)
     }
 
     @Test("A seeded graph's stores are in memory", arguments: seededModes)

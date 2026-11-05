@@ -33,13 +33,25 @@ final class AppLaunchModeTests {
         arguments: [
             (["Moth", "-UITesting", "1"], AppLaunchMode.uiTesting),
             (["Moth", "-DemoMode", "1"], AppLaunchMode.demo),
-            (["Moth", "-ApplePersistenceIgnoreState", "YES", "-UITesting", "1"], AppLaunchMode.uiTesting)
+            (["Moth", "-ApplePersistenceIgnoreState", "YES", "-UITesting", "1"], AppLaunchMode.uiTesting),
+            (["Moth", "-UITesting", "1", "-UITestICloudSync", "1"], AppLaunchMode.uiTestingWithICloudSync),
+            (["Moth", "-UITesting", "1", "-UITestStoreFailure", "1"], AppLaunchMode.uiTestingStoreFailure)
         ]
     )
     func argumentPairSelectsMode(arguments: [String], expected: AppLaunchMode) throws {
         let mode = try AppLaunchMode(arguments: arguments, defaults: defaults, environment: [:])
 
         #expect(mode == expected)
+    }
+
+    @Test(
+        "A UI test launch pair stops a launch that is not a UI test",
+        arguments: ["-UITestICloudSync", "-UITestStoreFailure"]
+    )
+    func uiTestPairNeedsUITesting(flag: String) {
+        #expect(throws: LaunchConfigurationError.needsUITesting(flag: flag)) {
+            try AppLaunchMode(arguments: ["Moth", flag, "1"], defaults: defaults, environment: [:])
+        }
     }
 
     @Test("Arguments the system adds for itself are ignored")
@@ -211,6 +223,7 @@ final class AppLaunchModeTests {
             (LaunchConfigurationError.conflictingModes, "-UITesting 1 or -DemoMode 1"),
             (LaunchConfigurationError.invalidEnvironment(key: "MOTH_TEST_HOST", value: "0"), "MOTH_TEST_HOST=1"),
             (LaunchConfigurationError.invalidDefault(key: "DemoMode", value: "sometimes"), "DemoMode"),
+            (LaunchConfigurationError.needsUITesting(flag: "-UITestStoreFailure"), "-UITesting 1"),
             (LaunchConfigurationError.cloudKitSchemaNeedsContainer, "MOTH_ICLOUD_CONTAINER"),
             (LaunchConfigurationError.storeUnavailable(detail: "disk full"), "disk full")
         ]

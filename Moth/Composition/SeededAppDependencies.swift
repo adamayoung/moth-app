@@ -12,9 +12,11 @@ final class SeededAppDependencies: AppDependencies {
     let secretStore: any SecretStore = InMemorySecretStore()
     let dataModel: DataModel
     let iCloudContainerIdentifier: String? = nil
+    let isSyncedToICloud: Bool
 
-    init(seed: Workspace?) throws {
+    init(seed: Workspace?, isSyncedToICloud: Bool = false) throws {
         self.dataModel = try .inMemory(seed: seed)
+        self.isSyncedToICloud = isSyncedToICloud
     }
 
 }

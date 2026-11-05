@@ -9,6 +9,10 @@ class MothTestCase: XCTestCase {
 
     private(set) var app: XCUIApplication!
 
+    var additionalLaunchArguments: [String] {
+        []
+    }
+
     override func setUp() async throws {
         continueAfterFailure = false
         await launchApp()
@@ -21,7 +25,7 @@ class MothTestCase: XCTestCase {
             "-UITesting", "1",
             "-ApplePersistenceIgnoreState", "YES",
             "-NSShowNonLocalizedStrings", "YES"
-        ]
+        ] + additionalLaunchArguments
         app.launch()
         self.app = app
     }

@@ -34,6 +34,10 @@ struct MainWindowScreen {
         region("responsePane")
     }
 
+    var iCloudSyncOffFooter: XCUIElement {
+        region("iCloudSyncOffFooter")
+    }
+
     func sidebarText(_ text: String) -> XCUIElement {
         sidebar.staticTexts[text]
     }

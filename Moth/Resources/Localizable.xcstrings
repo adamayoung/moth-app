@@ -133,6 +133,61 @@
         }
       }
     },
+    "SIDEBAR_ICLOUD_SYNC_OFF" : {
+      "comment" : "Sidebar footer shown when this build does not sync.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud Sync Off"
+          }
+        }
+      }
+    },
+    "SIDEBAR_ICLOUD_SYNC_OFF_HELP" : {
+      "comment" : "Tooltip on the sidebar footer shown when this build does not sync.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This build has no iCloud container, so your data stays on this Mac."
+          }
+        }
+      }
+    },
+    "STORE_FAILURE_ALERT_MESSAGE" : {
+      "comment" : "Message of the alert shown when the data store cannot open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit, then open Moth again. If this keeps happening, the data may come from a newer version of Moth."
+          }
+        }
+      }
+    },
+    "STORE_FAILURE_ALERT_QUIT" : {
+      "comment" : "The only button on the alert shown when the data store cannot open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit"
+          }
+        }
+      }
+    },
+    "STORE_FAILURE_ALERT_TITLE" : {
+      "comment" : "Title of the alert shown when the data store cannot open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth can’t open your data."
+          }
+        }
+      }
+    },
     "TAB_STRIP_LABEL" : {
       "comment" : "VoiceOver label for the strip of open request tabs.",
       "localizations" : {

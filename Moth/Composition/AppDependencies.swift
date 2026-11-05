@@ -16,4 +16,6 @@ protocol AppDependencies: AnyObject {
 
     var iCloudContainerIdentifier: String? { get }
 
+    var isSyncedToICloud: Bool { get }
+
 }

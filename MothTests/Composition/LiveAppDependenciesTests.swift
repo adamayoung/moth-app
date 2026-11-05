@@ -137,6 +137,33 @@ struct LiveAppDependenciesTests {
         #expect(opened == nil)
     }
 
+    @Test("A build entitled to its configured container is synced to iCloud")
+    func entitledBuildIsSynced() throws {
+        let dependencies = try makeDependencies(
+            infoDictionary: ["MothICloudContainer": "iCloud.moth"],
+            signature: teamSignedForICloud
+        )
+
+        #expect(dependencies.isSyncedToICloud)
+    }
+
+    @Test("A build with no container is not synced to iCloud")
+    func buildWithoutContainerIsNotSynced() throws {
+        let dependencies = try makeDependencies(infoDictionary: [:], signature: teamSignedForICloud)
+
+        #expect(!dependencies.isSyncedToICloud)
+    }
+
+    @Test("A build not entitled to its configured container is not synced to iCloud")
+    func unentitledBuildIsNotSynced() throws {
+        let dependencies = try makeDependencies(
+            infoDictionary: ["MothICloudContainer": "iCloud.moth"],
+            signature: adHoc
+        )
+
+        #expect(!dependencies.isSyncedToICloud)
+    }
+
     @Test("A store that will not open is an error")
     func storeFailureThrows() {
         #expect(throws: OpenFailure.self) {
