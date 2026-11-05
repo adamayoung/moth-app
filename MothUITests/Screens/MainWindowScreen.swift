@@ -34,8 +34,73 @@ struct MainWindowScreen {
         region("responsePane")
     }
 
+    var renameField: XCUIElement {
+        sidebar.textFields["sidebar.renameField"]
+    }
+
+    var deleteAlert: XCUIElement {
+        app.sheets.firstMatch
+    }
+
     func sidebarText(_ text: String) -> XCUIElement {
         sidebar.staticTexts[text]
+    }
+
+    func sidebarRow(_ name: String) -> XCUIElement {
+        sidebar.outlineRows.containing(.staticText, identifier: name).firstMatch
+    }
+
+    func expand(_ name: String) {
+        sidebarRow(name).disclosureTriangles.firstMatch.click()
+    }
+
+    func select(_ name: String) {
+        sidebarText(name).click()
+    }
+
+    func contextMenu(on name: String) -> XCUIElement {
+        sidebarText(name).rightClick()
+        return sidebar.menus.firstMatch
+    }
+
+    func chooseFromContextMenu(on name: String, _ item: String) {
+        contextMenu(on: name).menuItems[item].click()
+    }
+
+    func fileMenuItem(_ title: String) -> XCUIElement {
+        app.menuBars.menuBarItems["File"].menuItems[title]
+    }
+
+    func openFileMenu() {
+        app.menuBars.menuBarItems["File"].click()
+    }
+
+    func closeMenu() {
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
+    func chooseFromFileMenu(_ title: String) {
+        openFileMenu()
+        fileMenuItem(title).click()
+    }
+
+    func finishRename(typing name: String) {
+        XCTAssertTrue(renameField.waitForExistence(timeout: 10))
+        renameField.typeKey("a", modifierFlags: .command)
+        renameField.typeText(name + "\n")
+    }
+
+    func alertText(_ text: String) -> XCUIElement {
+        deleteAlert.staticTexts.matching(NSPredicate(format: "label == %@ OR value == %@", text, text)).firstMatch
+    }
+
+    func alertButton(_ title: String) -> XCUIElement {
+        deleteAlert.buttons[title]
+    }
+
+    func waitForRowToDisappear(_ name: String) -> Bool {
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: sidebarText(name))
+        return XCTWaiter.wait(for: [gone], timeout: 10) == .completed
     }
 
     func requestEditorText(_ text: String) -> XCUIElement {

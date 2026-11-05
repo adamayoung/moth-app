@@ -8,13 +8,13 @@ import XCTest
 final class AppShellTests: MothTestCase {
 
     @MainActor
-    func testSidebarShowsEachSectionWithItsEmptyText() {
+    func testSidebarShowsEachSectionWithItsContent() {
         let screen = MainWindowScreen(app: app)
 
         XCTAssertTrue(screen.sidebar.waitForExistence(timeout: 10))
 
         for text in [
-            "Collections", "No Collections",
+            "Collections", "Seeded Collection",
             "Environments", "No Environments",
             "History", "No History"
         ] {

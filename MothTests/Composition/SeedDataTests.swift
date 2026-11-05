@@ -37,6 +37,21 @@ struct SeedDataTests {
         #expect(environment.id.uuidString == "00000000-0000-0000-0000-000000000004")
     }
 
+    @Test("The seed gives the delete alert a plural folder and a singular one, as MothUITests expects")
+    func seedHoldsBothDeleteCounts() throws {
+        let collection = try #require(SeedData.workspace.collections.first)
+        guard case .folder(let users) = try #require(collection.children.first).node,
+              case .folder(let admins) = try #require(users.children.last).node else {
+            Issue.record("The seed's first child should be Users, with Admins last inside it")
+            return
+        }
+
+        #expect(users.name == "Users")
+        #expect(users.children.count == 4)
+        #expect(admins.name == "Admins")
+        #expect(admins.children.count == 1)
+    }
+
     @Test("The test host's store is empty")
     func hostStoreIsEmpty() throws {
         let dataModel = try dataModel(for: .testHost)

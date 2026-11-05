@@ -11,10 +11,13 @@ struct MacScene: Scene {
 
     var body: some Scene {
         WindowGroup {
-            MainWindowView()
+            MainWindowView(dataModel: dependencies.dataModel)
         }
         .defaultSize(width: 1100, height: 720)
         .windowResizability(.contentMinSize)
+        .commands {
+            SidebarCommands()
+        }
     }
 
 }

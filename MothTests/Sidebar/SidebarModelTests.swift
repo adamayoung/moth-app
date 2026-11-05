@@ -275,4 +275,25 @@ struct SidebarModelTests {
         #expect(model.renaming == nil)
     }
 
+    @Test("A move reaches the store, and a selected row keeps its selection as it moves")
+    func moveKeepsSelection() async throws {
+        model.selection = .request(top.id)
+
+        await model.move(.request(top.id), to: .container(.folder(empty.id)), before: nil)
+        try deliverTree()
+
+        #expect(model.tree.ancestors(of: .request(top.id)).last == .folder(empty.id))
+        #expect(model.selection == .request(top.id))
+    }
+
+    @Test("A drop the tree cannot hold leaves everything where it was")
+    func invalidMoveChangesNothing() async throws {
+        let before = model.tree
+
+        await model.move(.folder(folder.id), to: .container(.folder(inner.id)), before: nil)
+        try deliverTree()
+
+        #expect(model.tree == before)
+    }
+
 }

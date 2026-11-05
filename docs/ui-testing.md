@@ -19,10 +19,12 @@ missing from the catalog, so a hardcoded string fails the assertion on its copy.
 Demo mode uses the same seeded graph. `-DemoMode 1` or a stored `DemoMode`
 default selects it.
 
-`SeedData.workspace` holds one collection, "Seeded Collection", with one request,
-and one environment, "Seeded Environment", which is the active one. Its
+`SeedData.workspace` holds one collection, "Seeded Collection", and one
+environment, "Seeded Environment", which is the active one. The collection holds
+a folder, "Users", then a request, "Health". "Users" holds three requests and a
+folder, "Admins", which holds one, so a delete alert can count four or one. Its
 identifiers are fixed. UI-test and demo launches load it, and the test host's
-store stays empty.
+store stays empty. A launch starts with every row collapsed.
 
 The UI test bundle cannot import the app target, so a value it shares with the
 app's seed data is mirrored by hand. Change both sides together.

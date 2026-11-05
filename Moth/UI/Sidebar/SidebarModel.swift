@@ -100,6 +100,17 @@ final class SidebarModel {
         await perform { [writer] in try await writer.delete(deletion.id) }
     }
 
+    func move(_ id: TreeNodeID, to parent: SidebarParent, before: TreeNodeID?) async {
+        switch SidebarMove(moving: id, to: parent, before: before, in: tree) {
+        case .collection(let id, let before):
+            await perform { [writer] in try await writer.moveCollection(id, before: before) }
+        case .item(let id, let container, let before):
+            await perform { [writer] in try await writer.moveItem(id, to: container, before: before) }
+        case nil:
+            break
+        }
+    }
+
     private func reveal(_ id: TreeNodeID, in container: TreeContainerID?) {
         if let container {
             let parent = TreeNodeID(container)
