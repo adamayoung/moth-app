@@ -146,8 +146,45 @@ struct RequestBuilderBodyTests {
         #expect(built.notices == [.unsupportedBody(kind)])
     }
 
-    private func build(_ body: RequestBody, headers: [KeyValue] = []) async throws -> BuiltRequest {
-        try await builder.build(ResolvedRequest(url: "https://example.com", headers: headers, body: body))
+    @Test(
+        "A body on a method URLSession cannot send it with is left out and reported",
+        arguments: [HTTPMethod.get, .head, HTTPMethod(rawValue: "get")]
+    )
+    func bodyOnBodilessMethod(method: HTTPMethod) async throws {
+        let built = try await build(.raw(content: "{}", contentType: "application/json"), method: method)
+
+        #expect(built.urlRequest.httpBody == nil)
+        #expect(built.urlRequest.value(forHTTPHeaderField: "Content-Type") == nil)
+        #expect(built.notices == [.bodyNotSent(method: method)])
+    }
+
+    @Test("A body on DELETE is sent")
+    func bodyOnDelete() async throws {
+        let built = try await build(.raw(content: "{}", contentType: "application/json"), method: .delete)
+
+        #expect(text(of: built) == "{}")
+        #expect(built.notices.isEmpty)
+    }
+
+    @Test("A header that hides the form-data boundary keeps its value, and is reported")
+    func manualFormDataContentType() async throws {
+        let built = try await build(
+            .formData([FormDataField(key: "title", value: .text("Hello"))]),
+            headers: [KeyValue(key: "Content-Type", value: "multipart/form-data")]
+        )
+
+        #expect(built.urlRequest.value(forHTTPHeaderField: "Content-Type") == "multipart/form-data")
+        #expect(built.notices == [.formDataBoundaryNotDeclared])
+    }
+
+    private func build(
+        _ body: RequestBody,
+        headers: [KeyValue] = [],
+        method: HTTPMethod = .post
+    ) async throws -> BuiltRequest {
+        try await builder.build(
+            ResolvedRequest(method: method, url: "https://example.com", headers: headers, body: body)
+        )
     }
 
     private func text(of built: BuiltRequest) -> String? {

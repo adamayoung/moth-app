@@ -13,9 +13,11 @@ public nonisolated extension RequestCollection {
             return request.auth
         }
 
-        let chain = [auth] + (Self.folderAuths(leadingTo: request.id, in: children) ?? [])
+        guard let folderAuths = Self.folderAuths(leadingTo: request.id, in: children) else {
+            return .none
+        }
 
-        return chain.last { $0 != .inherit } ?? .none
+        return ([auth] + folderAuths).last { $0 != .inherit } ?? .none
     }
 
     private static func folderAuths(leadingTo requestID: UUID, in items: [CollectionItem]) -> [Auth]? {

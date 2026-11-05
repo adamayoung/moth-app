@@ -10,6 +10,7 @@ nonisolated struct EncodedBody {
     var data: Data?
     var contentType: String?
     var notices: [RequestBuildNotice] = []
+    var needsItsContentType = false
 
 }
 

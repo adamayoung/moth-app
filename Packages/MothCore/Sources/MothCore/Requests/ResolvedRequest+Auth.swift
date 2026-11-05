@@ -17,18 +17,20 @@ nonisolated extension ResolvedRequest {
         }
     }
 
-    var unsupportedAuthKind: UnsupportedAuthKind? {
+    var authNotice: RequestBuildNotice? {
         switch auth {
-        case .inherit, .none, .basic, .bearer:
+        case .none, .basic, .bearer:
             nil
+        case .inherit:
+            .inheritNotReplaced
         case .apiKey:
-            .apiKey
+            .unsupportedAuth(.apiKey)
         case .digest:
-            .digest
+            .unsupportedAuth(.digest)
         case .oauth2:
-            .oauth2
+            .unsupportedAuth(.oauth2)
         case .awsSigV4:
-            .awsSigV4
+            .unsupportedAuth(.awsSigV4)
         }
     }
 

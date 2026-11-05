@@ -80,6 +80,13 @@ struct AuthInheritanceTests {
         #expect(collection.effectiveAuth(of: request) == bearer)
     }
 
+    @Test("A request outside the tree inherits nothing, so no credential reaches it by accident")
+    func requestOutsideTheTree() {
+        let collection = nested(collectionAuth: bearer, folderAuths: [.none])
+
+        #expect(collection.effectiveAuth(of: Request(name: "Elsewhere")) == Auth.none)
+    }
+
     @Test("An inherited credential reaches the header through the resolver and the builder")
     func inheritedCredentialIsSent() async throws {
         let store = InMemorySecretStore()
@@ -99,9 +106,8 @@ struct AuthInheritanceTests {
         #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer abc")
     }
 
-    /// `folderAuths` runs outermost first, and the innermost folder holds `request`.
-    private func nested(collectionAuth: Auth, folderAuths: [Auth]) -> RequestCollection {
-        let children = folderAuths.reversed().reduce([Self.item(.request(request))]) { children, auth in
+    private func nested(collectionAuth: Auth, folderAuths outermostFirst: [Auth]) -> RequestCollection {
+        let children = outermostFirst.reversed().reduce([Self.item(.request(request))]) { children, auth in
             [Self.item(.folder(Folder(name: "Folder", auth: auth, children: children)))]
         }
 

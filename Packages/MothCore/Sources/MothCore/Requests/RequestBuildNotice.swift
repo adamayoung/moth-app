@@ -8,6 +8,10 @@ public nonisolated enum RequestBuildNotice: Sendable, Hashable {
     case unsupportedAuth(UnsupportedAuthKind)
     case unsupportedBody(UnsupportedBodyKind)
     case unsupportedFormDataFile(key: String)
+    case unsendableHeader(name: String)
+    case bodyNotSent(method: HTTPMethod)
+    case formDataBoundaryNotDeclared
+    case inheritNotReplaced
 
 }
 

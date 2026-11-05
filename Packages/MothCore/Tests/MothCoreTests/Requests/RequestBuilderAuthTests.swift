@@ -68,15 +68,39 @@ struct RequestBuilderAuthTests {
         #expect(built.notices == [.unsupportedAuth(kind)])
     }
 
-    @Test(
-        "No auth, and an Inherit with nothing to inherit, leave a manual header alone",
-        arguments: [Auth.none, .inherit]
-    )
-    func noAuth(auth: Auth) async throws {
-        let built = try await build(auth: auth, headers: [KeyValue(key: "Authorization", value: "Bearer manual")])
+    @Test("No auth leaves a manual header alone")
+    func noAuth() async throws {
+        let built = try await build(auth: .none, headers: [KeyValue(key: "Authorization", value: "Bearer manual")])
 
         #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer manual")
         #expect(built.notices.isEmpty)
+    }
+
+    @Test("Inherit reaching the builder sends no auth and is reported, because a caller skipped effectiveAuth(of:)")
+    func inheritNotReplaced() async throws {
+        let built = try await build(auth: .inherit)
+
+        #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == nil)
+        #expect(built.notices == [.inheritNotReplaced])
+    }
+
+    @Test(
+        "A token a header cannot carry is an error, so a manual header cannot go out in its place",
+        arguments: ["abc\n", "日本"]
+    )
+    func unsendableToken(token: String) async {
+        await #expect(throws: RequestBuildError.invalidBearerToken) {
+            try await build(
+                auth: .bearer(BearerAuth(token: secret)),
+                credentials: [secret: token],
+                headers: [KeyValue(key: "Authorization", value: "Bearer manual")]
+            )
+        }
+    }
+
+    @Test("The token error reads as the app shows it")
+    func invalidTokenDescription() {
+        #expect(RequestBuildError.invalidBearerToken.errorDescription == "This token can’t be sent in a header.")
     }
 
     @Test(

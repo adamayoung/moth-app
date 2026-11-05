@@ -130,15 +130,19 @@ body. Digest answers a 401 challenge, so it also needs the transport to retry.
 `.inherit` is replaced before resolution, by `RequestCollection.effectiveAuth(of:)`,
 because `VariableResolver` fetches secrets only for the auth it is given. The walk
 goes up through folders to the collection and stops at the first that sets auth,
-where setting `.none` counts.
+where setting `.none` counts. A request outside the tree inherits nothing, so a
+credential cannot reach it by accident.
 
 `RequestBuilder` turns a `ResolvedRequest` into the `URLRequest` that `HTTPKit`
-sends. An empty or unsendable URL throws. What it cannot send yet stays out of the
-request and is reported in `BuiltRequest.notices`: an auth kind with no provider,
-a binary or GraphQL body, and a form-data file field. A credential with no stored
-value sends no auth, and `ResolvedRequest.unresolvedCredentials` already reports
-it. An auth provider's `Authorization` header replaces a manual one. `URLRequest`
-holds one value per header name, so repeated names go out comma-joined.
+sends. An invalid URL or method, or a Bearer token a header cannot hold, throws.
+What it cannot send stays out of the request and is reported in
+`BuiltRequest.notices`: an auth kind with no provider, a binary or GraphQL body, a
+form-data file field, a header URLSession would drop or alter, and a body on GET
+or HEAD. A credential with no stored value sends no auth, and
+`ResolvedRequest.unresolvedCredentials` already reports it. An auth provider's
+`Authorization` header replaces a manual one. `URLRequest` holds one value per
+header name, so repeated names go out comma-joined, and repeated cookies joined by
+`; `.
 
 ## Persistence
 

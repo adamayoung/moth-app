@@ -14,6 +14,10 @@ public nonisolated struct BearerAuthProvider: AuthProvider {
     }
 
     public func apply(to request: inout URLRequest) async throws {
+        guard token.isSendableHeaderValue else {
+            throw RequestBuildError.invalidBearerToken
+        }
+
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
 

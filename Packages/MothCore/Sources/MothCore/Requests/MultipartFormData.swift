@@ -28,7 +28,8 @@ nonisolated struct MultipartFormData {
         return EncodedBody(
             data: Data(body.utf8),
             contentType: "multipart/form-data; boundary=\(boundary)",
-            notices: notices
+            notices: notices,
+            needsItsContentType: true
         )
     }
 

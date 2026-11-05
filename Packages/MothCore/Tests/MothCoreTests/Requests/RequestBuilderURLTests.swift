@@ -74,6 +74,16 @@ struct RequestBuilderURLTests {
         #expect(url == "https://example.com/users/:id")
     }
 
+    @Test("A path variable with no value stays as written, so a blank cannot change the route")
+    func emptyPathVariable() async throws {
+        let url = try await builtURL(
+            "https://example.com/users/:id/sessions",
+            pathParameters: [KeyValue(key: "id", value: "")]
+        )
+
+        #expect(url == "https://example.com/users/:id/sessions")
+    }
+
     @Test("A path variable named like a port, or matching only part of a segment, changes nothing")
     func pathVariableOnlyMatchesWholePathSegments() async throws {
         let url = try await builtURL(
@@ -90,7 +100,9 @@ struct RequestBuilderURLTests {
             ("example.com/users", "http://example.com/users"),
             ("localhost:8080/users", "http://localhost:8080/users"),
             ("example.com/next?to=https://other.test", "http://example.com/next?to=https://other.test"),
-            ("  example.com  ", "http://example.com")
+            ("  example.com  ", "http://example.com"),
+            ("192.0.2.1:8080/users", "http://192.0.2.1:8080/users"),
+            ("[::1]:8080/users", "http://[::1]:8080/users")
         ]
     )
     func defaultScheme(address: String, expected: String) async throws {
@@ -115,7 +127,12 @@ struct RequestBuilderURLTests {
             "http://example.com:port",
             "http://[example.com",
             "file:///etc/hosts",
-            "ftp://example.com"
+            "ftp://example.com",
+            "file:/etc/hosts",
+            "mailto:a@example.com",
+            "example.com:port",
+            "http://example.com:99999",
+            "http://example.com:0"
         ]
     )
     func invalidURL(address: String) async {
