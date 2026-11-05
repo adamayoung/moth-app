@@ -57,7 +57,13 @@ so trust the final `Ran N test(s).` line rather than only `** TEST SUCCEEDED **`
 
 `TestPlans/UnitTests.xctestplan` contains the app and package unit targets.
 `UITests.xctestplan` contains the full UI target. A new target must be added to
-the relevant plan and the scheme.
+the relevant plan. The `Moth` scheme lists the plans, not their targets, so it
+needs no entry.
+
+A package's test target also needs its package under the project's `Packages`
+folder entry, which belongs to no target. With the packages in the project's
+`packages` array, which `xcrun xcodeproj pkg add-local` writes, `make test`
+passed having run none of their tests, so check the count after adding one.
 
 ## Writing Swift Tests
 
