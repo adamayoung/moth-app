@@ -73,7 +73,7 @@ final class LoopbackServer: Sendable {
     }
 
     private static func path(of request: Data) -> String {
-        String(decoding: request, as: UTF8.self).split(separator: " ").dropFirst().first.map(String.init) ?? ""
+        String(bytes: request, encoding: .utf8)?.split(separator: " ").dropFirst().first.map(String.init) ?? ""
     }
 
 }
