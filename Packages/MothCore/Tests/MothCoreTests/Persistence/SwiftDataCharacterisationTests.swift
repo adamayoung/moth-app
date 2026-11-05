@@ -85,22 +85,15 @@ struct SwiftDataCharacterisationTests {
     }
 
     @Test(
-        "Characterises SwiftData: related models in two in-memory configurations both land in one store",
-        arguments: [
-            [ownersConfiguration, itemsConfiguration],
-            [itemsConfiguration, ownersConfiguration]
-        ]
+        "Characterises SwiftData: related models in two configurations both land in one store",
+        arguments: StoreLocation.allCases
     )
-    func characterisesRelatedModelsLandingInOneStore(configurationNames: [String]) throws {
-        let configurations = configurationNames.map { name in
-            name == Self.ownersConfiguration
-                ? Self.inMemoryConfiguration(named: name, for: [CrossStoreOwner.self])
-                : Self.inMemoryConfiguration(named: name, for: [CrossStoreItem.self])
-        }
-        let container = try ModelContainer(
-            for: Schema([CrossStoreOwner.self, CrossStoreItem.self]),
-            configurations: configurations
-        )
+    func characterisesRelatedModelsLandingInOneStore(location: StoreLocation) throws {
+        let directory = try Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let (container, configurations) = try Self.makeRelatedModelContainer(at: location, in: directory)
+        defer { container.deleteAllData() }
+
         let writer = ModelContext(container)
         let owner = CrossStoreOwner(name: "owner")
         let item = CrossStoreItem(label: "item")
@@ -109,15 +102,21 @@ struct SwiftDataCharacterisationTests {
         item.owner = owner
         try writer.save()
 
-        #expect(owner.persistentModelID.storeIdentifier == item.persistentModelID.storeIdentifier)
+        let ownerStore = try #require(owner.persistentModelID.storeIdentifier)
+        let itemStore = try #require(item.persistentModelID.storeIdentifier)
+        #expect(ownerStore == itemStore)
         for configuration in configurations {
             let entities = configuration.schema?.entities.map(\.name).sorted()
             #expect(entities == ["CrossStoreItem", "CrossStoreOwner"])
         }
-        let readBack = try #require(ModelContext(container).fetch(FetchDescriptor<CrossStoreItem>()).first)
-        #expect(readBack.owner?.name == "owner")
+        let reader = ModelContext(container)
+        try withExtendedLifetime(reader) {
+            let readBack = try #require(reader.fetch(FetchDescriptor<CrossStoreItem>()).first)
+            #expect(readBack.owner?.name == "owner")
+        }
     }
 
+    #if os(macOS)
     @Test("Characterises SwiftData: relating rows already in two stores traps at the assignment")
     func characterisesARelationshipBetweenRowsInTwoStores() async throws {
         let directory = try Self.makeTemporaryDirectory()
@@ -135,9 +134,10 @@ struct SwiftDataCharacterisationTests {
         #expect(standardError.contains("Illegal attempt to relate"))
         #expect(standardError.contains("to a model in another store"))
     }
+    #endif
 
     @Test(
-        "Characterises SwiftData: a stale save of the property a second context changed",
+        "Characterises SwiftData: a stale save of the same property overwrites a second context's change",
         arguments: StoreLocation.allCases
     )
     func characterisesAStaleSaveOfTheSameProperty(location: StoreLocation) throws {
@@ -156,7 +156,7 @@ struct SwiftDataCharacterisationTests {
     }
 
     @Test(
-        "Characterises SwiftData: a stale save of a different property of the row a second context changed",
+        "Characterises SwiftData: a stale save of a different property reverts a second context's change",
         arguments: StoreLocation.allCases
     )
     func characterisesAStaleSaveOfADifferentProperty(location: StoreLocation) throws {
@@ -175,7 +175,7 @@ struct SwiftDataCharacterisationTests {
     }
 
     @Test(
-        "Characterises SwiftData: a long-lived context's re-fetch sees a second context's save",
+        "Characterises SwiftData: a long-lived context's fetch by identifier refreshes a held row",
         arguments: StoreLocation.allCases
     )
     func characterisesARefetchInALongLivedContext(location: StoreLocation) throws {
@@ -185,13 +185,78 @@ struct SwiftDataCharacterisationTests {
             #expect(held.title == "seeded")
 
             try Self.changeTitleInASecondContext(of: container)
-            let refetched = try #require(longLived.fetch(FetchDescriptor<StaleSaveRow>()).first)
-            #expect(refetched.title == "second")
+            let refetched = try Self.fetchRow(held.persistentModelID, in: longLived)
+            #expect(refetched === held)
+            #expect(held.title == "second")
             refetched.notes = "long-lived"
             try longLived.save()
 
             let saved = try Self.savedValues(in: container)
             #expect(saved == RowValues(title: "second", notes: "long-lived"))
+        }
+    }
+
+    @Test(
+        "Characterises SwiftData: model(for:) leaves a held row stale, so its save reverts a second context's change",
+        arguments: StoreLocation.allCases
+    )
+    func characterisesModelForInALongLivedContext(location: StoreLocation) throws {
+        try Self.withSeededContainer(at: location) { container in
+            let longLived = ModelContext(container)
+            let held = try #require(longLived.fetch(FetchDescriptor<StaleSaveRow>()).first)
+            #expect(held.title == "seeded")
+
+            try Self.changeTitleInASecondContext(of: container)
+            let resolved = try #require(longLived.model(for: held.persistentModelID) as? StaleSaveRow)
+            #expect(resolved.title == "seeded")
+            resolved.notes = "long-lived"
+            try longLived.save()
+
+            let saved = try Self.savedValues(in: container)
+            #expect(saved == RowValues(title: "seeded", notes: "long-lived"))
+        }
+    }
+
+    @Test(
+        "Characterises SwiftData: a fetch leaves a row with unsaved changes stale, so its save reverts",
+        arguments: StoreLocation.allCases
+    )
+    func characterisesAFetchOverUnsavedChanges(location: StoreLocation) throws {
+        try Self.withSeededContainer(at: location) { container in
+            let longLived = ModelContext(container)
+            let held = try #require(longLived.fetch(FetchDescriptor<StaleSaveRow>()).first)
+            held.notes = "pending"
+
+            try Self.changeTitleInASecondContext(of: container)
+            let refetched = try Self.fetchRow(held.persistentModelID, in: longLived)
+            #expect(refetched.title == "seeded")
+            try longLived.save()
+
+            let saved = try Self.savedValues(in: container)
+            #expect(saved == RowValues(title: "seeded", notes: "pending"))
+        }
+    }
+
+    @Test(
+        "Characterises SwiftData: a rollback lets the next fetch refresh the row",
+        arguments: StoreLocation.allCases
+    )
+    func characterisesARollbackBeforeTheFetch(location: StoreLocation) throws {
+        try Self.withSeededContainer(at: location) { container in
+            let longLived = ModelContext(container)
+            let held = try #require(longLived.fetch(FetchDescriptor<StaleSaveRow>()).first)
+            held.notes = "pending"
+
+            try Self.changeTitleInASecondContext(of: container)
+            longLived.rollback()
+            let refetched = try Self.fetchRow(held.persistentModelID, in: longLived)
+            #expect(refetched.title == "second")
+            #expect(refetched.notes == "seeded")
+            refetched.notes = "after rollback"
+            try longLived.save()
+
+            let saved = try Self.savedValues(in: container)
+            #expect(saved == RowValues(title: "second", notes: "after rollback"))
         }
     }
 
@@ -213,6 +278,7 @@ struct SwiftDataCharacterisationTests {
         }
     }
 
+    #if os(macOS)
     static func relateRowsInTwoStores(in directory: URL) throws {
         let schema = Schema([CrossStoreOwner.self, CrossStoreItem.self])
         let owners = onDiskConfiguration(named: ownersConfiguration, schema: schema, in: directory)
@@ -224,9 +290,39 @@ struct SwiftDataCharacterisationTests {
         let context = ModelContext(container)
         let owner = try #require(context.fetch(FetchDescriptor<CrossStoreOwner>()).first)
         let item = try #require(context.fetch(FetchDescriptor<CrossStoreItem>()).first)
-        try #require(owner.persistentModelID.storeIdentifier != item.persistentModelID.storeIdentifier)
+        let ownerStore = try #require(owner.persistentModelID.storeIdentifier)
+        let itemStore = try #require(item.persistentModelID.storeIdentifier)
+        try #require(ownerStore != itemStore)
 
         item.owner = owner
+    }
+    #endif
+
+    private static func makeRelatedModelContainer(
+        at location: StoreLocation,
+        in directory: URL
+    ) throws -> (ModelContainer, [ModelConfiguration]) {
+        let configurations = switch location {
+        case .inMemory:
+            [
+                inMemoryConfiguration(named: ownersConfiguration, for: [CrossStoreOwner.self]),
+                inMemoryConfiguration(named: itemsConfiguration, for: [CrossStoreItem.self])
+            ]
+        case .onDisk:
+            [
+                onDiskConfiguration(
+                    named: ownersConfiguration,
+                    schema: Schema([CrossStoreOwner.self]),
+                    in: directory
+                ),
+                onDiskConfiguration(named: itemsConfiguration, schema: Schema([CrossStoreItem.self]), in: directory)
+            ]
+        }
+        let container = try ModelContainer(
+            for: Schema([CrossStoreOwner.self, CrossStoreItem.self]),
+            configurations: configurations
+        )
+        return (container, configurations)
     }
 
     /// `.automatic`, the default, uses CloudKit when the test host has the entitlement.
@@ -250,6 +346,7 @@ struct SwiftDataCharacterisationTests {
         )
     }
 
+    #if os(macOS)
     private static func seed(
         _ row: some PersistentModel,
         in configuration: ModelConfiguration,
@@ -260,6 +357,7 @@ struct SwiftDataCharacterisationTests {
         context.insert(row)
         try context.save()
     }
+    #endif
 
     /// `deleteAllData` runs first because SQLite logs a client bug when an open store is unlinked.
     private static func withSeededContainer(
@@ -295,9 +393,22 @@ struct SwiftDataCharacterisationTests {
         try second.save()
     }
 
+    private static func fetchRow(
+        _ identifier: PersistentIdentifier,
+        in context: ModelContext
+    ) throws -> StaleSaveRow {
+        let descriptor = FetchDescriptor<StaleSaveRow>(
+            predicate: #Predicate { $0.persistentModelID == identifier }
+        )
+        return try #require(context.fetch(descriptor).first)
+    }
+
     private static func savedValues(in container: ModelContainer) throws -> RowValues {
-        let row = try #require(ModelContext(container).fetch(FetchDescriptor<StaleSaveRow>()).first)
-        return RowValues(title: row.title, notes: row.notes)
+        let reader = ModelContext(container)
+        return try withExtendedLifetime(reader) {
+            let row = try #require(reader.fetch(FetchDescriptor<StaleSaveRow>()).first)
+            return RowValues(title: row.title, notes: row.notes)
+        }
     }
 
     private static func makeTemporaryDirectory() throws -> URL {

@@ -153,13 +153,18 @@ each other's change. The save does not fail: a stale context that changes one
 property puts the row's other properties back to the values it read, and `save()`
 returns normally.
 
-A fetch prevents this. It brings a row up to date even in a long-lived context
-that still holds an instance of the row, so `StoreActor` can keep one context and
-needs no new one per write. An edit to an instance held since an earlier fetch
-is the unsafe case. So every write runs on `StoreActor` or through `StoreWriter`,
-fetching rows by identifier immediately before changing them and saving in one
-synchronous step. The main context reads only, with autosave off. An editor edits
-a value-type draft and commits it through the writer.
+A `FetchDescriptor` fetch prevents this: it brings a row up to date even in a
+long-lived context that still holds an instance of the row. Two things defeat it.
+`ModelContext.model(for:)` returns the held instance without refreshing it, so it
+never stands in for a fetch. A fetch also leaves a row with unsaved changes as it
+was, so a context with pending changes reverts other writers on its next save.
+
+So `StoreActor` can keep one context and needs no new one per write. Every write
+runs on `StoreActor` or through `StoreWriter`: fetch rows by identifier with a
+`FetchDescriptor` immediately before changing them, save in one synchronous step,
+and call `rollback()` if the save throws, which clears the pending changes so the
+next fetch refreshes the row. The main context reads only, with autosave off. An
+editor edits a value-type draft and commits it through the writer.
 
 ## Secrets
 
@@ -213,15 +218,16 @@ outside its own container, and never touches another tool's configuration.
 
 Settle each with a test before the code that depends on it.
 `SwiftDataCharacterisationTests` in `MothCoreTests` holds the tests behind the
-settled answers, and fails if an SDK changes them.
+settled answers, and fails if an OS or SDK update changes them.
 
 - **Cross-store relationships: settled.** A relationship cannot cross the two
   stores. A configuration's schema takes in every model its models relate to, so
   two related models belong to both configurations, and SwiftData puts both rows
-  in one store with no error. Listing order does not choose that store, so a
-  relationship from a local model to a synced one could put local rows in the
-  synced store. Relating rows that are already in different stores is a fatal
-  error at the assignment, before any save, and no `catch` can handle it.
+  in one store with no error. Which store varied between containers opened with
+  the same configurations, so a relationship from a local model to a synced one
+  could put local rows in the synced store. Relating rows that are already in
+  different stores is a fatal error at the assignment, before any save, and no
+  `catch` can handle it. These tests use `cloudKitDatabase: .none` stores.
 - **A second context as a second writer: settled.** A stale save reverts the other
   context's change, as [Writing to the Store](#writing-to-the-store) describes.
   This holds for a second `ModelContext` on one container, in memory and on disk.
