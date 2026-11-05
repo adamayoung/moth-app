@@ -10,16 +10,17 @@ struct DependencyProvider {
     /// `App.main()` calls a parameterless `init()`, so the launcher and the `App` can only share one graph here.
     static let current = DependencyProvider(
         launchMode: resolveLaunchMode(),
-        infoDictionary: Bundle.main.infoDictionary ?? [:]
+        infoDictionary: Bundle.main.infoDictionary ?? [:],
+        signature: .current()
     )
 
     let launchMode: AppLaunchMode
     let dependencies: any AppDependencies
 
-    init(launchMode: AppLaunchMode, infoDictionary: [String: Any]) {
+    init(launchMode: AppLaunchMode, infoDictionary: [String: Any], signature: AppSignature) {
         self.launchMode = launchMode
         self.dependencies = switch launchMode {
-        case .live: LiveAppDependencies(infoDictionary: infoDictionary)
+        case .live: LiveAppDependencies(infoDictionary: infoDictionary, signature: signature)
         case .uiTesting, .demo, .testHost: SeededAppDependencies()
         }
     }

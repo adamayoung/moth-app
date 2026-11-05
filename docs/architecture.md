@@ -65,7 +65,8 @@ before the first distribution build.
 long-lived graph for the current `AppLaunchMode`:
 
 - live launches use the persistent stores, CloudKit, the real transport and the
-  Keychain;
+  Keychain, or an in-memory secret store when the build is ad hoc
+  ([Secrets](#secrets) says why);
 - UI-test and demo launches use seeded data, in-memory stores and an in-memory
   secret store;
 - the test host that app-hosted unit tests run in opens no windows, and its
@@ -171,6 +172,32 @@ sets these conditions:
 A reference can sync before its secret does, or the user may have iCloud
 Keychain turned off. A missing secret is a normal state the UI must handle.
 
+### Which Store a Build Uses
+
+`AppSignature` reads the running app's own signature, and `LiveAppDependencies`
+chooses from it, so the entitlement decides and a build setting cannot disagree:
+
+| Build | Secret store |
+| --- | --- |
+| Ad hoc or unsigned | `InMemorySecretStore`, so secrets last until quit |
+| Team-signed, no iCloud container | `KeychainSecretStore` in `.localOnly` mode, on the login keychain |
+| Team-signed, iCloud container | `KeychainSecretStore` in `.synchronised` mode, under the app's access group |
+
+Moth never causes a Keychain password prompt, and that decides the first row. An
+ad hoc build's designated requirement is its cdhash, so a rebuilt binary is a
+different app to an item's access list, and reading an item an earlier build
+saved prompts for a password. `kSecUseAuthenticationUI` and
+`LAContext.interactionNotAllowed` do not stop that prompt on the login keychain.
+The data protection keychain returns `errSecMissingEntitlement` to an ad hoc
+build, and signing one with `keychain-access-groups` gets it killed at launch.
+
+Only the iCloud entitlements carry `keychain-access-groups`, so a team-signed
+build with no container uses the login keychain. Its identity is stable, so a
+rebuild reads and replaces an item with no prompt. Removing an item an earlier
+build saved fails with `errSecInvalidOwnerEdit`, and reports that as an error.
+The service name holds the team, so one team's build never queries another's
+items, which would prompt.
+
 ## Configs and Signing
 
 `Configs/Debug.xcconfig` and `Configs/Release.xcconfig` set warnings as errors.
@@ -178,7 +205,7 @@ Each ends with `#include? "Local.xcconfig"`, a gitignored file where a contribut
 sets their own team. The iCloud container comes from a build setting. A build
 without one runs on `cloudKitDatabase: .none`, so a contributor can build Moth
 without the owner's signing identity. Local builds sign, ad hoc until a team is
-set. CI builds with `CODE_SIGNING_ALLOWED=NO`, which has neither iCloud nor
+set, and an ad hoc build keeps secrets in memory. CI builds with `CODE_SIGNING_ALLOWED=NO`, which has neither iCloud nor
 Keychain entitlements, so it uses `.none` stores and an in-memory secret store.
 
 The app is sandboxed with outgoing network connections allowed. It carries an
