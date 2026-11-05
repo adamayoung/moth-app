@@ -9,8 +9,7 @@ import SwiftData
 /// Frozen once on `main`. `SchemaV1Tests` pins the shape and `StoredJSONTests` the JSON in the `Data` attributes.
 ///
 /// Models are `public` for `@Query`, and only this module can set a property, so that every write goes through
-/// ``StoreWriter``. They nest here rather than in an `extension`, because SwiftFormat would hoist `public` onto the
-/// extension, and `@Model` reads the modifiers on the class. They are `nonisolated` so `@StoreActor` can use them.
+/// ``StoreWriter``. They nest here, not in a `public`-only `extension`, because `@Model` reads the class's modifiers.
 public nonisolated enum SchemaV1: VersionedSchema {
 
     public static let versionIdentifier = Schema.Version(1, 0, 0)
