@@ -20,6 +20,7 @@ struct MainWindowView: View {
         secretStore: any SecretStore,
         activeEnvironment: ActiveEnvironment,
         tabStore: RequestTabStore,
+        requestDrafts: RequestDrafts,
         isSyncedToICloud: Bool
     ) {
         self.dataModel = dataModel
@@ -30,7 +31,7 @@ struct MainWindowView: View {
             secretStore: secretStore,
             activeEnvironment: activeEnvironment
         )
-        self.tabs = RequestTabsModel(store: tabStore)
+        self.tabs = RequestTabsModel(store: tabStore, drafts: requestDrafts)
     }
 
     var body: some View {
@@ -67,6 +68,7 @@ struct MainWindowView: View {
             secretStore: InMemorySecretStore(),
             activeEnvironment: ActiveEnvironment(inMemory: SeedData.workspace.activeEnvironmentID),
             tabStore: .preview,
+            requestDrafts: RequestDrafts(writer: dataModel.writer),
             isSyncedToICloud: false
         )
         .frame(width: 1100, height: 720)

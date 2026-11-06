@@ -16,6 +16,7 @@ final class SeededAppDependencies: AppDependencies {
     let isSyncedToICloud: Bool
     let activeEnvironment: ActiveEnvironment
     let requestTabStore: RequestTabStore
+    let requestDrafts: RequestDrafts
 
     init(
         seed: Workspace?,
@@ -23,7 +24,9 @@ final class SeededAppDependencies: AppDependencies {
         restoresTabs: Bool = false,
         tabDefaults: UserDefaults = .standard
     ) throws {
-        self.dataModel = try .inMemory(seed: seed)
+        let dataModel = try DataModel.inMemory(seed: seed)
+        self.dataModel = dataModel
+        self.requestDrafts = RequestDrafts(writer: dataModel.writer)
         self.isSyncedToICloud = isSyncedToICloud
         self.activeEnvironment = ActiveEnvironment(inMemory: seed?.activeEnvironmentID)
         self.requestTabStore = RequestTabStore(defaults: tabDefaults, key: "SeededRequestTabs")
