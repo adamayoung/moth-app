@@ -103,6 +103,12 @@ The rules of a worktree run, and the first is absolute:
      on; that is theirs to run).
      Carry on without the Xcode MCP: `make build` is then your cheapest check,
      and the report names each preview unrendered and why.
+   - Close the workspace (`XcodeCloseWorkspace` with its identifier) before
+     the step 8 report and before any stop that ends the run. The user can
+     remove the tree from then on, and removing a tree the headless server
+     still has open puts error dialogs on their screen. If later work needs
+     it, such as a review comment, open it again with `XcodeOpenWorkspace`,
+     use the identifier that returns, and close it before you next report.
 2. **Keep git commands simple, and pass prose through files.** The worktree
    isolation guard refuses edits and git commands aimed at the main checkout,
    and inspects command *text*: it refuses anything that "names git in a form
@@ -681,8 +687,9 @@ write into the main checkout (rule 5):
 
 **While the PR is open, leave the worktree alone.** The branch is checked out
 there, its `DerivedData` is warm, and a review comment is easiest to answer in
-the tree the code was written in, and this session stays in it. End the report
-with the path and the command that clears it, so the user can run it from the
+the tree the code was written in, and this session stays in it. Its workspace
+is already closed (rule 1), because the command below takes no account of it.
+End the report with the path and the command that clears it, so the user can run it from the
 main checkout after the merge:
 
 ```
@@ -703,8 +710,8 @@ git status --porcelain | wc -l              # must be 0
 gh pr view <branch> --json state -q .state  # must be MERGED
 ```
 
-Close your workspace first (`XcodeCloseWorkspace` with its identifier), so the
-headless server lets go of the tree. Then call `ExitWorktree` with `keep`, which returns the session to the main
+If your workspace is open again, close it first (`XcodeCloseWorkspace` with its
+identifier), so the headless server lets go of the tree. Then call `ExitWorktree` with `keep`, which returns the session to the main
 checkout and leaves removal to the commands below. From there, remove the
 worktree and delete the feature branch, any fix branches this run opened, and
 the generated `worktree-issue-<N>` branch (or the one step 2 noted for a tree
