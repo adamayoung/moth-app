@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import CoreData
 import Foundation
 @testable import MothCore
 import SQLite3
@@ -35,7 +36,7 @@ private enum NewerLocalStoreFixture {
 
 }
 
-private nonisolated enum PlannedFixtureV1: VersionedSchema {
+nonisolated enum PlannedFixtureV1: VersionedSchema {
 
     static let versionIdentifier = Schema.Version(1, 0, 0)
 
@@ -54,7 +55,7 @@ private nonisolated enum PlannedFixtureV1: VersionedSchema {
 
 }
 
-private nonisolated enum PlannedFixtureV2: VersionedSchema {
+nonisolated enum PlannedFixtureV2: VersionedSchema {
 
     static let versionIdentifier = Schema.Version(2, 0, 0)
 
@@ -74,7 +75,7 @@ private nonisolated enum PlannedFixtureV2: VersionedSchema {
 
 }
 
-private nonisolated enum PlannedFixtureV3: VersionedSchema {
+nonisolated enum PlannedFixtureV3: VersionedSchema {
 
     static let versionIdentifier = Schema.Version(3, 0, 0)
 
@@ -109,7 +110,7 @@ private nonisolated enum PlannedFixtureMigrationPlan: SchemaMigrationPlan {
 
 struct SwiftDataNewerStoreCharacterisationTests {
 
-    @Test("Characterises SwiftData: a store from a newer schema opens with no error and loses the newer column")
+    @Test("Characterises SwiftData: with no stages in the plan, a newer store opens and loses the newer column")
     func characterisesOpeningANewerStore() throws {
         let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -117,10 +118,39 @@ struct SwiftDataNewerStoreCharacterisationTests {
         try Self.writeNewerStore(in: directory)
         #expect(try Self.values(of: Self.columnsQuery, at: store).contains(Self.newerColumn))
 
-        _ = try DataModel(location: .directory(directory), containerIdentifier: nil)
+        let configurations = StoreConfigurations(location: .directory(directory), containerIdentifier: nil)
+        _ = try ModelContainer(
+            for: Schema(versionedSchema: SchemaV1.self),
+            migrationPlan: MothMigrationPlan.self,
+            configurations: configurations.all
+        )
 
         #expect(try Self.values(of: Self.rowCountQuery, at: store) == ["1"])
         #expect(try !Self.values(of: Self.columnsQuery, at: store).contains(Self.newerColumn))
+    }
+
+    @Test("DataModel refuses the store SwiftData would have damaged, which keeps its row and its column")
+    func dataModelRefusesANewerStore() throws {
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = directory.appending(path: "Local.store")
+        try Self.writeNewerStore(in: directory)
+
+        #expect(throws: UnknownStoreSchemaError(storeName: "Local.store")) {
+            try DataModel(location: .directory(directory), containerIdentifier: nil)
+        }
+
+        #expect(try Self.values(of: Self.rowCountQuery, at: store) == ["1"])
+        #expect(try Self.values(of: Self.columnsQuery, at: store).contains(Self.newerColumn))
+    }
+
+    @Test("Characterises Core Data: SchemaV1's entity hashes hold, or StoreSchemaCheck refuses every existing store")
+    func characterisesSchemaV1EntityHashes() throws {
+        let model = try #require(NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.models))
+
+        let hashes = model.entityVersionHashesByName.mapValues { $0.base64EncodedString() }
+
+        #expect(hashes == Self.schemaV1EntityHashes)
     }
 
     @Test("Characterises SwiftData: with a migration stage in the plan, a store from a newer schema does not open")
@@ -152,6 +182,16 @@ struct SwiftDataNewerStoreCharacterisationTests {
         #expect(try Self.values(of: "SELECT name FROM pragma_table_info('ZPLANNEDROW')", at: store)
             .contains("ZADDEDINV3"))
     }
+
+    private static let schemaV1EntityHashes = [
+        "CollectionModel": "0UCbueFqp5AjBe2Zvss2MzYdufmxScVCls1USPloZog=",
+        "EnvironmentModel": "bEwXj35RNQw3GS0vEJkQCVUhzS9YbOsaFwHO4CztWk8=",
+        "FolderModel": "NuXp8/YOwcg9bUo4T4h14juzE7p8/hZcavAYvyYntoc=",
+        "HistoryEntryModel": "EgOwK7XyKkKnFzvXvlEQDPIfrmc862y3ZKKf31gY89k=",
+        "RequestModel": "6KEPNCfhOrUgft6i+1Ui8UfrXc0ya40rnrzQUWIdUMA=",
+        "VariableModel": "5heyuByXhjnR7/js10D3bA7u3mBXQbm6QIWyfAMtGZo=",
+        "WorkspaceModel": "Q4zOCtY8A+VFp9W/FNpHP3JMah1I1HoXrU/WSebZOeo="
+    ]
 
     private static let columnsQuery = "SELECT name FROM pragma_table_info('ZHISTORYENTRYMODEL')"
     private static let rowCountQuery = "SELECT COUNT(*) FROM ZHISTORYENTRYMODEL"

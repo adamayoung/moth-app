@@ -68,7 +68,7 @@ struct DependencyProvider {
                 throw failure
             }
             report(failure)
-            return .storeFailure(StoreFailureAlert())
+            return .storeFailure(StoreFailureAlert(cause: error))
         }
     }
 

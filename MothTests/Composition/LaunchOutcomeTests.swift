@@ -6,7 +6,17 @@
 import Foundation
 @testable import Moth
 import MothCore
+import SwiftData
 import Testing
+
+@Model
+private final nonisolated class AddedInNewerSchema {
+
+    var name = "newer data"
+
+    init() {}
+
+}
 
 @MainActor
 struct LaunchOutcomeTests {
@@ -15,6 +25,9 @@ struct LaunchOutcomeTests {
 
     private static let expectedMessage =
         "Quit, then open Moth again. If this keeps happening, the data may come from a newer version of Moth."
+
+    private static let newerSchemaMessage =
+        "This data was saved by a newer version of Moth. Update Moth to open it. Your data has not been changed."
 
     private let adHoc = AppSignature(teamIdentifier: nil, keychainAccessGroup: nil)
 
@@ -64,7 +77,22 @@ struct LaunchOutcomeTests {
             try DataModel(location: .directory(directory), containerIdentifier: identifier)
         }
 
-        #expect(Self.isStoreFailure(outcome))
+        #expect(Self.alertMessage(outcome) == Self.expectedMessage)
+        #expect(try Self.contents(of: directory) == before)
+    }
+
+    @Test("A store from a newer schema says so in the alert and stays exactly as it was")
+    func newerStoreGivesTheNewerSchemaMessage() throws {
+        let directory = try Self.makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Self.writeNewerStore(named: "Local", in: directory)
+        let before = try Self.contents(of: directory)
+
+        let outcome = try outcome(for: .live) { identifier in
+            try DataModel(location: .directory(directory), containerIdentifier: identifier)
+        }
+
+        #expect(Self.alertMessage(outcome) == Self.newerSchemaMessage)
         #expect(try Self.contents(of: directory) == before)
     }
 
@@ -107,6 +135,24 @@ struct LaunchOutcomeTests {
             return true
         }
         return false
+    }
+
+    private static func alertMessage(_ outcome: LaunchOutcome) -> String? {
+        if case .storeFailure(let alert) = outcome {
+            return alert.message
+        }
+        return nil
+    }
+
+    private static func writeNewerStore(named name: String, in directory: URL) throws {
+        let schema = Schema([AddedInNewerSchema.self], version: Schema.Version(2, 0, 0))
+        let configuration = ModelConfiguration(
+            name,
+            schema: schema,
+            url: directory.appending(path: "\(name).store"),
+            cloudKitDatabase: .none
+        )
+        _ = try ModelContainer(for: schema, configurations: configuration)
     }
 
     private static func makeDirectory() throws -> URL {

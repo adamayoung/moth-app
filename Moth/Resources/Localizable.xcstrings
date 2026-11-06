@@ -332,6 +332,17 @@
         }
       }
     },
+    "STORE_FAILURE_ALERT_NEWER_SCHEMA_MESSAGE" : {
+      "comment" : "Message of the alert shown when a data store was saved by a newer version of Moth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This data was saved by a newer version of Moth. Update Moth to open it. Your data has not been changed."
+          }
+        }
+      }
+    },
     "STORE_FAILURE_ALERT_QUIT" : {
       "comment" : "The only button on the alert shown when the data store cannot open.",
       "localizations" : {

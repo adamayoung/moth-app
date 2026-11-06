@@ -3,7 +3,6 @@
 //
 //  Copyright © 2026 Adam Young.
 
-import CoreData
 import Foundation
 @testable import MothCore
 import SwiftData
@@ -54,11 +53,15 @@ struct DataModelTests {
         let directory = try Self.makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = StoreConfigurations(location: .directory(directory), containerIdentifier: nil).synced.url
-        try Self.makeCoreDataStore(at: url)
+        try CoreDataStoreFixture.makeStore(at: url, models: SchemaV1.syncedModels)
 
-        let dataModel = try DataModel(location: .directory(directory), containerIdentifier: nil)
+        do {
+            let dataModel = try DataModel(location: .directory(directory), containerIdentifier: nil)
+            #expect(try dataModel.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).isEmpty)
+        }
 
-        #expect(try dataModel.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).isEmpty)
+        let reopened = try DataModel(location: .directory(directory), containerIdentifier: nil)
+        #expect(try reopened.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).isEmpty)
     }
 
     @Test("A data model reads back what it wrote after reopening on disk")
@@ -88,25 +91,6 @@ struct DataModelTests {
             .appending(path: "DataModelTests-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
-    }
-
-    private static func makeCoreDataStore(at url: URL) throws {
-        let model = try #require(NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.syncedModels))
-        let description = NSPersistentStoreDescription(url: url)
-        description.shouldAddStoreAsynchronously = false
-        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-        let container = NSPersistentContainer(name: "Synced", managedObjectModel: model)
-        container.persistentStoreDescriptions = [description]
-        var loadError: any Error?
-        container.loadPersistentStores { _, error in
-            loadError = error
-        }
-        if let loadError {
-            throw loadError
-        }
-        if let store = container.persistentStoreCoordinator.persistentStores.first {
-            try container.persistentStoreCoordinator.remove(store)
-        }
     }
 
 }
