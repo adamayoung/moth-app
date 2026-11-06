@@ -56,6 +56,10 @@ belongs to a package. Swift Testing function filters require trailing `()`;
 XCTest and UI test method filters do not. An incorrect filter can match nothing,
 so trust the final `Ran N test(s).` line rather than only `** TEST SUCCEEDED **`.
 
+`TEST_TARGET=` has no effect without `TESTS=`: `make test` then runs the whole
+plan, and `make test-unit` runs `MothTests`. `make test-ui` always runs
+`MothUITests`, so it ignores `TEST_TARGET=` altogether.
+
 ## Test Plans
 
 `TestPlans/UnitTests.xctestplan` contains the app and package unit targets.
