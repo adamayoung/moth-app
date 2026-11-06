@@ -10,10 +10,16 @@ XCODEBUILD_FLAGS ?= -scheme Moth -destination 'platform=macOS' -parallelizeTarge
 RUN_XCODE_TESTS = Scripts/run-xcode-tests.sh '$(RESULT_BUNDLE)' $(XCODEBUILD_FLAGS)
 UNSIGNED := CODE_SIGNING_ALLOWED=NO
 
-TEST_TARGET ?= MothTests
+DEFAULT_TEST_TARGET := MothTests
+TEST_TARGET ?= $(DEFAULT_TEST_TARGET)
 TESTS ?=
 ONLY_TESTING = $(if $(TESTS),$(TEST_TARGET)/$(TESTS))
 ONLY_TESTING_FLAG = $(if $(ONLY_TESTING),-only-testing:'$(ONLY_TESTING)')
+
+TEST_TARGET_GOALS := test test-unit test-unit-unsigned test-all
+ifneq ($(and $(filter $(TEST_TARGET_GOALS),$(MAKECMDGOALS)),$(filter-out $(DEFAULT_TEST_TARGET),$(TEST_TARGET)),$(if $(TESTS),,no filter)),)
+$(error TEST_TARGET=$(TEST_TARGET) needs TESTS=: without it, the run ignores TEST_TARGET and runs other tests)
+endif
 
 UI_ALLOWANCE ?=
 ifeq ($(UI_ALLOWANCE),short)

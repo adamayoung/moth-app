@@ -55,6 +55,27 @@ class TestSelectionTests(unittest.TestCase):
         output = dry_run("test", "TEST_TARGET=MothCoreTests", "TESTS=VariableResolverTests").stdout
         self.assertIn("-only-testing:'MothCoreTests/VariableResolverTests'", output)
 
+    def test_test_target_without_a_filter_fails_rather_than_run_other_tests(self):
+        for target in ("test", "test-unit", "test-unit-unsigned", "test-all"):
+            with self.subTest(target=target):
+                result = dry_run(target, "TEST_TARGET=MothCoreTests")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("TEST_TARGET=MothCoreTests needs TESTS=", result.stderr)
+                self.assertNotIn("-testPlan", result.stdout)
+
+    def test_test_target_without_a_filter_fails_before_any_earlier_goal_runs(self):
+        result = dry_run("build", "test", "TEST_TARGET=MothCoreTests")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("build-lock", result.stdout)
+
+    def test_the_default_test_target_needs_no_filter(self):
+        for value in ("TEST_TARGET=MothTests", "TEST_TARGET="):
+            with self.subTest(value=value):
+                self.assertEqual(dry_run("test-unit", value).returncode, 0)
+
+    def test_test_target_does_not_stop_a_target_that_runs_no_tests(self):
+        self.assertEqual(dry_run("build", "TEST_TARGET=MothCoreTests").returncode, 0)
+
     def test_test_unit_covers_only_the_app_tests(self):
         output = dry_run("test-unit").stdout
         self.assertIn("-testPlan UnitTests", output)
