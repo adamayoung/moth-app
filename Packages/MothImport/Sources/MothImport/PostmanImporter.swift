@@ -28,11 +28,15 @@ public nonisolated struct PostmanImporter: Sendable {
         var mapper = PostmanMapper()
         let content = PostmanImportContent.collection(mapper.collection(collection))
 
+        for secret in mapper.pendingSecrets {
+            try await secretStore.save(secret.value, for: secret.reference.identifier)
+        }
+
         return PostmanImportResult(
             content: content,
-            imported: PostmanImportedCounts(),
+            imported: mapper.imported,
             skipped: mapper.skipped,
-            secrets: []
+            secrets: mapper.pendingSecrets.map(\.reference)
         )
     }
 
