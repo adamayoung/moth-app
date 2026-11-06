@@ -24,4 +24,6 @@ protocol AppDependencies: AnyObject {
 
     var activeEnvironment: ActiveEnvironment { get }
 
+    var importFileSource: ImportFileSource { get }
+
 }

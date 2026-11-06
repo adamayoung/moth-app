@@ -5,7 +5,7 @@
 
 import Foundation
 import MothCore
-import MothImport
+@testable import MothImport
 import Testing
 
 struct PostmanImportNamingTests {
@@ -76,7 +76,7 @@ struct PostmanImportNamingTests {
     @Test("An environment with no name is Untitled, and takes a suffix like any other")
     func namesMissingEnvironment() async throws {
         let result = try await PostmanImporter(secretStore: InMemorySecretStore()).importFile(
-            Data(#"{ "values": [] }"#.utf8),
+            Data(#"{ "_postman_variable_scope": "environment", "values": [] }"#.utf8),
             existingCollectionNames: [],
             existingEnvironmentNames: ["Untitled"]
         )

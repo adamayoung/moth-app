@@ -17,16 +17,19 @@ final class SeededAppDependencies: AppDependencies {
     let activeEnvironment: ActiveEnvironment
     let requestTabStore: RequestTabStore
     let requestDrafts: RequestDrafts
+    let importFileSource: ImportFileSource
 
     init(
         seed: Workspace?,
         isSyncedToICloud: Bool = false,
         restoresTabs: Bool = false,
-        tabDefaults: UserDefaults = .standard
+        tabDefaults: UserDefaults = .standard,
+        importFile: Data? = nil
     ) throws {
         let dataModel = try DataModel.inMemory(seed: seed)
         self.dataModel = dataModel
         self.requestDrafts = RequestDrafts(writer: dataModel.writer)
+        self.importFileSource = importFile.map(ImportFileSource.uiTest) ?? .panel
         self.isSyncedToICloud = isSyncedToICloud
         self.activeEnvironment = ActiveEnvironment(inMemory: seed?.activeEnvironmentID)
         self.requestTabStore = RequestTabStore(defaults: tabDefaults, key: "SeededRequestTabs")

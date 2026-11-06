@@ -5,7 +5,7 @@
 
 import Foundation
 import MothCore
-import MothImport
+@testable import MothImport
 import Testing
 
 struct PostmanImportRejectionTests {
@@ -41,6 +41,13 @@ struct PostmanImportRejectionTests {
 
         await #expect(throws: PostmanImportError.unrecognisedFile) {
             try await Self.importing(data)
+        }
+    }
+
+    @Test("JSON with neither a name nor a scope isn't an environment, from a snippet as no licensed fixture lacks both")
+    func refusesAValuesArrayAlone() async {
+        await #expect(throws: PostmanImportError.unrecognisedFile) {
+            try await Self.importing(Data(#"{ "values": [] }"#.utf8))
         }
     }
 

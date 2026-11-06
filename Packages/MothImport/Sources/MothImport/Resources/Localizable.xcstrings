@@ -1,6 +1,339 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "IMPORT_AUTH_API_KEY" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API Key"
+          }
+        }
+      }
+    },
+    "IMPORT_AUTH_AWS_SIGV4" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AWS Signature"
+          }
+        }
+      }
+    },
+    "IMPORT_AUTH_DIGEST" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digest"
+          }
+        }
+      }
+    },
+    "IMPORT_AUTH_EDGEGRID" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EdgeGrid"
+          }
+        }
+      }
+    },
+    "IMPORT_AUTH_HAWK" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hawk"
+          }
+        }
+      }
+    },
+    "IMPORT_AUTH_NTLM" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NTLM"
+          }
+        }
+      }
+    },
+    "IMPORT_AUTH_OAUTH1" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OAuth 1.0"
+          }
+        }
+      }
+    },
+    "IMPORT_AUTH_OAUTH2" : {
+      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OAuth 2.0"
+          }
+        }
+      }
+    },
+    "IMPORT_SKIPPED_%@" : {
+      "comment" : "The sentence listing what an import left out. The argument is a list of skipped kinds, such as “4 scripts and 1 OAuth 1.0 auth”.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipped %@."
+          }
+        }
+      }
+    },
+    "IMPORT_SKIPPED_AUTH_%lld_%@" : {
+      "comment" : "One item in the skipped list: auth Moth could not keep. The first argument is the number dropped, the second the name of the auth scheme.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@auths@"
+          },
+          "substitutions" : {
+            "auths" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg %2$@ auth"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg %2$@ auths"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "IMPORT_SKIPPED_BODIES_%lld" : {
+      "comment" : "One item in the skipped list. The argument is the number of request bodies Moth could not keep.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld request body"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld request bodies"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "IMPORT_SKIPPED_DESCRIPTIONS_%lld" : {
+      "comment" : "One item in the skipped list. The argument is the number of descriptions dropped.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld description"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld descriptions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "IMPORT_SKIPPED_EXAMPLE_RESPONSES_%lld" : {
+      "comment" : "One item in the skipped list. The argument is the number of saved example responses dropped.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld example response"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld example responses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "IMPORT_SKIPPED_FOLDER_VARIABLES_%lld" : {
+      "comment" : "One item in the skipped list. The argument is the number of folder variables dropped.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld folder variable"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld folder variables"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "IMPORT_SKIPPED_SCRIPTS_%lld" : {
+      "comment" : "One item in the skipped list. The argument is the number of scripts dropped.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld script"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld scripts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "IMPORT_SUMMARY_COLLECTION_%@_%lld_%lld" : {
+      "comment" : "The first line of the import result for a collection. The arguments are its name, its number of requests and its number of folders.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported “%1$@”: %#@requests@, %#@folders@."
+          },
+          "substitutions" : {
+            "folders" : {
+              "argNum" : 3,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg folder"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg folders"
+                    }
+                  }
+                }
+              }
+            },
+            "requests" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg requests"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "IMPORT_SUMMARY_ENVIRONMENT_%@_%lld" : {
+      "comment" : "The first line of the import result for an environment. The arguments are its name and its number of variables.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported “%1$@”: %#@variables@."
+          },
+          "substitutions" : {
+            "variables" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg variable"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg variables"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "IMPORT_UNTITLED_NAME" : {
       "comment" : "The name of an imported folder, request or environment whose Postman file gives it none.",
       "localizations" : {

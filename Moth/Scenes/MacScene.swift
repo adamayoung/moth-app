@@ -17,7 +17,8 @@ struct MacScene: Scene {
                 activeEnvironment: dependencies.activeEnvironment,
                 tabStore: dependencies.requestTabStore,
                 requestDrafts: dependencies.requestDrafts,
-                isSyncedToICloud: dependencies.isSyncedToICloud
+                isSyncedToICloud: dependencies.isSyncedToICloud,
+                importFileSource: dependencies.importFileSource
             )
         }
         .defaultSize(width: 1100, height: 720)
@@ -25,6 +26,7 @@ struct MacScene: Scene {
         .commands {
             SidebarCommands()
             RequestTabCommands()
+            ImportCommands()
         }
     }
 

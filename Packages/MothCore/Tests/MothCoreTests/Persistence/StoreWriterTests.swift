@@ -188,6 +188,22 @@ struct StoreWriterTests {
         #expect(names == ["After"])
     }
 
+    @Test("A failed write of a whole tree leaves none of its rows, and no workspace")
+    func failedTreeWriteLeavesNothing() async throws {
+        let dataModel = try DataModel.inMemory()
+        let collection = DomainFixtures.collection()
+
+        await #expect(throws: WriteFailure.self) {
+            try await Self.failWriting(collection, with: dataModel.writer)
+        }
+
+        #expect(try Self.savedRows(WorkspaceModel.self, in: dataModel).isEmpty)
+        #expect(try Self.savedRows(CollectionModel.self, in: dataModel).isEmpty)
+        #expect(try Self.savedRows(FolderModel.self, in: dataModel).isEmpty)
+        #expect(try Self.savedRows(RequestModel.self, in: dataModel).isEmpty)
+        #expect(try Self.savedRows(VariableModel.self, in: dataModel).isEmpty)
+    }
+
     @Test("A write made while a second context changes a row keeps that change")
     func writeKeepsAChangeFromAnotherContext() async throws {
         let dataModel = try DataModel.inMemory()
@@ -221,6 +237,16 @@ struct StoreWriterTests {
     private static func failWriting(with writer: StoreWriter) throws {
         try writer.write { context in
             context.insert(CollectionModel())
+            throw WriteFailure()
+        }
+    }
+
+    @StoreActor
+    private static func failWriting(_ collection: RequestCollection, with writer: StoreWriter) throws {
+        try writer.write { context in
+            let row = try CollectionModel(collection, sortOrder: 0)
+            context.insert(row)
+            row.workspace = try StoreWriter.implicitWorkspace(in: context)
             throw WriteFailure()
         }
     }

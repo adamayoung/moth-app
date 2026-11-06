@@ -4,8 +4,10 @@
 //  Copyright © 2026 Adam Young.
 
 import MothCore
+import MothImport
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MainWindowView: View {
 
@@ -14,6 +16,7 @@ struct MainWindowView: View {
     @State private var sidebar: SidebarModel
     @State private var environments: EnvironmentsModel
     @State private var tabs: RequestTabsModel
+    @State private var imports: ImportModel
 
     init(
         dataModel: DataModel,
@@ -21,22 +24,38 @@ struct MainWindowView: View {
         activeEnvironment: ActiveEnvironment,
         tabStore: RequestTabStore,
         requestDrafts: RequestDrafts,
-        isSyncedToICloud: Bool
+        isSyncedToICloud: Bool,
+        importFileSource: ImportFileSource
     ) {
-        self.dataModel = dataModel
-        self.isSyncedToICloud = isSyncedToICloud
-        self.sidebar = SidebarModel(writer: dataModel.writer, secretStore: secretStore)
-        self.environments = EnvironmentsModel(
-            writer: dataModel.writer,
+        let writer = dataModel.writer
+        let sidebar = SidebarModel(writer: writer, secretStore: secretStore)
+        let environments = EnvironmentsModel(
+            writer: writer,
             secretStore: secretStore,
             activeEnvironment: activeEnvironment
         )
+        self.dataModel = dataModel
+        self.isSyncedToICloud = isSyncedToICloud
+        self.sidebar = sidebar
+        self.environments = environments
         self.tabs = RequestTabsModel(store: tabStore, drafts: requestDrafts)
+        self.imports = ImportModel(
+            source: importFileSource,
+            secretStore: secretStore,
+            sidebar: sidebar,
+            environments: environments,
+            write: { try await writer.create($0) }
+        )
     }
 
     var body: some View {
         NavigationSplitView {
             SidebarView(model: sidebar, environments: environments, tabs: tabs, isSyncedToICloud: isSyncedToICloud)
+                .safeAreaBar(edge: .bottom, spacing: 0) {
+                    if imports.isImporting {
+                        ImportProgressFooter()
+                    }
+                }
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
             RequestDetailView(tabs: tabs)
@@ -56,6 +75,16 @@ struct MainWindowView: View {
                 tabs.collectionDidChange(snapshot)
             }
         }
+        .fileImporter(isPresented: $imports.isChoosingFile, allowedContentTypes: [.json]) { result in
+            Task { await imports.fileChosen(result) }
+        }
+        .sheet(item: $imports.report) { report in
+            ImportResultSheet(report: report)
+        }
+        .focusedSceneValue(
+            \.importCommands,
+            ImportCommandContext(model: imports, canImport: imports.canImport)
+        )
         .modelContainer(dataModel.container)
     }
 
@@ -69,7 +98,8 @@ struct MainWindowView: View {
             activeEnvironment: ActiveEnvironment(inMemory: SeedData.workspace.activeEnvironmentID),
             tabStore: .preview,
             requestDrafts: RequestDrafts(writer: dataModel.writer),
-            isSyncedToICloud: false
+            isSyncedToICloud: false,
+            importFileSource: .panel
         )
         .frame(width: 1100, height: 720)
     }
