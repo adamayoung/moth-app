@@ -3,15 +3,25 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import MothCore
+import SwiftData
 import SwiftUI
 
 struct MainWindowView: View {
 
-    let isSyncedToICloud: Bool
+    private let dataModel: DataModel
+    private let isSyncedToICloud: Bool
+    @State private var sidebar: SidebarModel
+
+    init(dataModel: DataModel, isSyncedToICloud: Bool) {
+        self.dataModel = dataModel
+        self.isSyncedToICloud = isSyncedToICloud
+        self.sidebar = SidebarModel(writer: dataModel.writer)
+    }
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(isSyncedToICloud: isSyncedToICloud)
+            SidebarView(model: sidebar, isSyncedToICloud: isSyncedToICloud)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
             VStack(spacing: 0) {
@@ -26,11 +36,14 @@ struct MainWindowView: View {
             }
         }
         .frame(minWidth: 800, minHeight: 500)
+        .modelContainer(dataModel.container)
     }
 
 }
 
 #Preview {
-    MainWindowView(isSyncedToICloud: false)
-        .frame(width: 1100, height: 720)
+    if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
+        MainWindowView(dataModel: dataModel, isSyncedToICloud: false)
+            .frame(width: 1100, height: 720)
+    }
 }

@@ -244,6 +244,11 @@ and call `rollback()` if the save throws, which clears the pending changes so th
 next fetch refreshes the row. The main context reads only, with autosave off. An
 editor edits a value-type draft and commits it through the writer.
 
+A view reads flat `@Query` results, not a row's to-many arrays, which go stale on
+the main context once the writer saves. `CollectionTree` builds the sidebar's
+value tree from those rows, and selection names a row by identifier, so a sync
+that removes a row moves the selection to the nearest surviving ancestor.
+
 Models are `public` for `@Query`, but only `MothCore` can make one or set a
 property, and `StoreWriter`'s commands take domain values. `WriteBoundaryTests`
 holds this. It covers `MothCore`'s surface: anyone holding a context can still

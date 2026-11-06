@@ -3,17 +3,29 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import MothCore
+import SwiftData
 import SwiftUI
 
 struct SidebarView: View {
 
+    @Bindable var model: SidebarModel
     let isSyncedToICloud: Bool
 
     var body: some View {
-        List {
+        List(selection: $model.selection) {
             Section("SIDEBAR_COLLECTIONS_SECTION") {
-                ContentUnavailableView {
-                    Text("SIDEBAR_COLLECTIONS_EMPTY")
+                if model.showsEmptyState {
+                    ContentUnavailableView {
+                        Text("SIDEBAR_COLLECTIONS_EMPTY")
+                    }
+                } else {
+                    ForEach(model.tree.roots) { node in
+                        SidebarRow(node: node, model: model)
+                    }
+                    .dropDestination(for: SidebarDragItem.self) { items, offset in
+                        Task { await model.drop(items.map(\.id), on: .root, atOffset: offset) }
+                    }
                 }
             }
 
@@ -36,16 +48,46 @@ struct SidebarView: View {
                 ICloudSyncOffFooter()
             }
         }
+        .alert(deletionTitle, item: $model.pendingDeletion) { deletion in
+            Button("SIDEBAR_DELETE_CONFIRM", role: .destructive) {
+                Task { await model.confirmDeletion(deletion) }
+            }
+            Button("SIDEBAR_DELETE_CANCEL", role: .cancel) {}
+        } message: { deletion in
+            if let count = deletion.requestsToMention {
+                Text("SIDEBAR_DELETE_CONTAINER_MESSAGE_\(count)")
+            } else {
+                Text("SIDEBAR_DELETE_MESSAGE")
+            }
+        }
+        .focusedSceneValue(
+            \.sidebarCommands,
+            SidebarCommandContext(model: model, newItemContainer: model.newItemContainer)
+        )
+        .background {
+            SidebarTreeObserver(model: model)
+        }
+    }
+
+    private var deletionTitle: String {
+        String(localized: "SIDEBAR_DELETE_TITLE_\(model.pendingDeletion?.name ?? "")")
     }
 
 }
 
+@ViewBuilder
+private func seededSidebar(isSyncedToICloud: Bool) -> some View {
+    if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
+        SidebarView(model: SidebarModel(writer: dataModel.writer), isSyncedToICloud: isSyncedToICloud)
+            .modelContainer(dataModel.container)
+            .frame(width: 240, height: 500)
+    }
+}
+
 #Preview("Synced") {
-    SidebarView(isSyncedToICloud: true)
-        .frame(width: 240, height: 500)
+    seededSidebar(isSyncedToICloud: true)
 }
 
 #Preview("iCloud Sync Off") {
-    SidebarView(isSyncedToICloud: false)
-        .frame(width: 240, height: 500)
+    seededSidebar(isSyncedToICloud: false)
 }

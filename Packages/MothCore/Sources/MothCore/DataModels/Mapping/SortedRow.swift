@@ -23,6 +23,12 @@ nonisolated extension Sequence where Element: SortedRow {
         (map(\.sortOrder).max() ?? -1) + 1
     }
 
+    /// Sync can duplicate a row, and the first in order stands for it.
+    var oneRowPerID: [Element] {
+        var seen: Set<UUID> = []
+        return inSortOrder.filter { seen.insert($0.id).inserted }
+    }
+
 }
 
 nonisolated extension Optional where Wrapped: Sequence, Wrapped.Element: SortedRow {
