@@ -48,7 +48,7 @@ struct StoreWriterAuthTests {
             try await dataModel.writer.updateRequest(
                 request.id,
                 with: edit(auth: .none),
-                replacing: bearer(oldToken)
+                from: edit(auth: bearer(oldToken))
             )
         }
 
@@ -66,7 +66,7 @@ struct StoreWriterAuthTests {
         try await dataModel.writer.updateRequest(
             request.id,
             with: edit(auth: mine),
-            replacing: .basic(BasicAuth(username: "old", password: password))
+            from: edit(auth: .basic(BasicAuth(username: "old", password: password)))
         )
 
         #expect(try savedAuth(of: request.id, in: dataModel) == mine)
@@ -81,7 +81,7 @@ struct StoreWriterAuthTests {
         let released = try await dataModel.writer.updateRequest(
             request.id,
             with: edit(auth: .none),
-            replacing: bearer(oldToken)
+            from: edit(auth: bearer(oldToken))
         )
 
         #expect(released == [oldToken, newToken])
@@ -95,7 +95,7 @@ struct StoreWriterAuthTests {
         let released = try await dataModel.writer.updateRequest(
             request.id,
             with: edit(auth: bearer(newToken)),
-            replacing: bearer(oldToken)
+            from: edit(auth: bearer(oldToken))
         )
 
         #expect(released == [oldToken])
@@ -110,7 +110,7 @@ struct StoreWriterAuthTests {
         let released = try await dataModel.writer.updateRequest(
             request.id,
             with: edit(auth: bearer(oldToken)),
-            replacing: bearer(oldToken)
+            from: edit(auth: bearer(oldToken))
         )
 
         #expect(released.isEmpty)
@@ -128,7 +128,7 @@ struct StoreWriterAuthTests {
         let released = try await dataModel.writer.updateRequest(
             request.id,
             with: edit(auth: .none),
-            replacing: bearer(oldToken)
+            from: edit(auth: bearer(oldToken))
         )
 
         #expect(released.isEmpty)
@@ -148,12 +148,12 @@ struct StoreWriterAuthTests {
         let keptByFolder = try await dataModel.writer.updateRequest(
             request.id,
             with: edit(auth: .none),
-            replacing: bearer(oldToken)
+            from: edit(auth: bearer(oldToken))
         )
         let keptByCollection = try await dataModel.writer.updateRequest(
             folderRequest.id,
             with: edit(auth: .none),
-            replacing: bearer(newToken)
+            from: edit(auth: bearer(newToken))
         )
 
         #expect(keptByFolder.isEmpty)
@@ -176,31 +176,60 @@ struct StoreWriterAuthTests {
         let released = try await dataModel.writer.updateRequest(
             request.id,
             with: edit(auth: .none),
-            replacing: bearer(oldToken)
+            from: edit(auth: bearer(oldToken))
         )
 
         #expect(released.isEmpty)
     }
 
-    @Test("A body and auth the editor can't change leave the row's bytes as they were")
-    func unsupportedKindsSurviveASave() async throws {
+    @Test("A Save that leaves the body and auth alone keeps their stored bytes, including keys this build can't read")
+    func untouchedFieldsKeepTheirBytes() async throws {
         let request = Request(
             name: "Request",
             body: .graphQL(query: "{ me }", variables: "{}"),
             auth: .digest(DigestAuth(username: "ada", password: oldToken))
         )
         let dataModel = try dataModel(holding: request)
-        let before = try #require(TreeFixtures.savedRows(RequestModel.self, in: dataModel).first)
-        let (bodyData, authData) = (before.bodyData, before.authData)
+        let context = ModelContext(dataModel.container)
+        let row = try #require(context.fetch(RequestModel.withID(request.id)).first)
+        let authJSON = try #require(row.authData.flatMap { String(bytes: $0, encoding: .utf8) })
+        let bodyJSON = try #require(row.bodyData.flatMap { String(bytes: $0, encoding: .utf8) })
+        let auth = Data(authJSON.replacingOccurrences(of: "\"username\"", with: "\"future\":1,\"username\"").utf8)
+        let body = Data(bodyJSON.replacingOccurrences(of: "\"query\"", with: "\"future\":1,\"query\"").utf8)
+        row.authData = auth
+        row.bodyData = body
+        try context.save()
         var draft = RequestDraft(request)
         draft.url = "https://example.com"
 
-        let released = try await dataModel.writer.updateRequest(request.id, with: draft.edit, replacing: request.auth)
+        let released = try await dataModel.writer.updateRequest(
+            request.id,
+            with: draft.edit,
+            from: RequestEdit(request)
+        )
 
         let after = try #require(TreeFixtures.savedRows(RequestModel.self, in: dataModel).first)
         #expect(after.urlTemplate == "https://example.com")
-        #expect(after.bodyData == bodyData)
-        #expect(after.authData == authData)
+        #expect(after.bodyData == body)
+        #expect(after.authData == auth)
+        #expect(released.isEmpty)
+    }
+
+    @Test("A body and auth the draft didn't change stay as a sync left them, with no refusal")
+    func untouchedFieldsKeepASync() async throws {
+        let theirBody = RequestBody.raw(content: "theirs", contentType: "text/plain")
+        let request = Request(name: "Request", body: theirBody, auth: bearer(newToken))
+        let dataModel = try dataModel(holding: request)
+        let base = RequestEdit(body: .none, auth: bearer(oldToken))
+        var edit = base
+        edit.urlTemplate = "https://example.com"
+
+        let released = try await dataModel.writer.updateRequest(request.id, with: edit, from: base)
+
+        let saved = try #require(TreeFixtures.savedRows(RequestModel.self, in: dataModel).first).asDomain()
+        #expect(saved.urlTemplate == "https://example.com")
+        #expect(saved.body == theirBody)
+        #expect(saved.auth == bearer(newToken))
         #expect(released.isEmpty)
     }
 

@@ -32,7 +32,7 @@ struct StoreWriterRequestTests {
             holding: RequestCollection(name: "API", children: [TreeFixtures.item(0, request)])
         )
 
-        try await dataModel.writer.updateRequest(request.id, with: edit, replacing: request.auth)
+        try await dataModel.writer.updateRequest(request.id, with: edit, from: RequestEdit(request))
 
         #expect(try RequestEdit(savedRequest(request.id, in: dataModel)) == edit)
     }
@@ -45,7 +45,7 @@ struct StoreWriterRequestTests {
         )
         try await dataModel.writer.rename(.request(request.id), to: "Renamed")
 
-        try await dataModel.writer.updateRequest(request.id, with: edit, replacing: request.auth)
+        try await dataModel.writer.updateRequest(request.id, with: edit, from: RequestEdit(request))
 
         #expect(try savedRequest(request.id, in: dataModel).name == "Renamed")
     }
@@ -61,7 +61,7 @@ struct StoreWriterRequestTests {
             holding: RequestCollection(name: "API", children: [TreeFixtures.item(0, request)])
         )
 
-        try await dataModel.writer.updateRequest(request.id, with: edit, replacing: request.auth)
+        try await dataModel.writer.updateRequest(request.id, with: edit, from: RequestEdit(request))
 
         let saved = try savedRequest(request.id, in: dataModel)
         #expect(saved.settings == request.settings)
@@ -78,7 +78,7 @@ struct StoreWriterRequestTests {
         try context.insert(RequestModel(request, sortOrder: 1))
         try context.save()
 
-        try await dataModel.writer.updateRequest(request.id, with: edit, replacing: request.auth)
+        try await dataModel.writer.updateRequest(request.id, with: edit, from: RequestEdit(request))
 
         let rows = try TreeFixtures.savedRows(RequestModel.self, in: dataModel)
         #expect(rows.count == 2)
@@ -98,7 +98,7 @@ struct StoreWriterRequestTests {
         try context.save()
 
         await #expect(throws: (any Error).self) {
-            try await dataModel.writer.updateRequest(request.id, with: edit, replacing: request.auth)
+            try await dataModel.writer.updateRequest(request.id, with: edit, from: RequestEdit(request))
         }
 
         let saved = try #require(TreeFixtures.savedRows(RequestModel.self, in: dataModel).first)
@@ -110,7 +110,7 @@ struct StoreWriterRequestTests {
     func requestHasGone() async throws {
         let dataModel = try TreeFixtures.dataModel(holding: RequestCollection(name: "API"))
 
-        try await dataModel.writer.updateRequest(UUID(), with: edit, replacing: .inherit)
+        try await dataModel.writer.updateRequest(UUID(), with: edit, from: RequestEdit())
 
         #expect(try TreeFixtures.savedRows(RequestModel.self, in: dataModel).isEmpty)
     }

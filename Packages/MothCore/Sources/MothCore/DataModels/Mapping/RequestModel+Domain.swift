@@ -29,14 +29,20 @@ nonisolated extension RequestModel: StoredAuthRow {
         }
     }
 
-    func apply(_ edit: RequestEdit) throws {
+    /// Rewrites a body or auth only when it changed, because encoding a decoded value drops any key this build can't
+    /// read.
+    func apply(_ edit: RequestEdit, from base: RequestEdit) throws {
         assign(edit.method.rawValue, to: \.methodRawValue)
         assign(edit.urlTemplate, to: \.urlTemplate)
         try assign(StoredJSON.encode(edit.queryParameters), to: \.queryParametersData)
         try assign(StoredJSON.encode(edit.pathParameters), to: \.pathParametersData)
         try assign(StoredJSON.encode(edit.headers), to: \.headersData)
-        try assign(StoredJSON.encode(edit.body), to: \.bodyData)
-        try assign(StoredJSON.encode(edit.auth), to: \.authData)
+        if edit.body != base.body {
+            try assign(StoredJSON.encode(edit.body), to: \.bodyData)
+        }
+        if edit.auth != base.auth {
+            try assign(StoredJSON.encode(edit.auth), to: \.authData)
+        }
     }
 
     /// An equal value still counts as a change to a row, and a sync would carry it to every Mac.

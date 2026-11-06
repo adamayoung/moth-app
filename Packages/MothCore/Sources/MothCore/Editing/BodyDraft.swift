@@ -34,6 +34,7 @@ public nonisolated struct BodyDraft: Sendable {
     public var rawContentType = RawContentType.json.rawValue
     public var urlEncodedRows: [KeyValue] = []
     public var formDataFields: [FormDataField] = []
+    public private(set) var storedContentType: String?
     private var unsupportedBody: RequestBody?
 
     public init(_ body: RequestBody) {
@@ -50,6 +51,7 @@ public nonisolated struct BodyDraft: Sendable {
             self.kind = .raw
             self.rawContent = content
             self.rawContentType = contentType
+            self.storedContentType = RawContentType(rawValue: contentType) == nil ? contentType : nil
         case .binary:
             self.kind = .binary
             self.unsupportedBody = body
@@ -75,6 +77,23 @@ public nonisolated struct BodyDraft: Sendable {
         case .binary: BodyKind.editable + [.binary]
         case .graphQL: BodyKind.editable + [.graphQL]
         default: BodyKind.editable
+        }
+    }
+
+    /// Takes the chosen kind and its fields from what is saved, and keeps what was typed for the others.
+    public mutating func follow(_ saved: BodyDraft) {
+        let typed = self
+        self = saved
+        if saved.kind != .raw {
+            rawContent = typed.rawContent
+            rawContentType = typed.rawContentType
+            storedContentType = typed.storedContentType
+        }
+        if saved.kind != .urlEncoded {
+            urlEncodedRows = typed.urlEncodedRows
+        }
+        if saved.kind != .formData {
+            formDataFields = typed.formDataFields
         }
     }
 

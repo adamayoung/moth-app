@@ -47,7 +47,7 @@ final class AuthorizationModel {
         draft.discardCredentials(matching: credentials, heldBy: target.auth)
     }
 
-    /// Returns whether the sheet can close. Values go first, because a row referring to no value would lose it.
+    /// Returns whether the sheet can close.
     func save() async -> Bool {
         guard !isSaving else {
             return false
@@ -61,12 +61,9 @@ final class AuthorizationModel {
             isSaving = false
         }
         do {
-            for write in draft.credentialWrites(heldBy: target.auth) {
-                try await secretStore.apply(write)
-                credentials.record(write.value, for: write.reference)
+            _ = try await secretStore.commit(draft.credentialWrites()) {
+                try await write(draft.requestAuth, target.auth)
             }
-            let released = try await write(draft.requestAuth, target.auth)
-            await secretStore.remove(released)
             return true
         } catch {
             Logger.sidebar.error("Saving auth failed: \(String(describing: error), privacy: .private)")

@@ -22,7 +22,7 @@ nonisolated protocol StoredAuthRow: PersistentModel {
 extension StoreWriter {
 
     /// Every row with this id, because sync can duplicate one. Returns the references this leaves unheld, as
-    /// `updateRequest(_:with:replacing:)` does, under the same check of what the caller read.
+    /// `updateRequest(_:with:from:)` does, under the same check of what the caller read.
     @discardableResult
     public func updateAuth(
         of container: TreeContainerID,

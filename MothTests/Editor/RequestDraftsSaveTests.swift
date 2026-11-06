@@ -72,30 +72,30 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
         #expect(drafts.isEdited(request.id))
     }
 
-    @Test("A Save refused for a newer credential keeps the draft, and the delivery that follows lets it through")
+    @Test("An auth edit refused for a newer credential keeps the draft, and the delivery that follows lets it through")
     func refusedSaveRecovers() async throws {
         let secretStore = RecordingSecretStore()
+        secretStore.save("newer", for: newerToken.identifier)
         let request = Request(name: "Request", auth: bearer(token))
         let (dataModel, drafts) = try stored(request, secretStore: secretStore)
-        drafts.update(request.id) { $0.url = "https://example.com/mine" }
+        drafts.update(request.id) { $0.auth.kind = .none }
         var synced = request
         synced.auth = bearer(newerToken)
         try await dataModel.writer.updateRequest(
             request.id,
             with: RequestEdit(synced),
-            replacing: bearer(token)
+            from: RequestEdit(request)
         )
 
         #expect(await !drafts.save(request.id))
-        #expect(drafts.draft(for: request.id)?.url == "https://example.com/mine")
         #expect(drafts.isEdited(request.id))
+        #expect(secretStore.values == [newerToken.identifier: "newer"])
 
         drafts.savedRequestDidChange(synced)
 
         #expect(await drafts.save(request.id))
-        let saved = try savedRequest(request.id, in: dataModel).asDomain()
-        #expect(saved.urlTemplate == "https://example.com/mine")
-        #expect(saved.auth == bearer(newerToken))
+        #expect(try savedRequest(request.id, in: dataModel).asDomain().auth == Auth.none)
+        #expect(secretStore.values.isEmpty)
     }
 
     @Test("A body and auth nobody touched follow a sync, under a draft edited elsewhere")
@@ -140,7 +140,11 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
     @Test("Saves run in order, so a later Save can't be overtaken by an earlier one")
     func savesRunInOrder() async {
         let secretStore = HoldingSecretStore()
-        let drafts = RequestDrafts(secretStore: secretStore) { _, _, _ in [] }
+        var written: Auth?
+        let drafts = RequestDrafts(secretStore: secretStore) { _, edit, _ in
+            written = edit.auth
+            return []
+        }
         let request = Request(name: "Request", auth: bearer(token))
         drafts.savedRequestDidChange(request)
         drafts.update(request.id) { $0.auth.setCredential("first", for: token) }
@@ -155,7 +159,11 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
 
         #expect(await firstSave.value)
         #expect(await secondSave.value)
-        #expect(await secretStore.values == [token.identifier: "second"])
+        guard case .bearer(let saved) = written else {
+            Issue.record("The last Save should have written Bearer auth")
+            return
+        }
+        #expect(await secretStore.values[saved.token.identifier] == "second")
     }
 
 }

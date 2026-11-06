@@ -112,7 +112,7 @@ struct RequestEditorForm: View {
         switch draft.body.kind {
         case .urlEncoded:
             Button("REQUEST_EDITOR_ADD_FIELD") {
-                addURLEncodedRow()
+                addRow(to: \.body.urlEncodedRows)
             }
             .accessibilityIdentifier("urlEncoded.add")
         case .formData:
@@ -180,14 +180,6 @@ struct RequestEditorForm: View {
     private func addRow(to rows: WritableKeyPath<RequestDraft, [KeyValue]>) {
         let row = KeyValue(key: "", value: "")
         update { $0[keyPath: rows].append(row) }
-        Task {
-            focusedRow = row.id
-        }
-    }
-
-    private func addURLEncodedRow() {
-        let row = KeyValue(key: "", value: "")
-        update { $0.body.urlEncodedRows.append(row) }
         Task {
             focusedRow = row.id
         }

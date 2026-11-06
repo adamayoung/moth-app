@@ -12,8 +12,8 @@ import OSLog
 @Observable
 final class RequestDrafts {
 
-    /// Takes the auth the draft read, and returns the references the write leaves unheld.
-    typealias Save = @MainActor (Request.ID, RequestEdit, Auth) async throws -> Set<SecretReference>
+    /// Takes the edit and what it started from, and returns the references the write leaves unheld.
+    typealias Save = @MainActor (Request.ID, RequestEdit, RequestEdit) async throws -> Set<SecretReference>
 
     private struct Entry {
 
@@ -29,19 +29,24 @@ final class RequestDrafts {
             draft.auth.discardCredentials(matching: credentials, heldBy: saved.auth.requestAuth)
         }
 
-        /// A sync never takes what was typed, but a body or auth nobody touched follows it, because a Save would
-        /// otherwise put back what another Mac has replaced.
+        /// A sync never takes what was typed, but a body or auth nobody touched follows it, and an edited auth moves to
+        /// the references the row now holds, because a Save from the old ones would release the new.
         mutating func moveSaved(to newSaved: RequestDraft) {
+            var body = draft.body
+            var auth = draft.auth
+            if body.hasSameContent(as: saved.body) {
+                body.follow(newSaved.body)
+            }
+            if auth.hasSameContent(as: saved.auth) {
+                auth.follow(newSaved.auth)
+            } else {
+                auth.rebaseCredentials(onto: newSaved.auth)
+            }
             if !isEdited {
                 draft = newSaved
-            } else {
-                if draft.body.hasSameContent(as: saved.body) {
-                    draft.body = newSaved.body
-                }
-                if draft.auth.hasSameContent(as: saved.auth) {
-                    draft.auth = newSaved.auth
-                }
             }
+            draft.body = body
+            draft.auth = auth
             saved = newSaved
         }
 
@@ -59,8 +64,8 @@ final class RequestDrafts {
     }
 
     convenience init(writer: StoreWriter, secretStore: any SecretStore) {
-        self.init(secretStore: secretStore) { id, edit, held in
-            try await writer.updateRequest(id, with: edit, replacing: held)
+        self.init(secretStore: secretStore) { id, edit, base in
+            try await writer.updateRequest(id, with: edit, from: base)
         }
     }
 
@@ -144,32 +149,28 @@ final class RequestDrafts {
             return true
         }
         let edit = entry.draft.edit
-        let held = entry.saved.auth.requestAuth
+        let base = entry.saved.edit
+        let writes = entry.draft.auth.credentialWrites()
         do {
-            try await writeCredentials(of: entry.draft.auth, heldBy: held, in: id)
-            let released = try await saveEdit(id, edit, held)
-            await secretStore.remove(released)
+            let released = try await secretStore.commit(writes) {
+                try await saveEdit(id, edit, base)
+            }
             entries[id]?.credentials.forget(released)
         } catch {
             Logger.editor.error("Saving a request failed: \(String(describing: error), privacy: .private)")
             return false
         }
-        await finishSave(of: edit, from: entry.draft, heldBy: held, in: id)
-        return true
-    }
-
-    /// Values go first: a stray item is harmless, and a row referring to no value would lose it.
-    private func writeCredentials(of auth: AuthDraft, heldBy held: Auth, in id: Request.ID) async throws {
-        for write in auth.credentialWrites(heldBy: held) {
-            try await secretStore.apply(write)
+        for write in writes {
             entries[id]?.credentials.record(write.value, for: write.reference)
         }
+        await finishSave(of: edit, from: entry.draft, heldBefore: base.auth, in: id)
+        return true
     }
 
     private func finishSave(
         of edit: RequestEdit,
         from draft: RequestDraft,
-        heldBy held: Auth,
+        heldBefore held: Auth,
         in id: Request.ID
     ) async {
         let saved = RequestDraft(edit)
@@ -177,6 +178,8 @@ final class RequestDrafts {
         entries[id]?.saved = saved
         if isUnchanged {
             entries[id]?.draft = saved
+        } else {
+            entries[id]?.draft.auth.rebaseCredentials(onto: saved.auth)
         }
         entries[id]?.discardCredentialsMatchingStore()
         if

@@ -104,7 +104,6 @@ struct AuthDraftTests {
 
         draft.setCredential("s3cret", for: Self.token)
 
-        #expect(draft.requestAuth == bearer)
         let encoded = try JSONEncoder().encode(draft.requestAuth)
         #expect(try !#require(String(bytes: encoded, encoding: .utf8)).contains("s3cret"))
     }
@@ -122,6 +121,17 @@ struct AuthDraftTests {
         #expect(draft.hasSameContent(as: AuthDraft(bearer)))
     }
 
+    @Test("Two typed values are different content, though they share one new reference")
+    func typedValuesDiffer() {
+        var first = AuthDraft(bearer)
+        first.setCredential("first", for: Self.token)
+        var second = first
+        second.setCredential("second", for: Self.token)
+
+        #expect(first.requestAuth == second.requestAuth)
+        #expect(!first.hasSameContent(as: second))
+    }
+
     @Test("Typing for a kind that isn't chosen is no change")
     func hiddenKindsTypingIsNoChange() {
         var draft = AuthDraft(bearer)
@@ -131,16 +141,32 @@ struct AuthDraftTests {
         draft.kind = .bearer
 
         #expect(draft.hasSameContent(as: AuthDraft(bearer)))
-        #expect(draft.credentialWrites(heldBy: bearer).isEmpty)
+        #expect(draft.credentialWrites().isEmpty)
     }
 
-    @Test("A changed credential is written under its reference")
-    func changedCredentialIsWritten() {
+    @Test("A changed credential goes under a new reference, so a Save that fails changes nothing stored")
+    func changedCredentialTakesANewReference() throws {
         var draft = AuthDraft(basic)
 
         draft.setCredential("new", for: Self.password)
 
-        #expect(draft.credentialWrites(heldBy: basic) == [CredentialWrite(reference: Self.password, value: "new")])
+        let write = try #require(draft.credentialWrites().first)
+        #expect(draft.credentialWrites().count == 1)
+        #expect(write.reference != Self.password)
+        #expect(write.value == "new")
+        #expect(draft.requestAuth == .basic(BasicAuth(username: "ada", password: write.reference)))
+    }
+
+    @Test("A credential changed twice keeps its new reference, so a Save tried again writes the same item")
+    func changedCredentialKeepsItsNewReference() {
+        var draft = AuthDraft(bearer)
+
+        draft.setCredential("first", for: Self.token)
+        let first = draft.credentialWrites().first?.reference
+        draft.setCredential("second", for: Self.token)
+
+        #expect(draft.credentialWrites() == [CredentialWrite(reference: first ?? Self.token, value: "second")])
+        #expect(first != Self.token)
     }
 
     @Test("An untouched credential writes nothing", arguments: [
@@ -150,16 +176,18 @@ struct AuthDraftTests {
         .none
     ] + unsupported)
     func untouchedCredentialWritesNothing(auth: Auth) {
-        #expect(AuthDraft(auth).credentialWrites(heldBy: auth).isEmpty)
+        #expect(AuthDraft(auth).credentialWrites().isEmpty)
     }
 
-    @Test("A cleared password is saved, because Basic can send a username alone")
-    func clearedPasswordIsSaved() {
+    @Test("A cleared password is saved under a new reference, because Basic can send a username alone")
+    func clearedPasswordIsSaved() throws {
         var draft = AuthDraft(basic)
 
         draft.setCredential("", for: Self.password)
 
-        #expect(draft.credentialWrites(heldBy: basic) == [CredentialWrite(reference: Self.password, value: "")])
+        let write = try #require(draft.credentialWrites().first)
+        #expect(write.reference != Self.password)
+        #expect(write.value.isEmpty)
     }
 
     @Test("A new Basic auth saves an empty password, so it can send a username alone")
@@ -168,18 +196,17 @@ struct AuthDraftTests {
 
         draft.kind = .basic
 
-        #expect(draft.credentialWrites(heldBy: .none) == [
-            CredentialWrite(reference: draft.passwordReference, value: "")
-        ])
+        #expect(draft.credentialWrites() == [CredentialWrite(reference: draft.passwordReference, value: "")])
     }
 
-    @Test("A cleared token removes what is stored, because a header can't send an empty one")
-    func clearedTokenIsRemoved() {
+    @Test("A cleared token moves off its reference and writes nothing, because a header can't send an empty one")
+    func clearedTokenWritesNothing() {
         var draft = AuthDraft(bearer)
 
         draft.setCredential("", for: Self.token)
 
-        #expect(draft.credentialWrites(heldBy: bearer) == [CredentialWrite(reference: Self.token, value: nil)])
+        #expect(draft.credentialWrites().isEmpty)
+        #expect(draft.requestAuth != bearer)
     }
 
     @Test("A new Bearer auth with no token saves nothing")
@@ -188,7 +215,45 @@ struct AuthDraftTests {
 
         draft.kind = .bearer
 
-        #expect(draft.credentialWrites(heldBy: .none).isEmpty)
+        #expect(draft.credentialWrites().isEmpty)
+    }
+
+    @Test("Following what is saved takes its kind and references, and keeps what was typed for another kind")
+    func followingKeepsHiddenTyping() {
+        var draft = AuthDraft(.none)
+        draft.kind = .basic
+        draft.setCredential("typed", for: draft.passwordReference)
+        draft.kind = .none
+
+        draft.follow(AuthDraft(bearer))
+
+        #expect(draft.requestAuth == bearer)
+        #expect(draft.typedCredential(for: draft.passwordReference) == "typed")
+    }
+
+    @Test("Rebasing an edited auth takes the row's references, and keeps its kind and username")
+    func rebasingTakesTheRowsReferences() {
+        let newer = SecretReference(identifier: "newer")
+        var draft = AuthDraft(basic)
+        draft.username = "grace"
+
+        draft.rebaseCredentials(onto: AuthDraft(.basic(BasicAuth(username: "ada", password: newer))))
+
+        #expect(draft.requestAuth == .basic(BasicAuth(username: "grace", password: newer)))
+        #expect(draft.credentialWrites().isEmpty)
+    }
+
+    @Test("Rebasing onto a row that holds a reference this draft minted mints another, so nothing writes over it")
+    func rebasingNeverReusesAHeldReference() throws {
+        var draft = AuthDraft(bearer)
+        draft.setCredential("first", for: Self.token)
+        let saved = AuthDraft(draft.requestAuth)
+
+        draft.rebaseCredentials(onto: saved)
+        draft.setCredential("second", for: draft.tokenReference)
+
+        let write = try #require(draft.credentialWrites().first)
+        #expect(write.reference != saved.tokenReference)
     }
 
 }

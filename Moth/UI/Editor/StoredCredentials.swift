@@ -56,11 +56,22 @@ extension AuthDraft {
 
 extension SecretStore {
 
-    func apply(_ write: CredentialWrite) async throws {
-        if let value = write.value {
-            try await save(value, for: write.reference.identifier)
-        } else {
-            try await removeValue(for: write.reference.identifier)
+    /// Values go first, because a row referring to no value would lose it. A row that can't be written takes the new
+    /// values with it, and what it replaced stays until it has moved on.
+    func commit(
+        _ writes: [CredentialWrite],
+        writingRow: () async throws -> Set<SecretReference>
+    ) async throws -> Set<SecretReference> {
+        do {
+            for write in writes {
+                try await save(write.value, for: write.reference.identifier)
+            }
+            let released = try await writingRow()
+            await remove(released)
+            return released
+        } catch {
+            await remove(Set(writes.map(\.reference)))
+            throw error
         }
     }
 

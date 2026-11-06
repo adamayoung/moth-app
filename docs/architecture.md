@@ -328,20 +328,29 @@ a body or auth keeps an entry of its own in the picker, and a Save writes the sa
 bytes. Choosing another kind and saving replaces it.
 
 A typed credential stays on the `AuthDraft`. `RequestEdit` holds references, so
-the text has no route to a row. Save writes the value to the secret store, then the
-row, then removes what the row released. `updateRequest` takes the auth the draft
-read, refuses if no row with that id still holds those references, and returns the
-references no other request, folder or collection holds. It searches each row's
-auth JSON as text, so a row this build can't read keeps its items. `RequestDrafts`
-runs Saves and reads one at a time, because Keychain calls finish in no set order.
-An empty Password is saved, because Basic can send a username alone, and an empty
-Token removes the value, because a header can't send one.
+the text has no route to a row. A changed credential takes a new reference, and a
+Save never writes to one a row already holds, so a Save that fails changes nothing
+stored. It writes the value, then the row, then removes what the row released, and
+a row that can't be written takes the new value with it. `AuthDraft` mints its new
+references up front, so a Save tried again writes the same item. Clearing a Token
+leaves the new reference with no value, because a header can't send an empty token.
+An empty Password is saved, because Basic can send a username alone.
+`RequestDrafts` runs Saves and reads one at a time, because Keychain calls finish in
+no set order.
 
-While a draft is edited, a body or auth nobody touched follows a delivery. Otherwise
-a URL edit would put back what another Mac replaced, and a Save refused for a newer
-credential could never go through. A credential with no stored value stays editable,
-with "Not available on this Mac yet" as its placeholder, because an import saves
-nothing for an empty credential.
+`updateRequest` takes the edit the draft started from, and writes a body or auth
+only if the draft changed it. That keeps what a sync wrote, including to a tab whose
+row isn't being delivered, and keeps the stored bytes, because encoding a decoded
+value drops any key this build can't read. A changed auth must match what a row still
+holds, or the write is refused. The refused draft stays edited, and the next delivery
+moves it to the row's references. `updateRequest` returns the references no other
+request, folder or collection holds, and it searches each row's auth JSON as bytes,
+so a row this build can't read keeps its items.
+
+While a draft is edited, a body or auth nobody touched follows a delivery, and only
+its chosen kind's fields change, so text held for another kind stays. A credential
+with no stored value stays editable, with "Not available on this Mac yet" as its
+placeholder, because an import saves nothing for an empty credential.
 
 The Authorization… sheet sets a collection's or folder's auth through
 `StoreWriter.updateAuth`, under the same rules, when its Save button is pressed. A

@@ -90,7 +90,7 @@ struct RequestDraftsCredentialTests: RequestDraftsTesting {
 
         #expect(await drafts.save(request.id))
 
-        #expect(valuesAtWrite == [token.identifier: "typed"])
+        #expect(valuesAtWrite?.values.contains("typed") == true)
     }
 
     @Test("A value the store refuses stops the Save, so no row refers to nothing")
@@ -203,8 +203,8 @@ struct RequestDraftsCredentialTests: RequestDraftsTesting {
         #expect(!drafts.isEdited(request.id))
     }
 
-    @Test("After a Save the field shows what was saved, with nothing edited")
-    func saveShowsTheSavedValue() async {
+    @Test("After a Save the field shows what was saved under its new reference, with nothing edited")
+    func saveShowsTheSavedValue() async throws {
         let drafts = RequestDrafts(secretStore: RecordingSecretStore()) { _, _, _ in [] }
         let request = Request(name: "Request", auth: bearer(token))
         drafts.savedRequestDidChange(request)
@@ -212,8 +212,10 @@ struct RequestDraftsCredentialTests: RequestDraftsTesting {
 
         #expect(await drafts.save(request.id))
 
-        #expect(drafts.credential(token, in: request.id) == .available("typed"))
-        #expect(drafts.draft(for: request.id)?.auth.typedCredential(for: token) == nil)
+        let reference = try #require(drafts.draft(for: request.id)?.auth.tokenReference)
+        #expect(reference != token)
+        #expect(drafts.credential(reference, in: request.id) == .available("typed"))
+        #expect(drafts.draft(for: request.id)?.auth.typedCredential(for: reference) == nil)
         #expect(!drafts.isEdited(request.id))
     }
 
@@ -229,20 +231,20 @@ struct RequestDraftsCredentialTests: RequestDraftsTesting {
         #expect(drafts.credential(reference, in: request.id) == .notYetAvailable)
     }
 
-    @Test("Clearing a token removes the stored value")
-    func clearingATokenRemovesIt() async {
+    @Test("Clearing a token removes the stored value once the row has moved on")
+    func clearingATokenRemovesIt() async throws {
         let secretStore = RecordingSecretStore()
         secretStore.save("stored", for: token.identifier)
-        let drafts = RequestDrafts(secretStore: secretStore) { _, _, _ in [] }
         let request = Request(name: "Request", auth: bearer(token))
-        drafts.savedRequestDidChange(request)
+        let (_, drafts) = try stored(request, secretStore: secretStore)
         await drafts.loadCredential(token, in: request.id)
         drafts.update(request.id) { $0.auth.setCredential("", for: token) }
 
         #expect(await drafts.save(request.id))
 
         #expect(secretStore.values.isEmpty)
-        #expect(drafts.credential(token, in: request.id) == .notYetAvailable)
+        let reference = try #require(drafts.draft(for: request.id)?.auth.tokenReference)
+        #expect(drafts.credential(reference, in: request.id) == .notYetAvailable)
     }
 
     @Test("Revert drops a typed credential")

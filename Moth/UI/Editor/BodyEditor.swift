@@ -38,14 +38,14 @@ struct BodyEditor: View {
         .accessibilityIdentifier("body.kind")
     }
 
-    /// A stored type outside the four keeps its entry, because an import can bring one.
+    /// A stored type outside the four keeps its entry, because an import can bring one and a change can be undone.
     private var contentTypePicker: some View {
         Picker("RAW_CONTENT_TYPE_LABEL", selection: contentType) {
             ForEach(RawContentType.allCases, id: \.self) { type in
                 Text(type.title).tag(type.rawValue)
             }
-            if RawContentType(rawValue: draft.rawContentType) == nil {
-                Text(verbatim: draft.rawContentType).tag(draft.rawContentType)
+            if let stored = draft.storedContentType {
+                Text(verbatim: stored).tag(stored)
             }
         }
         .labelsHidden()

@@ -328,7 +328,6 @@ struct RequestDraftTests {
         draft.auth.setCredential("s3cret", for: token)
 
         #expect(!draft.hasSameContent(as: saved))
-        #expect(draft.edit.auth == auth)
         let encoded = try JSONEncoder().encode(draft.edit.auth)
         #expect(try !#require(String(bytes: encoded, encoding: .utf8)).contains("s3cret"))
     }

@@ -94,6 +94,41 @@ struct BodyDraftTests {
         #expect(fields[1] == file)
     }
 
+    @Test("A stored type outside the four stays on offer after another is chosen, and one of the four adds nothing")
+    func storedContentType() {
+        var draft = BodyDraft(.raw(content: "x", contentType: "application/javascript"))
+        #expect(draft.storedContentType == "application/javascript")
+
+        draft.rawContentType = RawContentType.json.rawValue
+
+        #expect(draft.storedContentType == "application/javascript")
+        #expect(BodyDraft(.raw(content: "x", contentType: "application/json")).storedContentType == nil)
+    }
+
+    @Test("Following what is saved takes its kind and fields, and keeps what was typed for another kind")
+    func followingKeepsHiddenFields() {
+        var draft = BodyDraft(.none)
+        draft.kind = .raw
+        draft.rawContent = "typed"
+        draft.kind = .none
+
+        draft.follow(BodyDraft(.urlEncoded([KeyValue(key: "a", value: "b")])))
+
+        #expect(draft.kind == .urlEncoded)
+        #expect(draft.urlEncodedRows.map(\.key) == ["a"])
+        #expect(draft.rawContent == "typed")
+    }
+
+    @Test("Following a saved binary body keeps it, so the draft can't lose what it can't show")
+    func followingKeepsAnUnsupportedBody() {
+        let binary = RequestBody.binary(filePath: "/tmp/a.bin")
+        var draft = BodyDraft(.none)
+
+        draft.follow(BodyDraft(binary))
+
+        #expect(draft.requestBody == binary)
+    }
+
     @Test("Rows typed back in are the same content, whatever their identifiers")
     func comparisonIgnoresRowIdentifiers() {
         let urlEncoded = BodyDraft(.urlEncoded([KeyValue(key: "a", value: "b")]))
