@@ -69,6 +69,22 @@ final class ImportTests: MothTestCase {
     }
 
     @MainActor
+    func testImportIsUnavailableUntilTheResultCloses() throws {
+        let (window, result) = try importing("postman-cli-action/postman-echo-environment.json")
+
+        window.openFileMenu()
+        XCTAssertFalse(window.fileMenuItem("Import\u{2026}").isEnabled)
+        window.closeMenu()
+
+        result.doneButton.click()
+        XCTAssertTrue(result.waitForDismissal())
+
+        window.openFileMenu()
+        XCTAssertTrue(window.fileMenuItem("Import\u{2026}").isEnabled)
+        window.closeMenu()
+    }
+
+    @MainActor
     func testRefusesAFileOfAnotherKind() throws {
         let (window, result) = try importing("postman-collection-transformer/v2.1.0/proper-description-parsing.json")
 

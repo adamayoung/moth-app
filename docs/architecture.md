@@ -154,9 +154,24 @@ header name, so repeated names go out comma-joined, and repeated cookies joined 
 
 `PostmanImporter` takes a file's bytes, so the app needs no `PostmanKit` type, and
 returns domain values with counts of what it imported and skipped. It writes
-nothing to the store. Secrets are saved once mapping finishes, and a failed save
-removes those already saved. A caller whose store write then fails removes
-`PostmanImportResult.secrets`.
+nothing to the store itself. Secrets are saved once mapping finishes, and a failed
+save removes those already saved. `importFile(_:…:into:)` then hands the content to
+the store it is given, and removes `PostmanImportResult.secrets` if that throws, so
+a failed import leaves no stray items. A caller of the form with no store does this
+itself.
+
+File > Import… belongs to `ImportModel`, one per window. It reads the chosen file
+inside its security scope, because the sandbox grants user-selected files read-only
+and only within that scope. `StoreWriter.create(_:)` writes a whole collection or
+environment in one `write` batch, so a failed save leaves nothing of it. Reading,
+mapping and saving secrets all run off the main actor, and the store write runs on
+`StoreActor`. "Importing…" is a sidebar footer, not a sheet, so the window stays
+usable. Closing a window during an import still finishes the write.
+
+`PostmanImportResult.importedSummary` and `skippedSummary` hold the result sheet's
+text, in `MothImport`'s catalog. The skipped list follows the catalog's language
+rather than the Mac's region. It names only what was dropped: auth stored by kind
+with no provider is not listed, because the send reports it.
 
 Moth keeps what it can store and counts the rest:
 
