@@ -8,8 +8,18 @@ import Foundation
 enum AppLaunchMode: Equatable {
     case live
     case uiTesting
+    case uiTestingWithICloudSync
+    case uiTestingStoreFailure
     case demo
     case testHost
+
+    /// A seeded store fails only on a schema defect, and a test host left waiting on a modal alert would never exit.
+    var showsStoreFailureAlert: Bool {
+        switch self {
+        case .live, .uiTestingStoreFailure: true
+        case .uiTesting, .uiTestingWithICloudSync, .demo, .testHost: false
+        }
+    }
 
     init(
         arguments: [String],
@@ -24,10 +34,12 @@ enum AppLaunchMode: Equatable {
             throw .conflictingModes
         }
 
+        let uiTestingMode = try Self.uiTestingMode(in: launchArguments, isUITesting: isUITesting)
+
         if try Self.isTestHost(environment) {
             self = .testHost
-        } else if isUITesting {
-            self = .uiTesting
+        } else if let uiTestingMode {
+            self = uiTestingMode
         } else if isDemo {
             self = .demo
         } else {
@@ -37,6 +49,32 @@ enum AppLaunchMode: Equatable {
 
     static func initialisesCloudKitSchema(arguments: [String]) throws(LaunchConfigurationError) -> Bool {
         try selects("-InitializeCloudKitSchema", in: Array(arguments.dropFirst()))
+    }
+
+    private static func uiTestingMode(
+        in arguments: [String],
+        isUITesting: Bool
+    ) throws(LaunchConfigurationError) -> AppLaunchMode? {
+        let simulatesStoreFailure = try selects("-UITestStoreFailure", in: arguments)
+        let simulatesICloudSync = try selects("-UITestICloudSync", in: arguments)
+
+        guard isUITesting else {
+            if simulatesStoreFailure {
+                throw .needsUITesting(flag: "-UITestStoreFailure")
+            }
+            if simulatesICloudSync {
+                throw .needsUITesting(flag: "-UITestICloudSync")
+            }
+            return nil
+        }
+
+        if simulatesStoreFailure, simulatesICloudSync {
+            throw .conflictingUITestPairs
+        }
+        if simulatesStoreFailure {
+            return .uiTestingStoreFailure
+        }
+        return simulatesICloudSync ? .uiTestingWithICloudSync : .uiTesting
     }
 
     private static func isTestHost(_ environment: [String: String]) throws(LaunchConfigurationError) -> Bool {

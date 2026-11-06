@@ -7,9 +7,11 @@ import SwiftUI
 
 struct MainWindowView: View {
 
+    let isSyncedToICloud: Bool
+
     var body: some View {
         NavigationSplitView {
-            SidebarView()
+            SidebarView(isSyncedToICloud: isSyncedToICloud)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
             VStack(spacing: 0) {
@@ -29,6 +31,6 @@ struct MainWindowView: View {
 }
 
 #Preview {
-    MainWindowView()
+    MainWindowView(isSyncedToICloud: false)
         .frame(width: 1100, height: 720)
 }

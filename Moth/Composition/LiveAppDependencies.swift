@@ -14,6 +14,7 @@ final class LiveAppDependencies: AppDependencies {
     let secretStore: any SecretStore
     let dataModel: DataModel
     let iCloudContainerIdentifier: String?
+    let isSyncedToICloud: Bool
     let launchReconcile: Task<Void, Never>
 
     /// `openDataModel` has no default, so that no test can reach the real store or CloudKit by leaving it out.
@@ -25,8 +26,10 @@ final class LiveAppDependencies: AppDependencies {
         let configuredIdentifier = infoDictionary["MothICloudContainer"] as? String ?? ""
         let identifier = configuredIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let containerIdentifier = identifier.isEmpty ? nil : identifier
-        let dataModel = try openDataModel(Self.syncedContainer(containerIdentifier, signature: signature))
+        let syncedContainer = Self.syncedContainer(containerIdentifier, signature: signature)
+        let dataModel = try openDataModel(syncedContainer)
         self.iCloudContainerIdentifier = containerIdentifier
+        self.isSyncedToICloud = syncedContainer != nil
         self.secretStore = Self.makeSecretStore(signature: signature)
         self.dataModel = dataModel
         self.launchReconcile = Self.reconcileAtLaunch(dataModel.writer)

@@ -11,7 +11,7 @@ struct MacScene: Scene {
 
     var body: some Scene {
         WindowGroup {
-            MainWindowView()
+            MainWindowView(isSyncedToICloud: dependencies.isSyncedToICloud)
         }
         .defaultSize(width: 1100, height: 720)
         .windowResizability(.contentMinSize)

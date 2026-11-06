@@ -25,7 +25,15 @@ struct AppStringCatalogTests {
             ("RESPONSE_EMPTY_DESCRIPTION", "Send a request to see its response here."),
             ("TAB_STRIP_LABEL", "Request Tabs"),
             ("REQUEST_EDITOR_PANE_LABEL", "Request Editor"),
-            ("RESPONSE_PANE_LABEL", "Response")
+            ("RESPONSE_PANE_LABEL", "Response"),
+            ("SIDEBAR_ICLOUD_SYNC_OFF", "iCloud Sync Off"),
+            ("SIDEBAR_ICLOUD_SYNC_OFF_HELP", "This build has no iCloud container, so your data stays on this Mac."),
+            ("STORE_FAILURE_ALERT_TITLE", "Moth can’t open your data."),
+            (
+                "STORE_FAILURE_ALERT_MESSAGE",
+                "Quit, then open Moth again. If this keeps happening, the data may come from a newer version of Moth."
+            ),
+            ("STORE_FAILURE_ALERT_QUIT", "Quit")
         ]
     )
     func catalogHoldsEnglishValue(key: String, expected: String) throws {
