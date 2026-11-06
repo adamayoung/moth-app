@@ -80,7 +80,8 @@ focused doubles. This is plain constructor injection at one composition root,
 with no container.
 
 Anything the app does with no window open belongs to an owner that lives as
-long as the app, never to a `.task` on a view.
+long as the app, never to a `.task` on a view. `MothAppDelegate` asks before a
+quit that would lose edits, so it reads `RequestDrafts` from the graph.
 
 `LiveAppDependencies` takes the function that opens its store, and that function
 has no default, so a test cannot reach the real store or CloudKit by leaving it
@@ -272,6 +273,47 @@ committing the old kind would lose a value another Mac has already moved. A
 sync can also land before its delivery, so `updateVariable` takes the secret
 its caller read and refuses the write if the store has moved on. The model runs
 its writes one at a time, because Keychain calls finish in no set order.
+
+### Editing a Request
+
+A request saves explicitly, unlike a variable. An edit changes a `RequestDraft`,
+a value type, and File > Save writes its `RequestEdit` through
+`StoreWriter.updateRequest`. `RequestEdit` holds the method, URL template, query
+and path rows and headers. It has no name, so a Save can't undo a rename from the
+sidebar, and it leaves the body and auth alone.
+
+The URL field shows the query the store keeps in rows, because
+[a query that has rows leaves the template](#postman-import). `RequestDraft`
+composes the field from the rows that are sent, so a disabled row or one with no
+key stays out of it, and a `{{variable}}` stays literal while everything else is
+percent-encoded. Typing in the field keeps the text as typed and parses it back
+into rows by text, because `{{host}}/users` is no URL until it is resolved. The
+enabled rows take the parsed pairs by position, so they keep their identities. A
+`+` in the query reads as the space a server reads, because `RequestBuilder` would
+send a row's `+` as `%2B`. Path rows come from the URL by the rule sending uses.
+Renaming one segment keeps its row, and removing a segment removes it, down to a
+bare `:`. A wider change keeps no value by position. A stored row with no segment
+in the template stays hidden and is saved as it was, because a variable can hold
+the segment. Save shows the stored form, so `?flag` reads `?flag=`: a `KeyValue`
+has no null value, and that is what `RequestBuilder` sends.
+
+Rows can't hold everything a template's own query can, and a Save moves that
+query into rows. A whole query in one variable, `?{{query}}`, becomes a key. A
+variable that holds encoded text is encoded again. An escape that isn't UTF-8,
+`%E9`, stays as literal text and goes out as `%25E9`.
+
+`RequestDrafts` holds a saved form and a draft for each request. There is one for
+the app, on `AppDependencies`, because the quit alert has no view in reach. So two
+windows on one request share a draft, and the alert counts requests. Drafts stay
+in memory. Closing a window keeps them, and the alert still counts them.
+
+`RequestEditorObserver` queries the selected tab's row alone, because decoding
+every request on each delivery would read every body. A delivery moves the saved
+form under an edited draft and leaves the draft, so a sync never takes what was
+typed, Revert goes to what is stored now, and the last Save wins. A clean draft
+follows the store. A row that can't be decoded shows a message and no editor, and
+refuses Save, because [a default would overwrite the value](#rows-and-stored-json).
+A failed Save keeps the draft and leaves its tab open.
 
 ### CloudKit Model Rules
 

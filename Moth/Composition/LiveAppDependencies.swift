@@ -18,6 +18,7 @@ final class LiveAppDependencies: AppDependencies {
     let activeEnvironment = ActiveEnvironment(defaults: .standard)
     let launchReconcile: Task<Void, Never>
     let requestTabStore = RequestTabStore(defaults: .standard, key: "RequestTabs")
+    let requestDrafts: RequestDrafts
     let importFileSource = ImportFileSource.panel
 
     /// `openDataModel` has no default, so that no test can reach the real store or CloudKit by leaving it out.
@@ -35,6 +36,7 @@ final class LiveAppDependencies: AppDependencies {
         self.isSyncedToICloud = syncedContainer != nil
         self.secretStore = Self.makeSecretStore(signature: signature)
         self.dataModel = dataModel
+        self.requestDrafts = RequestDrafts(writer: dataModel.writer)
         self.launchReconcile = Self.reconcileAtLaunch(dataModel.writer)
     }
 

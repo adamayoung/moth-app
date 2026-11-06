@@ -78,7 +78,37 @@ struct AppStringCatalogTests {
                 "This data was saved by a newer version of Moth. Update Moth to open it. "
                     + "Your data has not been changed."
             ),
-            ("STORE_FAILURE_ALERT_QUIT", "Quit")
+            ("STORE_FAILURE_ALERT_QUIT", "Quit"),
+            ("MENU_SAVE", "Save"),
+            ("MENU_REVERT_TO_SAVED", "Revert to Saved"),
+            ("REQUEST_EDITOR_METHOD_LABEL", "Method"),
+            ("REQUEST_EDITOR_URL_LABEL", "URL"),
+            ("REQUEST_EDITOR_SECTIONS_LABEL", "Request Sections"),
+            ("REQUEST_EDITOR_SECTION_PARAMS", "Params"),
+            ("REQUEST_EDITOR_SECTION_HEADERS", "Headers"),
+            ("REQUEST_EDITOR_SECTION_BODY", "Body"),
+            ("REQUEST_EDITOR_SECTION_AUTH", "Auth"),
+            ("REQUEST_EDITOR_PATH_VARIABLES", "Path Variables"),
+            ("KEY_VALUE_COLUMN_ENABLED", "Enabled"),
+            ("KEY_VALUE_COLUMN_KEY", "Key"),
+            ("KEY_VALUE_COLUMN_VALUE", "Value"),
+            ("REQUEST_EDITOR_ADD_PARAMETER", "Add Parameter"),
+            ("REQUEST_EDITOR_ADD_HEADER", "Add Header"),
+            ("REQUEST_EDITOR_REMOVE_PARAMETER", "Remove Parameter"),
+            ("REQUEST_EDITOR_REMOVE_HEADER", "Remove Header"),
+            ("REQUEST_EDITOR_UNREADABLE_TITLE", "Can\u{2019}t Read This Request"),
+            (
+                "REQUEST_EDITOR_UNREADABLE_DESCRIPTION",
+                "It was saved by a newer version of Moth, or it\u{2019}s damaged."
+            ),
+            ("TAB_EDITED_LABEL_%@", "%@ has unsaved changes"),
+            ("CLOSE_TAB_ALERT_TITLE_%@", "Save changes to \u{201C}%@\u{201D}?"),
+            ("CLOSE_TAB_ALERT_SAVE", "Save"),
+            ("CLOSE_TAB_ALERT_DONT_SAVE", "Don\u{2019}t Save"),
+            ("CLOSE_TAB_ALERT_CANCEL", "Cancel"),
+            ("QUIT_ALERT_TITLE", "Quit with unsaved changes?"),
+            ("QUIT_ALERT_QUIT", "Quit Anyway"),
+            ("QUIT_ALERT_CANCEL", "Cancel")
         ]
     )
     func catalogHoldsEnglishValue(key: String, expected: String) throws {
@@ -98,6 +128,21 @@ struct AppStringCatalogTests {
         ]
     )
     func deleteMessageVariesByCount(key: String, count: Int, expected: String) throws {
+        try expectPlural(key: key, count: count, expected: expected)
+    }
+
+    @Test(
+        "The quit alert's count reads correctly in the singular and the plural",
+        arguments: [
+            (1, "Your unsaved edits to 1 request will be lost."),
+            (2, "Your unsaved edits to 2 requests will be lost.")
+        ]
+    )
+    func quitMessageVariesByCount(count: Int, expected: String) throws {
+        try expectPlural(key: "QUIT_ALERT_MESSAGE_%lld", count: count, expected: expected)
+    }
+
+    private func expectPlural(key: String, count: Int, expected: String) throws {
         let englishURL = try #require(Bundle.main.url(forResource: "en-GB", withExtension: "lproj"))
         let english = try #require(Bundle(url: englishURL))
         let format = english.localizedString(

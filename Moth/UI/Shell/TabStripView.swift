@@ -42,8 +42,9 @@ struct TabStripView: View {
                         RequestTabView(
                             tab: tab,
                             isSelected: tab.id == selected,
+                            isEdited: tabs.drafts.isEdited(tab.id),
                             select: { tabs.select(tab.id) },
-                            close: { tabs.close(tab.id) }
+                            close: { tabs.requestClose(tab.id) }
                         )
                     }
                 }
@@ -69,12 +70,12 @@ private func openSeededRequests(from tree: CollectionTree, in tabs: RequestTabsM
 }
 
 #Preview("No Tabs") {
-    TabStripView(tabs: RequestTabsModel(store: .preview))
+    TabStripView(tabs: RequestTabsModel(store: .preview, drafts: RequestDrafts(save: { _, _ in })))
         .frame(width: 600)
 }
 
 #Preview("Open Tabs") {
-    let tabs = RequestTabsModel(store: .preview)
+    let tabs = RequestTabsModel(store: .preview, drafts: RequestDrafts(save: { _, _ in }))
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
         TabStripView(tabs: tabs)
             .frame(width: 600)

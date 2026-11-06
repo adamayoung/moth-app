@@ -48,7 +48,7 @@ enum SeedData {
             children: [
                 CollectionItem(
                     sortOrder: 0,
-                    node: .request(Request(id: identifier(3), name: "List Users", urlTemplate: "{{host}}/users"))
+                    node: .request(listUsers)
                 ),
                 CollectionItem(
                     sortOrder: 1,
@@ -56,7 +56,13 @@ enum SeedData {
                 ),
                 CollectionItem(
                     sortOrder: 2,
-                    node: .request(Request(id: identifier(8), name: "Update User", method: .patch))
+                    node: .request(Request(
+                        id: identifier(8),
+                        name: "Update User",
+                        method: .patch,
+                        urlTemplate: "{{host}}/users/:id",
+                        pathParameters: [KeyValue(id: identifier(25), key: "id", value: "42")]
+                    ))
                 ),
                 CollectionItem(sortOrder: 3, node: .folder(admins))
             ]
@@ -80,6 +86,20 @@ enum SeedData {
             activeEnvironmentID: environment.id
         )
     }()
+
+    private static let listUsers = Request(
+        id: identifier(3),
+        name: "List Users",
+        urlTemplate: "{{host}}/users",
+        queryParameters: [
+            KeyValue(id: identifier(21), key: "limit", value: "10"),
+            KeyValue(id: identifier(22), key: "offset", value: "0", isEnabled: false)
+        ],
+        headers: [
+            KeyValue(id: identifier(23), key: "Accept", value: "application/json"),
+            KeyValue(id: identifier(24), key: "X-Debug", value: "1", isEnabled: false)
+        ]
+    )
 
     private static func identifier(_ value: UInt8) -> UUID {
         UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, value))

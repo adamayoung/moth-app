@@ -46,8 +46,7 @@ nonisolated extension ResolvedRequest {
 
     private func substitutingPathVariable(in segment: Substring) -> String {
         guard
-            segment.hasPrefix(":"),
-            let name = segment.dropFirst().removingPercentEncoding,
+            let name = segment.pathVariableName,
             let variable = pathParameters.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
         else {
             return String(segment)
@@ -65,6 +64,17 @@ nonisolated extension ResolvedRequest {
 
         let existing = query.map { [$0] } ?? []
         return (existing + parameters).filter { !$0.isEmpty }.joined(separator: "&")
+    }
+
+}
+
+nonisolated extension Substring {
+
+    var pathVariableName: String? {
+        guard hasPrefix(":"), let name = dropFirst().removingPercentEncoding, !name.isEmpty else {
+            return nil
+        }
+        return name
     }
 
 }

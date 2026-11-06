@@ -23,6 +23,21 @@ nonisolated extension RequestModel {
         }
     }
 
+    func apply(_ edit: RequestEdit) throws {
+        assign(edit.method.rawValue, to: \.methodRawValue)
+        assign(edit.urlTemplate, to: \.urlTemplate)
+        try assign(StoredJSON.encode(edit.queryParameters), to: \.queryParametersData)
+        try assign(StoredJSON.encode(edit.pathParameters), to: \.pathParametersData)
+        try assign(StoredJSON.encode(edit.headers), to: \.headersData)
+    }
+
+    /// An equal value still counts as a change to a row, and a sync would carry it to every Mac.
+    private func assign<Value: Equatable>(_ value: Value, to property: ReferenceWritableKeyPath<RequestModel, Value>) {
+        if self[keyPath: property] != value {
+            self[keyPath: property] = value
+        }
+    }
+
     public func asDomain() throws -> Request {
         try Request(
             id: id,

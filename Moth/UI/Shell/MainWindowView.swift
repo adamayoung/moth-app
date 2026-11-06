@@ -23,6 +23,7 @@ struct MainWindowView: View {
         secretStore: any SecretStore,
         activeEnvironment: ActiveEnvironment,
         tabStore: RequestTabStore,
+        requestDrafts: RequestDrafts,
         isSyncedToICloud: Bool,
         importFileSource: ImportFileSource
     ) {
@@ -37,7 +38,7 @@ struct MainWindowView: View {
         self.isSyncedToICloud = isSyncedToICloud
         self.sidebar = sidebar
         self.environments = environments
-        self.tabs = RequestTabsModel(store: tabStore)
+        self.tabs = RequestTabsModel(store: tabStore, drafts: requestDrafts)
         self.imports = ImportModel(
             source: importFileSource,
             secretStore: secretStore,
@@ -96,6 +97,7 @@ struct MainWindowView: View {
             secretStore: InMemorySecretStore(),
             activeEnvironment: ActiveEnvironment(inMemory: SeedData.workspace.activeEnvironmentID),
             tabStore: .preview,
+            requestDrafts: RequestDrafts(writer: dataModel.writer),
             isSyncedToICloud: false,
             importFileSource: .panel
         )

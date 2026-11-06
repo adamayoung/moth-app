@@ -16,6 +16,7 @@ struct MacScene: Scene {
                 secretStore: dependencies.secretStore,
                 activeEnvironment: dependencies.activeEnvironment,
                 tabStore: dependencies.requestTabStore,
+                requestDrafts: dependencies.requestDrafts,
                 isSyncedToICloud: dependencies.isSyncedToICloud,
                 importFileSource: dependencies.importFileSource
             )

@@ -4,6 +4,7 @@
 //  Copyright © 2026 Adam Young.
 
 import AppKit
+import MothCore
 import SwiftUI
 
 /// A value, because a `Commands` body cannot observe the model: the view that can publishes what the menu needs.
@@ -11,6 +12,7 @@ struct RequestTabCommandContext {
 
     let tabs: RequestTabsModel
     let hasOpenTabs: Bool
+    let savableRequest: Request.ID?
 
 }
 
@@ -40,6 +42,30 @@ struct RequestTabCommands: Commands {
 
             Button("MENU_CLOSE_WINDOW", action: closeKeyWindow)
                 .keyboardShortcut("w", modifiers: [.command, .shift])
+
+            Divider()
+
+            Button("MENU_SAVE") {
+                withSavableRequest { tabs, id in
+                    Task { await tabs.drafts.save(id) }
+                }
+            }
+            .keyboardShortcut("s")
+            .disabled(context?.savableRequest == nil)
+
+            Button("MENU_REVERT_TO_SAVED") {
+                withSavableRequest { tabs, id in
+                    tabs.drafts.revert(id)
+                }
+            }
+            .disabled(context?.savableRequest == nil)
+        }
+    }
+
+    /// The focused value outlives a sheet or panel taking the keyboard, and a draft must not change behind one.
+    private func withSavableRequest(_ action: (RequestTabsModel, Request.ID) -> Void) {
+        if let context, let id = context.savableRequest, NSApp.keyWindow == NSApp.mainWindow {
+            action(context.tabs, id)
         }
     }
 
