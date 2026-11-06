@@ -6,7 +6,6 @@
 import MothCore
 import OSLog
 
-/// What the secret store holds, as far as this draft has read it.
 struct StoredCredentials {
 
     private var values: [SecretReference: SecretValue] = [:]
@@ -30,7 +29,6 @@ struct StoredCredentials {
 
 extension SecretValue {
 
-    /// What a credential field shows, before anything has been typed.
     var text: String {
         if case .available(let value) = self {
             value

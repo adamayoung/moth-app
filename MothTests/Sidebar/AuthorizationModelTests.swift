@@ -77,7 +77,8 @@ struct AuthorizationModelTests {
         #expect(secretStore.values == [reference.identifier: "s3cret-token"])
         let row = try savedFolder()
         #expect(try row.asDomain().auth == bearer(reference))
-        #expect(try !String(decoding: #require(row.authData), as: UTF8.self).contains("s3cret-token"))
+        let authJSON = try #require(row.authData)
+        #expect(try !#require(String(bytes: authJSON, encoding: .utf8)).contains("s3cret-token"))
     }
 
     @Test("A collection's auth is saved")

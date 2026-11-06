@@ -330,7 +330,7 @@ struct RequestDraftTests {
         #expect(!draft.hasSameContent(as: saved))
         #expect(draft.edit.auth == auth)
         let encoded = try JSONEncoder().encode(draft.edit.auth)
-        #expect(!String(decoding: encoded, as: UTF8.self).contains("s3cret"))
+        #expect(try !#require(String(bytes: encoded, encoding: .utf8)).contains("s3cret"))
     }
 
 }

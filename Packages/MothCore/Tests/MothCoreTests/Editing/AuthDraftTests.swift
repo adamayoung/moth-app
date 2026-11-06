@@ -106,7 +106,7 @@ struct AuthDraftTests {
 
         #expect(draft.requestAuth == bearer)
         let encoded = try JSONEncoder().encode(draft.requestAuth)
-        #expect(!String(decoding: encoded, as: UTF8.self).contains("s3cret"))
+        #expect(try !#require(String(bytes: encoded, encoding: .utf8)).contains("s3cret"))
     }
 
     @Test("A typed credential counts as a change, until it is discarded")

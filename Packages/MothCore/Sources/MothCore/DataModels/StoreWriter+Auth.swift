@@ -12,7 +12,6 @@ public nonisolated enum AuthWriteError: Error, Equatable {
 
 }
 
-/// A row whose auth is stored as JSON, and may hold references to the Keychain.
 nonisolated protocol StoredAuthRow: PersistentModel {
 
     var authData: Data? { get set }
@@ -65,16 +64,16 @@ extension StoreWriter {
         }
         let others = try authJSON(outside: rows, in: context)
         return letGo.filter { reference in
-            !others.contains { $0.contains(reference.identifier) }
+            !others.contains { $0.range(of: Data(reference.identifier.utf8)) != nil }
         }
     }
 
-    /// Text rather than decoded `Auth`, because a row this build can't read may still hold a reference, and keeping an
+    /// Bytes rather than decoded `Auth`, because a row this build can't read may still hold a reference, and keeping an
     /// item by mistake only leaves a stray.
     private static func authJSON(
         outside rows: [any StoredAuthRow],
         in context: ModelContext
-    ) throws -> [String] {
+    ) throws -> [Data] {
         let changing = Set(rows.map(\.persistentModelID))
         var all: [any StoredAuthRow] = try context.fetch(FetchDescriptor<RequestModel>())
         try all += context.fetch(FetchDescriptor<FolderModel>())
@@ -82,7 +81,6 @@ extension StoreWriter {
         return all
             .filter { !changing.contains($0.persistentModelID) }
             .compactMap(\.authData)
-            .map { String(decoding: $0, as: UTF8.self) }
     }
 
 }

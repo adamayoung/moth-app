@@ -85,7 +85,6 @@ public nonisolated struct AuthDraft: Sendable {
         AuthKind.editable + (unsupportedAuth.map { [AuthKind($0)] } ?? [])
     }
 
-    /// The reference the chosen kind shows a field for.
     public var credentialReference: SecretReference? {
         switch kind {
         case .basic: passwordReference

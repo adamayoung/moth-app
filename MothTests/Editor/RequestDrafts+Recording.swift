@@ -10,7 +10,6 @@ typealias RecordedSave = @MainActor (Request.ID, RequestEdit) async throws -> Vo
 
 extension RequestDrafts {
 
-    /// For a test about the edit a Save writes, which has no credentials to release.
     convenience init(recording save: @escaping RecordedSave) {
         self.init(secretStore: InMemorySecretStore()) { id, edit, _ in
             try await save(id, edit)
