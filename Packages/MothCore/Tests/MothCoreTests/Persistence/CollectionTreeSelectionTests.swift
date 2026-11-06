@@ -32,7 +32,7 @@ nonisolated struct CollectionTreeSelectionTests {
     }
 
     private static func node(_ id: TreeNodeID, children: [TreeNode] = []) -> TreeNode {
-        TreeNode(id: id, name: "", method: nil, children: children)
+        TreeNode(id: id, name: "", method: nil, auth: nil, children: children)
     }
 
     /// The whole tree with `removed` and everything beneath it gone.

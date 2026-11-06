@@ -35,7 +35,7 @@ final class RequestDrafts {
 
     convenience init(writer: StoreWriter) {
         self.init { id, edit in
-            try await writer.updateRequest(id, with: edit)
+            try await writer.updateRequest(id, with: edit, replacing: edit.auth)
         }
     }
 
