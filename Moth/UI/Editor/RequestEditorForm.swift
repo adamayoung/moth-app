@@ -35,6 +35,8 @@ struct RequestEditorForm: View {
     @Binding var section: RequestEditorSection
     let update: ((inout RequestDraft) -> Void) -> Void
 
+    @FocusState private var focusedRow: KeyValue.ID?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(verbatim: name)
@@ -43,18 +45,18 @@ struct RequestEditorForm: View {
 
             address
 
-            Picker("REQUEST_EDITOR_SECTIONS_LABEL", selection: $section) {
-                ForEach(RequestEditorSection.allCases) { section in
-                    Text(section.title).tag(section)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .accessibilityIdentifier("requestEditor.sections")
+            sectionBar
 
-            ScrollView {
-                sectionContent
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    sectionContent
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .onChange(of: focusedRow) { _, row in
+                    if let row {
+                        proxy.scrollTo(row)
+                    }
+                }
             }
         }
         .padding()
@@ -77,6 +79,38 @@ struct RequestEditorForm: View {
         }
     }
 
+    /// Add sits here, outside the scroll view, because a short pane would otherwise hide it below the rows.
+    private var sectionBar: some View {
+        HStack {
+            Picker("REQUEST_EDITOR_SECTIONS_LABEL", selection: $section) {
+                ForEach(RequestEditorSection.allCases) { section in
+                    Text(section.title).tag(section)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .accessibilityIdentifier("requestEditor.sections")
+
+            Spacer()
+
+            switch section {
+            case .params:
+                Button("REQUEST_EDITOR_ADD_PARAMETER") {
+                    addRow(to: \.queryParameters)
+                }
+                .accessibilityIdentifier("params.add")
+            case .headers:
+                Button("REQUEST_EDITOR_ADD_HEADER") {
+                    addRow(to: \.headers)
+                }
+                .accessibilityIdentifier("headers.add")
+            case .body, .auth:
+                EmptyView()
+            }
+        }
+    }
+
     @ViewBuilder
     private var sectionContent: some View {
         switch section {
@@ -85,8 +119,8 @@ struct RequestEditorForm: View {
                 KeyValueGrid(
                     rows: draft.queryParameters,
                     identifierPrefix: "params",
-                    addTitle: "REQUEST_EDITOR_ADD_PARAMETER",
-                    removeLabel: "REQUEST_EDITOR_REMOVE_PARAMETER"
+                    removeLabel: "REQUEST_EDITOR_REMOVE_PARAMETER",
+                    focusedRow: $focusedRow
                 ) { rows in
                     update { $0.queryParameters = rows }
                 }
@@ -101,13 +135,22 @@ struct RequestEditorForm: View {
             KeyValueGrid(
                 rows: draft.headers,
                 identifierPrefix: "headers",
-                addTitle: "REQUEST_EDITOR_ADD_HEADER",
-                removeLabel: "REQUEST_EDITOR_REMOVE_HEADER"
+                removeLabel: "REQUEST_EDITOR_REMOVE_HEADER",
+                focusedRow: $focusedRow
             ) { rows in
                 update { $0.headers = rows }
             }
         case .body, .auth:
             EmptyView()
+        }
+    }
+
+    /// Focus moves on the next turn, because the new row's field does not exist until this change has rendered.
+    private func addRow(to rows: WritableKeyPath<RequestDraft, [KeyValue]>) {
+        let row = KeyValue(key: "", value: "")
+        update { $0[keyPath: rows].append(row) }
+        Task {
+            focusedRow = row.id
         }
     }
 

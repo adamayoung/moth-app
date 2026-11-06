@@ -49,6 +49,13 @@ final class RequestTabsModel {
         tabs.close(id)
     }
 
+    /// A text field commits as it is torn down with focus, and that text must not land on a tab that has just closed.
+    func editDraft(_ id: Request.ID, _ change: (inout RequestDraft) -> Void) {
+        if tabs.selected == id {
+            drafts.update(id, change)
+        }
+    }
+
     func requestClose(_ id: Request.ID) {
         if drafts.isEdited(id), let tab = tab(for: id) {
             pendingClose = tab

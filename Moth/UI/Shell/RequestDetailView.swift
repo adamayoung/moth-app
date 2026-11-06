@@ -19,8 +19,8 @@ struct RequestDetailView: View {
             TabStripView(tabs: tabs)
             Divider()
             VSplitView {
-                RequestEditorPane(tab: selected, drafts: tabs.drafts)
-                    .frame(minHeight: 160)
+                RequestEditorPane(tab: selected, drafts: tabs.drafts, edit: tabs.editDraft)
+                    .frame(minHeight: 250)
                 ResponsePane()
                     .frame(minHeight: 160)
             }

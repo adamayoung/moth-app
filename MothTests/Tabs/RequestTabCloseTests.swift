@@ -121,6 +121,26 @@ final class RequestTabCloseTests {
         #expect(!tabs.drafts.isEdited(request.id))
     }
 
+    @Test("A field that commits as its tab closes puts no edit back on the draft")
+    func commitFromClosedTabIsIgnored() async throws {
+        let tabs = try editedTabs()
+
+        await tabs.saveAndClose(request.id)
+        tabs.editDraft(request.id) { $0.url = "https://example.com/stale" }
+
+        #expect(tabs.drafts.draft(for: request.id)?.url == "https://example.com/more")
+        #expect(!tabs.drafts.isEdited(request.id))
+    }
+
+    @Test("An edit to the selected tab reaches its draft")
+    func editReachesDraft() throws {
+        let tabs = try openedTabs()
+
+        tabs.editDraft(request.id) { $0.url = "https://example.com/typed" }
+
+        #expect(tabs.drafts.draft(for: request.id)?.url == "https://example.com/typed")
+    }
+
     @Test("A request that leaves the store drops its draft")
     func requestLeavingStoreDropsDraft() throws {
         let tabs = try editedTabs()

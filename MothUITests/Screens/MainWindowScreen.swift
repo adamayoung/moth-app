@@ -168,6 +168,25 @@ struct MainWindowScreen {
             .firstMatch
     }
 
+    func editedDot(on name: String) -> XCUIElement {
+        tabStrip.descendants(matching: .any)
+            .matching(identifier: "requestTabEdited")
+            .matching(NSPredicate(format: "label == %@", "\(name) has unsaved changes"))
+            .firstMatch
+    }
+
+    func waitForEditedDotToClear(on name: String) -> Bool {
+        let gone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: editedDot(on: name)
+        )
+        return XCTWaiter.wait(for: [gone], timeout: 10) == .completed
+    }
+
+    func saveKey() {
+        app.typeKey("s", modifierFlags: .command)
+    }
+
     func closeTabKey() {
         app.typeKey("w", modifierFlags: .command)
     }

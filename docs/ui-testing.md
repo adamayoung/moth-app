@@ -32,8 +32,9 @@ environments: "Seeded Environment", which is the active one and holds `host`, an
 "Staging", which holds six variables, so a delete alert can count one or six. The
 collection holds a variable, `apiVersion`, a folder, "Users", then a request,
 "Health". "Users" holds three requests and a folder, "Admins", which holds one, so
-a delete alert can count four or one. There are no globals. Its identifiers are
-fixed. UI-test and demo launches load it, and the test host's
+a delete alert can count four or one. "List Users" has `limit=10`, a disabled
+`offset=0`, and two headers, one disabled. "Update User" has `:id` set to 42.
+There are no globals. Its identifiers are fixed. UI-test and demo launches load it, and the test host's
 store stays empty. A launch starts with every row collapsed.
 
 The UI test bundle cannot import the app target, so a value it shares with the

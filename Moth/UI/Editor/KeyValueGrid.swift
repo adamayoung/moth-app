@@ -10,23 +10,16 @@ struct KeyValueGrid: View {
 
     let rows: [KeyValue]
     let identifierPrefix: String
-    let addTitle: LocalizedStringKey
     let removeLabel: LocalizedStringKey
+    var focusedRow: FocusState<KeyValue.ID?>.Binding
     let change: ([KeyValue]) -> Void
 
-    @FocusState private var focusedKey: KeyValue.ID?
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
-                header
-                ForEach(rows) { row in
-                    gridRow(row)
-                }
+        Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+            header
+            ForEach(rows) { row in
+                gridRow(row)
             }
-
-            Button(addTitle, action: addRow)
-                .accessibilityIdentifier("\(identifierPrefix).add")
         }
     }
 
@@ -54,7 +47,7 @@ struct KeyValueGrid: View {
             TextField("KEY_VALUE_COLUMN_KEY", text: binding(row, \.key))
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
-                .focused($focusedKey, equals: row.id)
+                .focused(focusedRow, equals: row.id)
                 .accessibilityIdentifier("\(identifierPrefix).key")
 
             TextField("KEY_VALUE_COLUMN_VALUE", text: binding(row, \.value))
@@ -84,15 +77,6 @@ struct KeyValueGrid: View {
                 }
                 return changed
             })
-        }
-    }
-
-    /// Focus moves on the next turn, because the new row's field does not exist until this change has rendered.
-    private func addRow() {
-        let row = KeyValue(key: "", value: "")
-        change(rows + [row])
-        Task {
-            focusedKey = row.id
         }
     }
 
