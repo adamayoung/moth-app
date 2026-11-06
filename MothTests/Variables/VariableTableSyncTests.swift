@@ -80,11 +80,9 @@ struct VariableTableSyncTests {
         try table.variablesDidChange(savedVariables)
         await table.loadSecrets()
         table.update(token.id) { $0.secret?.value = .available(value) }
-        await store.holdNextSave()
+        store.holdNextSave()
         let commit = Task { await table.commit(token.id) }
-        while await !store.isHoldingASave {
-            await Task.yield()
-        }
+        await store.waitUntilHolding()
         return (table, commit)
     }
 
@@ -160,11 +158,11 @@ struct VariableTableSyncTests {
         table.update(token.id) { $0.secret?.value = .available("abc") }
         let secondCommit = Task { await table.commit(token.id) }
         try await letOtherWorkRun()
-        await store.finishHeldSave()
+        store.finishHeldSave()
         await firstCommit.value
         await secondCommit.value
 
-        #expect(await store.value(for: reference.identifier) == "abc")
+        #expect(store.value(for: reference.identifier) == "abc")
     }
 
     @Test("Turning off Secret while its last edit saves leaves nothing in the store")
@@ -174,11 +172,11 @@ struct VariableTableSyncTests {
 
         let turningOff = Task { await table.setSecret(false, for: token.id) }
         try await letOtherWorkRun()
-        await store.finishHeldSave()
+        store.finishHeldSave()
         await commit.value
         await turningOff.value
 
-        #expect(await store.values.isEmpty)
+        #expect(store.values.isEmpty)
         #expect(try savedVariables.last?.currentValue == "ab")
     }
 

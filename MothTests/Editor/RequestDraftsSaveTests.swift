@@ -17,17 +17,6 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
     private let token = SecretReference(identifier: "token")
     private let newerToken = SecretReference(identifier: "newer-token")
 
-    /// Bounded, because a Save that never reaches the store would otherwise hold the machine-wide build lock for ever.
-    private func waitUntilHolding(_ store: HoldingSecretStore) async {
-        for _ in 0 ..< 100_000 {
-            if await store.isHoldingASave {
-                return
-            }
-            await Task.yield()
-        }
-        Issue.record("The Save never reached the secret store")
-    }
-
     @Test("An unsupported body and auth survive a Save through the real writer")
     func unsupportedKindsSurviveSave() async throws {
         let auth = Auth.apiKey(APIKeyAuth(name: "X-Key", value: token, location: .header))
@@ -148,14 +137,14 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
         let request = Request(name: "Request", auth: bearer(token))
         drafts.savedRequestDidChange(request)
         drafts.update(request.id) { $0.auth.setCredential("first", for: token) }
-        await secretStore.holdNextSave()
+        secretStore.holdNextSave()
         let firstSave = Task { await drafts.save(request.id) }
-        await waitUntilHolding(secretStore)
+        await secretStore.waitUntilHolding()
 
         drafts.update(request.id) { $0.auth.setCredential("second", for: token) }
         let secondSave = Task { await drafts.save(request.id) }
         await Task.yield()
-        await secretStore.finishHeldSave()
+        secretStore.finishHeldSave()
 
         #expect(await firstSave.value)
         #expect(await secondSave.value)
@@ -163,7 +152,7 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
             Issue.record("The last Save should have written Bearer auth")
             return
         }
-        #expect(await secretStore.values[saved.token.identifier] == "second")
+        #expect(secretStore.values[saved.token.identifier] == "second")
     }
 
 }

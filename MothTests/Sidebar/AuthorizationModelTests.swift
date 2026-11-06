@@ -187,14 +187,12 @@ struct AuthorizationModelTests {
             draft.setCredential("typed", for: draft.tokenReference)
         }
         let reference = model.draft.tokenReference
-        await secretStore.holdNextSave()
+        secretStore.holdNextSave()
         let save = Task { await model.save() }
-        for _ in 0 ..< 100_000 where await !secretStore.isHoldingASave {
-            await Task.yield()
-        }
+        await secretStore.waitUntilHolding()
 
         model.update { $0.kind = .none }
-        await secretStore.finishHeldSave()
+        secretStore.finishHeldSave()
 
         #expect(await save.value)
         #expect(try savedFolder().asDomain().auth == bearer(reference))
