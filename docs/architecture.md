@@ -560,6 +560,36 @@ URLSession merges a repeated response header into one comma-separated value,
 `Set-Cookie` included. `URLSessionLoopbackTests` records this. Keeping them apart
 needs the transport swap that [Stack](#stack) reserves for a real wall.
 
+## Sending a Request
+
+Send takes what the tab shows. `RequestDraft.outgoing(from:in:)` puts the draft's
+fields over the stored row, because a draft holds no settings or variables, and
+replaces `.inherit` from `CollectionTree`, which already holds each container's
+decoded auth. A container whose auth can't be read refuses the send rather than
+going out with no auth. `DataModel.sendContext` fetches each variable scope, because
+a row's to-many arrays go stale on the main context.
+
+`RequestSender` resolves, builds and transmits off the main actor. A typed
+credential answers from the draft through a `SecretStore` of its own, so an unsaved
+one is sent and never reaches the Keychain. It never logs: a request's URL, headers
+and body can each hold a secret.
+
+A send ends in a `SendResult`. `ResponseContent` is worked out there, once, and not
+in a view. It goes by the bytes rather than `Content-Type`, because servers mislabel
+binary as text. `JSONReindenter` lays out the text the server sent, because
+`JSONSerialization` output loses key order and rewrites numbers. A body over 2 MB
+stays raw. `ReadOnlyTextView` shows it, because `Text` lays out megabytes on the main
+thread.
+
+A request that can't be built was not sent, so it carries no "sent as written" note.
+That includes `{{host}}` in the host with no active environment, which reads "This
+URL isn’t valid." A failure after that keeps its notes, because the request went out.
+
+`RequestResponses` holds the latest response for each tab of one window, in memory,
+so a relaunch returns to No Response. Cancel shows at once, and each send has a token,
+so a result that arrives afterwards lands nowhere. Closing a tab cancels its send and
+drops its response, and closing a window cancels.
+
 ## Concurrency
 
 `MothCore`, `MothImport` and the app default to `MainActor`. `HTTPKit` and

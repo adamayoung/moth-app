@@ -11,6 +11,9 @@ struct RequestEditorPane: View {
     let tab: RequestTab?
     let drafts: RequestDrafts
     let edit: (Request.ID, (inout RequestDraft) -> Void) -> Void
+    var isSending = false
+    var send: (Request.ID) -> Void = { _ in }
+    var cancelSend: (Request.ID) -> Void = { _ in }
 
     @State private var section = RequestEditorSection.params
 
@@ -52,7 +55,10 @@ struct RequestEditorPane: View {
                 section: $section,
                 credential: { drafts.credential($0, in: tab.id) },
                 loadCredential: { await drafts.loadCredential($0, in: tab.id) },
-                update: { change in edit(tab.id, change) }
+                update: { change in edit(tab.id, change) },
+                isSending: isSending,
+                send: { send(tab.id) },
+                cancelSend: { cancelSend(tab.id) }
             )
             .id(tab.id)
         }

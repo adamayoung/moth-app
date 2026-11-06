@@ -64,6 +64,16 @@ struct OutgoingRequestTests {
         #expect(outgoing.typedCredentials == [CredentialWrite(reference: bearer.token, value: "typed")])
     }
 
+    @Test("A draft has a URL once it holds more than blanks", arguments: [
+        ("", false), ("   ", false), ("\n", false), ("example.com", true), ("{{host}}", true)
+    ])
+    func hasURL(url: String, expected: Bool) {
+        var draft = RequestDraft(stored)
+        draft.url = url
+
+        #expect(draft.hasURL == expected)
+    }
+
     @Test("A draft with no typed credential has none")
     func noTypedCredential() throws {
         #expect(try RequestDraft(stored).outgoing(from: stored, in: .empty).typedCredentials.isEmpty)

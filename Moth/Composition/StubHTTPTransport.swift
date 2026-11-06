@@ -6,11 +6,34 @@
 import Foundation
 import HTTPKit
 
+/// Routes by path, so a UI test reaches each case by typing a URL, with no launch argument.
 final nonisolated class StubHTTPTransport: HTTPTransport {
+
+    private static let body = Data(#"{"id":1,"name":"Moth"}"#.utf8)
+    private static let headers = ["Content-Type": "application/json", "X-Request-Id": "stub"]
+
+    /// `tls` stays nil, so a test can prove the Timing tab lists only the phases that happened.
+    private static let metrics = HTTPMetrics(
+        totalTime: .milliseconds(142),
+        dns: .milliseconds(12),
+        connect: .milliseconds(30),
+        firstByte: .milliseconds(90),
+        download: .milliseconds(10)
+    )
 
     @concurrent
     func send(_ request: URLRequest) async throws -> HTTPResponse {
-        HTTPResponse(status: 200, headers: ["Content-Type": "application/json"], body: Data("{}".utf8))
+        switch request.url?.path() {
+        case "/wait":
+            try await Task.sleep(for: .seconds(600))
+        case "/refused":
+            throw HTTPTransportError.connectionFailed(description: "Could not connect to the server.")
+        case "/timeout":
+            throw HTTPTransportError.timedOut(description: "The request timed out.")
+        default:
+            break
+        }
+        return HTTPResponse(status: 200, headers: Self.headers, body: Self.body, metrics: Self.metrics)
     }
 
 }

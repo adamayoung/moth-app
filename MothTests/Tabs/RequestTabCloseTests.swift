@@ -47,7 +47,11 @@ final class RequestTabCloseTests {
     private func openedTabs(saving save: @escaping RecordedSave = { _, _ in }) throws -> RequestTabsModel {
         let drafts = RequestDrafts(recording: save)
         drafts.savedRequestDidChange(request)
-        let tabs = RequestTabsModel(store: RequestTabStore(defaults: defaults, key: "Tabs"), drafts: drafts)
+        let tabs = RequestTabsModel(
+            store: RequestTabStore(defaults: defaults, key: "Tabs"),
+            drafts: drafts,
+            responses: .preview
+        )
         try tabs.collectionDidChange(snapshot())
         tabs.open(request.id)
         return tabs

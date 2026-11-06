@@ -3,6 +3,8 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import Foundation
+
 /// `typedCredentials` are plaintext, so never log or persist one.
 public nonisolated struct OutgoingRequest: Sendable {
 
@@ -17,6 +19,10 @@ public nonisolated struct OutgoingRequest: Sendable {
 }
 
 public nonisolated extension RequestDraft {
+
+    var hasURL: Bool {
+        !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     /// `stored` supplies what the editor doesn't hold. `.inherit` is replaced here, because the resolver fetches
     /// secrets only for the auth it is given.

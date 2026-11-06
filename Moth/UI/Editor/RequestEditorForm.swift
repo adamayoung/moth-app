@@ -37,6 +37,9 @@ struct RequestEditorForm: View {
     let credential: (SecretReference) -> SecretValue
     let loadCredential: (SecretReference) async -> Void
     let update: ((inout RequestDraft) -> Void) -> Void
+    let isSending: Bool
+    let send: () -> Void
+    let cancelSend: () -> Void
 
     @FocusState private var focusedRow: KeyValue.ID?
 
@@ -70,6 +73,16 @@ struct RequestEditorForm: View {
             TextField("REQUEST_EDITOR_URL_LABEL", text: url)
                 .textFieldStyle(.roundedBorder)
                 .accessibilityIdentifier("requestEditor.url")
+
+            if isSending {
+                Button("REQUEST_EDITOR_CANCEL_SEND", action: cancelSend)
+                    .accessibilityIdentifier("requestEditor.cancel")
+            } else {
+                Button("REQUEST_EDITOR_SEND", action: send)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!draft.hasURL)
+                    .accessibilityIdentifier("requestEditor.send")
+            }
         }
     }
 

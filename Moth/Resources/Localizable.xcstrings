@@ -728,6 +728,17 @@
         }
       }
     },
+    "REQUEST_EDITOR_CANCEL_SEND" : {
+      "comment" : "Button that replaces Send while a request is in flight.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
     "REQUEST_EDITOR_EMPTY_DESCRIPTION" : {
       "comment" : "Editor pane guidance when no request is open.",
       "localizations" : {
@@ -871,6 +882,17 @@
         }
       }
     },
+    "REQUEST_EDITOR_SEND" : {
+      "comment" : "Button beside the URL field that sends the request.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
+          }
+        }
+      }
+    },
     "REQUEST_EDITOR_UNREADABLE_DESCRIPTION" : {
       "comment" : "Description shown in place of the editor when a stored request can't be decoded.",
       "localizations" : {
@@ -904,6 +926,50 @@
         }
       }
     },
+    "RESPONSE_BODY_BINARY" : {
+      "comment" : "Title shown in place of a body that is not text.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Binary response"
+          }
+        }
+      }
+    },
+    "RESPONSE_BODY_EMPTY" : {
+      "comment" : "Title shown when a response has no body.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty Response"
+          }
+        }
+      }
+    },
+    "RESPONSE_BODY_TOO_LARGE" : {
+      "comment" : "Shown above the raw text of a body over 2 MB.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Response is too large to format."
+          }
+        }
+      }
+    },
+    "RESPONSE_CANCELLED" : {
+      "comment" : "Response pane title after the person cancels a send.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request Cancelled"
+          }
+        }
+      }
+    },
     "RESPONSE_EMPTY_DESCRIPTION" : {
       "comment" : "Response pane guidance before a request is sent.",
       "localizations" : {
@@ -926,6 +992,95 @@
         }
       }
     },
+    "RESPONSE_FAILED_CONNECT" : {
+      "comment" : "Response pane title when a connection, TLS or other transport failure stops a request.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Connect"
+          }
+        }
+      }
+    },
+    "RESPONSE_FAILED_NOT_SENT" : {
+      "comment" : "Response pane title when Moth could not build the request, so nothing went out.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Send"
+          }
+        }
+      }
+    },
+    "RESPONSE_FAILED_TIMEOUT" : {
+      "comment" : "Response pane title when the server took too long to answer.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request Timed Out"
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNDEFINED_VARIABLE_%@" : {
+      "comment" : "Shown above a response when one variable had no value. The argument is its name. RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{{%@}} isn’t defined, so it was sent as written."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld" : {
+      "comment" : "Shown above a response when several variables had no value. The argument is how many. RESPONSE_NOTE_UNDEFINED_VARIABLE_%@ covers one, by name.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld variable isn’t defined and was sent as written."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld variables aren’t defined and were sent as written."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNSUPPORTED_AUTH" : {
+      "comment" : "Shown above a response when Moth can't yet send the request's kind of auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without its unsupported auth."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNSUPPORTED_BODY" : {
+      "comment" : "Shown above a response when Moth can't yet send the request's kind of body.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without its unsupported body."
+          }
+        }
+      }
+    },
     "RESPONSE_PANE_LABEL" : {
       "comment" : "VoiceOver label for the pane that shows a request's response.",
       "localizations" : {
@@ -933,6 +1088,127 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Response"
+          }
+        }
+      }
+    },
+    "RESPONSE_SECTION_BODY" : {
+      "comment" : "Response section showing the response body.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Body"
+          }
+        }
+      }
+    },
+    "RESPONSE_SECTION_HEADERS" : {
+      "comment" : "Response section listing the response headers.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Headers"
+          }
+        }
+      }
+    },
+    "RESPONSE_SECTIONS_LABEL" : {
+      "comment" : "Accessibility label of the Body, Headers and Timing picker.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Response Sections"
+          }
+        }
+      }
+    },
+    "RESPONSE_SECTION_TIMING" : {
+      "comment" : "Response section listing how long each phase took.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timing"
+          }
+        }
+      }
+    },
+    "RESPONSE_SENDING" : {
+      "comment" : "Response pane while a request is in flight.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending…"
+          }
+        }
+      }
+    },
+    "RESPONSE_TIMING_CONNECT" : {
+      "comment" : "Timing row: opening the connection.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect"
+          }
+        }
+      }
+    },
+    "RESPONSE_TIMING_DNS" : {
+      "comment" : "Timing row: looking up the host name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DNS"
+          }
+        }
+      }
+    },
+    "RESPONSE_TIMING_DOWNLOAD" : {
+      "comment" : "Timing row: receiving the response.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
+          }
+        }
+      }
+    },
+    "RESPONSE_TIMING_FIRST_BYTE" : {
+      "comment" : "Timing row: from sending the request to the first byte back.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First Byte"
+          }
+        }
+      }
+    },
+    "RESPONSE_TIMING_TLS" : {
+      "comment" : "Timing row: the TLS handshake.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TLS"
+          }
+        }
+      }
+    },
+    "RESPONSE_TIMING_TOTAL" : {
+      "comment" : "Timing row: the whole request.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total"
           }
         }
       }

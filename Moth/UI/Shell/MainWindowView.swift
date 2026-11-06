@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import HTTPKit
 import MothCore
 import MothImport
 import SwiftData
@@ -21,6 +22,7 @@ struct MainWindowView: View {
     init(
         dataModel: DataModel,
         secretStore: any SecretStore,
+        transport: any HTTPTransport,
         activeEnvironment: ActiveEnvironment,
         tabStore: RequestTabStore,
         requestDrafts: RequestDrafts,
@@ -38,7 +40,16 @@ struct MainWindowView: View {
         self.isSyncedToICloud = isSyncedToICloud
         self.sidebar = sidebar
         self.environments = environments
-        self.tabs = RequestTabsModel(store: tabStore, drafts: requestDrafts)
+        self.tabs = RequestTabsModel(
+            store: tabStore,
+            drafts: requestDrafts,
+            responses: RequestResponses(
+                dataModel: dataModel,
+                transport: transport,
+                secretStore: secretStore,
+                activeEnvironment: activeEnvironment
+            )
+        )
         self.imports = ImportModel(
             source: importFileSource,
             secretStore: secretStore,
@@ -96,6 +107,7 @@ struct MainWindowView: View {
         MainWindowView(
             dataModel: dataModel,
             secretStore: secretStore,
+            transport: StubHTTPTransport(),
             activeEnvironment: ActiveEnvironment(inMemory: SeedData.workspace.activeEnvironmentID),
             tabStore: .preview,
             requestDrafts: RequestDrafts(writer: dataModel.writer, secretStore: secretStore),

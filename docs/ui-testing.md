@@ -35,6 +35,12 @@ value. Any other launch ignores it. `ImportTests` sets it and relaunches, becaus
 test needs its own file, and reads the licensed fixtures in place through
 `#filePath`.
 
+`StubHTTPTransport` answers every send on a seeded launch and routes by the URL's
+path, so a test reaches each case by typing a URL, and `{{host}}/wait` proves the
+active environment too. `/wait` stays in flight until it is cancelled, `/refused`
+fails to connect and `/timeout` times out. Any other path returns 200 with one JSON
+body and fixed metrics: 142 ms in all, with no TLS phase.
+
 `SeedData.workspace` holds one collection, "Seeded Collection", and two
 environments: "Seeded Environment", which is the active one and holds `host`, and
 "Staging", which holds six variables, so a delete alert can count one or six. The
