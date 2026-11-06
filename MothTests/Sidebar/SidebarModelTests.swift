@@ -288,4 +288,20 @@ struct SidebarModelTests {
         #expect(model.tree.roots.map(\.name) == ["Other", "API"])
     }
 
+    @Test("The empty state waits for the first tree, so a launch with collections never shows it")
+    func emptyStateWaitsForTheFirstTree() {
+        let unfed = SidebarModel(writer: dataModel.writer)
+
+        #expect(!unfed.showsEmptyState)
+
+        unfed.treeDidChange(.empty)
+
+        #expect(unfed.showsEmptyState)
+    }
+
+    @Test("A tree with collections shows no empty state")
+    func collectionsHideTheEmptyState() {
+        #expect(!model.showsEmptyState)
+    }
+
 }

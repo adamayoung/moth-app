@@ -15,7 +15,7 @@ struct SidebarView: View {
     var body: some View {
         List(selection: $model.selection) {
             Section("SIDEBAR_COLLECTIONS_SECTION") {
-                if model.tree.roots.isEmpty {
+                if model.showsEmptyState {
                     ContentUnavailableView {
                         Text("SIDEBAR_COLLECTIONS_EMPTY")
                     }

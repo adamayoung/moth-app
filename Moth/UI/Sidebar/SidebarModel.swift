@@ -19,6 +19,7 @@ final class SidebarModel {
     private(set) var renaming: TreeNodeID?
     private(set) var tree = CollectionTree.empty
 
+    private var hasReceivedTree = false
     private let writer: StoreWriter
 
     init(writer: StoreWriter) {
@@ -37,7 +38,13 @@ final class SidebarModel {
         return tree.ancestors(of: selection).last.flatMap(TreeContainerID.init)
     }
 
+    /// False until the first tree arrives, so a launch with collections never flashes the empty state.
+    var showsEmptyState: Bool {
+        hasReceivedTree && tree.roots.isEmpty
+    }
+
     func treeDidChange(_ newTree: CollectionTree) {
+        hasReceivedTree = true
         selection = tree.selection(selection, carriedTo: newTree)
         if let renaming, tree.contains(renaming), !newTree.contains(renaming) {
             self.renaming = nil
@@ -118,6 +125,7 @@ final class SidebarModel {
     }
 
     func drop(_ ids: [TreeNodeID], on parent: SidebarParent, atOffset offset: Int) async {
+        await commitActiveRename()
         let siblings: [TreeNode] = switch parent {
         case .root: tree.roots
         case .container(let container): tree.node(TreeNodeID(container))?.children ?? []
@@ -152,7 +160,7 @@ final class SidebarModel {
             try await write()
             return true
         } catch {
-            Logger.sidebar.error("A sidebar write failed: \(error)")
+            Logger.sidebar.error("A sidebar write failed: \(String(describing: error), privacy: .public)")
             return false
         }
     }

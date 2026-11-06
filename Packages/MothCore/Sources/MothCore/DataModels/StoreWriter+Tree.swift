@@ -137,9 +137,9 @@ extension StoreWriter {
     ) throws -> TreeContainerRow {
         let row: TreeContainerRow? = switch id {
         case .collection(let id):
-            try context.fetch(CollectionModel.withID(id)).first.map { .collection($0) }
+            try context.fetch(CollectionModel.withID(id)).inSortOrder.first.map { .collection($0) }
         case .folder(let id):
-            try context.fetch(FolderModel.withID(id)).first.map { .folder($0) }
+            try context.fetch(FolderModel.withID(id)).inSortOrder.first.map { .folder($0) }
         }
         guard let row else {
             throw TreeWriteError.containerNotFound(id)

@@ -84,4 +84,16 @@ extension SidebarModelTests {
         #expect(model.renameDraft == "Typing")
     }
 
+    @Test("A drop saves a rename in progress")
+    func dropSavesARenameInProgress() async throws {
+        await model.beginRename(of: .request(top.id))
+        model.renameDraft = "Typed"
+
+        await model.drop([.folder(empty.id)], on: .container(.collection(collection.id)), atOffset: 0)
+        try deliverTree()
+
+        #expect(model.tree.node(.request(top.id))?.name == "Typed")
+        #expect(model.renaming == nil)
+    }
+
 }

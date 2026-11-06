@@ -212,4 +212,26 @@ struct StoreWriterMoveTests {
         #expect(positions == [1, 2])
     }
 
+    @Test("A duplicated folder acts as the row the tree shows, not whichever the fetch returns first")
+    func twinContainerIsTheFirstInOrder() async throws {
+        let folder = Folder(name: "Twin")
+        let child = Folder(name: "Child")
+        let shown = Folder(id: folder.id, name: "Twin", children: [TreeFixtures.item(0, child)])
+        let collection = RequestCollection(name: "API", children: [TreeFixtures.item(5, shown)])
+        let dataModel = try TreeFixtures.dataModel(holding: collection)
+        let context = ModelContext(dataModel.container)
+        let insertedFirst = try #require(context.fetch(FolderModel.withID(folder.id)).first)
+        let childRow = try #require(context.fetch(FolderModel.withID(child.id)).first)
+        let parent = try #require(context.fetch(CollectionModel.withID(collection.id)).first)
+        let insertedLater = try FolderModel(Folder(id: folder.id, name: "Twin"), sortOrder: 0)
+        context.insert(insertedLater)
+        insertedLater.place(in: .collection(parent))
+        insertedFirst.place(in: .folder(childRow))
+        try context.save()
+
+        try await dataModel.writer.moveItem(.folder(child.id), to: .folder(folder.id), before: nil)
+
+        #expect(try TreeFixtures.names(of: .folder(folder.id), in: dataModel) == ["Child"])
+    }
+
 }
