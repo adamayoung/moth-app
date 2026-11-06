@@ -24,6 +24,7 @@ struct BodyEditor: View {
 
             content
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var kindPicker: some View {

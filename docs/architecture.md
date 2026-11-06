@@ -140,6 +140,11 @@ goes up through folders to the collection and stops at the first that sets auth,
 where setting `.none` counts. A request outside the tree inherits nothing, so a
 credential cannot reach it by accident.
 
+`CollectionTree.inheritedAuth(of:)` makes the same walk for the editor's Inherit
+message, from each container's `authData`, so it decodes no request body. A
+container whose auth can't be read ends that walk, and its Authorization… command
+is disabled, because a Save would overwrite what it holds.
+
 `RequestBuilder` turns a `ResolvedRequest` into the `URLRequest` that `HTTPKit`
 sends. An invalid URL or method, or a Bearer token a header cannot hold, throws.
 What it cannot send stays out of the request and is reported in
@@ -279,8 +284,8 @@ its writes one at a time, because Keychain calls finish in no set order.
 A request saves explicitly, unlike a variable. An edit changes a `RequestDraft`,
 a value type, and File > Save writes its `RequestEdit` through
 `StoreWriter.updateRequest`. `RequestEdit` holds the method, URL template, query
-and path rows and headers. It has no name, so a Save can't undo a rename from the
-sidebar, and it leaves the body and auth alone.
+and path rows, headers, body and auth. It has no name, so a Save can't undo a
+rename from the sidebar.
 
 The URL field shows the query the store keeps in rows, because
 [a query that has rows leaves the template](#postman-import). `RequestDraft`
@@ -314,6 +319,33 @@ typed, Revert goes to what is stored now, and the last Save wins. A clean draft
 follows the store. A row that can't be decoded shows a message and no editor, and
 refuses Save, because [a default would overwrite the value](#rows-and-stored-json).
 A failed Save keeps the draft and leaves its tab open.
+
+`BodyDraft` and `AuthDraft` keep each kind's fields while a draft is open, so
+trying another kind loses nothing, and only the chosen kind is saved. What the
+editor can't change yet stays as it came and shows Not Supported Yet: a binary or
+GraphQL body, a form-data file row, and API key, Digest, OAuth2 and AWS auth. Such
+a body or auth keeps an entry of its own in the picker, and a Save writes the same
+bytes. Choosing another kind and saving replaces it.
+
+A typed credential stays on the `AuthDraft`. `RequestEdit` holds references, so
+the text has no route to a row. Save writes the value to the secret store, then the
+row, then removes what the row released. `updateRequest` takes the auth the draft
+read, refuses if no row with that id still holds those references, and returns the
+references no other request, folder or collection holds. It searches each row's
+auth JSON as text, so a row this build can't read keeps its items. `RequestDrafts`
+runs Saves and reads one at a time, because Keychain calls finish in no set order.
+An empty Password is saved, because Basic can send a username alone, and an empty
+Token removes the value, because a header can't send one.
+
+While a draft is edited, a body or auth nobody touched follows a delivery. Otherwise
+a URL edit would put back what another Mac replaced, and a Save refused for a newer
+credential could never go through. A credential with no stored value stays editable,
+with "Not available on this Mac yet" as its placeholder, because an import saves
+nothing for an empty credential.
+
+The Authorization… sheet sets a collection's or folder's auth through
+`StoreWriter.updateAuth`, under the same rules, when its Save button is pressed. A
+failed Save keeps the sheet open and says so.
 
 ### CloudKit Model Rules
 
@@ -445,6 +477,10 @@ The sheet reads again after each delivery from the store and each time it opens.
 
 Removing a variable, or deleting its environment or collection, removes the
 Keychain item unless another variable holds that reference.
+
+Replacing a credential on a request, folder or collection removes its Keychain item
+once the row has changed, unless another row's auth holds that reference. Deleting
+one leaves the item behind as a stray.
 
 ### Which Store a Build Uses
 

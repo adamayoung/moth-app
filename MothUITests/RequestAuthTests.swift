@@ -77,7 +77,7 @@ final class RequestAuthTests: MothTestCase {
         let (_, _, fields) = openAuth(of: "List Users")
         fields.chooseKind("Bearer Token")
         XCTAssertTrue(fields.secureTokenField.waitForExistence(timeout: 10))
-        XCTAssertEqual(fields.tokenVisibilityButton.title, "Show")
+        XCTAssertEqual(fields.tokenVisibilityButton.label, "Show")
         fields.secureTokenField.click()
         app.typeText("abc123")
 
@@ -86,7 +86,7 @@ final class RequestAuthTests: MothTestCase {
         XCTAssertTrue(fields.revealedTokenField.waitForExistence(timeout: 10))
         XCTAssertEqual(fields.revealedTokenField.value as? String, "abc123")
         XCTAssertFalse(fields.secureTokenField.exists)
-        XCTAssertEqual(fields.tokenVisibilityButton.title, "Hide")
+        XCTAssertEqual(fields.tokenVisibilityButton.label, "Hide")
 
         fields.tokenVisibilityButton.click()
 
@@ -103,7 +103,7 @@ final class RequestAuthTests: MothTestCase {
         fields.passwordVisibilityButton.click()
 
         XCTAssertTrue(fields.passwordVisibilityButton.waitForExistence(timeout: 10))
-        XCTAssertEqual(fields.passwordVisibilityButton.title, "Hide")
+        XCTAssertEqual(fields.passwordVisibilityButton.label, "Hide")
         XCTAssertFalse(fields.securePasswordField.exists)
     }
 
