@@ -222,7 +222,10 @@ struct ImportModelTests {
         #expect(model.canImport)
     }
 
-    @Test("Choosing a file does nothing during an import, as the menu's state can lag the model", .timeLimit(.minutes(1)))
+    @Test(
+        "Choosing a file does nothing during an import, as the menu's state can lag the model",
+        .timeLimit(.minutes(1))
+    )
     func chooseFileIsRefusedDuringAnImport() async {
         let secretStore = ThreadHoldingSecretStore()
         let model = makeModel(secretStore: secretStore)
