@@ -87,6 +87,18 @@ struct PostmanEnvironmentTests {
         #expect(environment.values.map(\.key) == ["fo/o", "b\\ar"])
     }
 
+    @Test("An export keeps the scope it declares")
+    func keepsScope() throws {
+        let environment = try Fixture.environment("postman-cli-action/postman-echo-environment.json")
+
+        #expect(environment.scope == "environment")
+    }
+
+    @Test("A file that declares no scope decodes with none")
+    func allowsMissingScope() throws {
+        #expect(try decodeEnvironment(type: "default").scope == nil)
+    }
+
     private func decodeEnvironment(type: String) throws -> PostmanEnvironment {
         let json = #"{ "values": [{ "key": "token", "value": "abc", "type": "\#(type)", "enabled": true }] }"#
         return try JSONDecoder().decode(PostmanEnvironment.self, from: Data(json.utf8))

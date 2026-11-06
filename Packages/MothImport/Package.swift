@@ -27,7 +27,12 @@ let package = Package(
     ],
 
     targets: [
-        .target(name: "MothImport", dependencies: ["MothCore", "PostmanKit"], swiftSettings: swiftSettings),
+        .target(
+            name: "MothImport",
+            dependencies: ["MothCore", "PostmanKit"],
+            resources: [.process("Resources")],
+            swiftSettings: swiftSettings
+        ),
         .testTarget(name: "MothImportTests", dependencies: ["MothImport", "MothCore"], swiftSettings: swiftSettings)
     ]
 )

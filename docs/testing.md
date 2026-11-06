@@ -109,6 +109,9 @@ on a `packages` array. To link a product, add it to the target's
   belief, not the format. They live in
   `Packages/PostmanKit/Tests/PostmanKitTests/Fixtures/` under Apache-2.0, so
   record each new file's repository, commit and kind in `SOURCES.md` there.
+  `MothImportTests` reads the same files in place through `#filePath`, because a
+  test target cannot reach another package's bundle. Use a snippet only where no
+  licensed fixture holds the case, and say so in the test's name.
 
 ## Verification Expectations
 
