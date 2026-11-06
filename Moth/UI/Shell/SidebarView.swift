@@ -78,6 +78,9 @@ struct SidebarView: View {
         .sheet(item: $model.presentedVariables) { target in
             VariableSheet(title: target.title, table: model.variableTable(for: target))
         }
+        .sheet(item: $model.presentedAuthorization) { target in
+            AuthorizationSheet(model: model.authorizationModel(for: target))
+        }
         .focusedSceneValue(
             \.sidebarCommands,
             SidebarCommandContext(model: model, environments: environments, newItemContainer: model.newItemContainer)
@@ -115,7 +118,7 @@ private func seededSidebar(isSyncedToICloud: Bool) -> some View {
         SidebarView(
             model: model,
             environments: environments,
-            tabs: RequestTabsModel(store: .preview, drafts: RequestDrafts(save: { _, _ in })),
+            tabs: RequestTabsModel(store: .preview, drafts: RequestDrafts.preview),
             isSyncedToICloud: isSyncedToICloud
         )
         .background { EnvironmentsObserver(model: environments) }

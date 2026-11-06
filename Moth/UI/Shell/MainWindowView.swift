@@ -92,12 +92,13 @@ struct MainWindowView: View {
 
 #Preview {
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
+        let secretStore = InMemorySecretStore()
         MainWindowView(
             dataModel: dataModel,
-            secretStore: InMemorySecretStore(),
+            secretStore: secretStore,
             activeEnvironment: ActiveEnvironment(inMemory: SeedData.workspace.activeEnvironmentID),
             tabStore: .preview,
-            requestDrafts: RequestDrafts(writer: dataModel.writer),
+            requestDrafts: RequestDrafts(writer: dataModel.writer, secretStore: secretStore),
             isSyncedToICloud: false,
             importFileSource: .panel
         )

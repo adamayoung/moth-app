@@ -1,6 +1,270 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "AUTH_INHERITED_FROM_%@" : {
+      "comment" : "Says where inherited auth comes from. The argument is a folder's or collection's name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inherited from “%@”"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_API_KEY" : {
+      "comment" : "Stored auth kind Moth can't edit yet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API Key"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_AWS_SIGV4" : {
+      "comment" : "Stored auth kind Moth can't edit yet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AWS Signature"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_BASIC" : {
+      "comment" : "Auth kind.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Auth"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_BEARER" : {
+      "comment" : "Auth kind.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bearer Token"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_DIGEST" : {
+      "comment" : "Stored auth kind Moth can't edit yet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digest Auth"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_INHERIT" : {
+      "comment" : "Auth kind: use the auth of the folder or collection above.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inherit"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_LABEL" : {
+      "comment" : "Picker of an auth kind.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auth Type"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_NONE" : {
+      "comment" : "Auth kind: send no auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Auth"
+          }
+        }
+      }
+    },
+    "AUTH_KIND_OAUTH2" : {
+      "comment" : "Stored auth kind Moth can't edit yet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OAuth 2.0"
+          }
+        }
+      }
+    },
+    "AUTH_NOTHING_TO_INHERIT" : {
+      "comment" : "Shown for Inherit when nothing above sets auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No auth to inherit"
+          }
+        }
+      }
+    },
+    "AUTHORIZATION_CANCEL" : {
+      "comment" : "Button that closes the Authorization sheet without saving.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "AUTHORIZATION_SAVE" : {
+      "comment" : "Button that saves the Authorization sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
+    },
+    "AUTHORIZATION_SAVE_FAILED" : {
+      "comment" : "Shown in the Authorization sheet when a save fails.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth couldn’t save this. Close the sheet and try again."
+          }
+        }
+      }
+    },
+    "AUTH_PASSWORD" : {
+      "comment" : "Basic auth field.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        }
+      }
+    },
+    "AUTH_TOKEN" : {
+      "comment" : "Bearer auth field.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        }
+      }
+    },
+    "AUTH_USERNAME" : {
+      "comment" : "Basic auth field.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username"
+          }
+        }
+      }
+    },
+    "BODY_KIND_BINARY" : {
+      "comment" : "Stored body kind Moth can't edit yet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Binary"
+          }
+        }
+      }
+    },
+    "BODY_KIND_FORM_DATA" : {
+      "comment" : "Body kind: multipart form data.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Form Data"
+          }
+        }
+      }
+    },
+    "BODY_KIND_GRAPHQL" : {
+      "comment" : "Stored body kind Moth can't edit yet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GraphQL"
+          }
+        }
+      }
+    },
+    "BODY_KIND_LABEL" : {
+      "comment" : "Picker of a request's body kind.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Body Type"
+          }
+        }
+      }
+    },
+    "BODY_KIND_NONE" : {
+      "comment" : "Body kind: the request has no body.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "BODY_KIND_RAW" : {
+      "comment" : "Body kind: text the person writes.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raw"
+          }
+        }
+      }
+    },
+    "BODY_KIND_URL_ENCODED" : {
+      "comment" : "Body kind: a URL-encoded form.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL Encoded"
+          }
+        }
+      }
+    },
     "CLOSE_TAB_ALERT_CANCEL" : {
       "comment" : "Button in the close alert that keeps the tab open.",
       "localizations" : {
@@ -298,6 +562,17 @@
         }
       }
     },
+    "NOT_SUPPORTED_YET" : {
+      "comment" : "Shown for a stored body, row or auth that Moth keeps but can't edit.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Supported Yet"
+          }
+        }
+      }
+    },
     "QUIT_ALERT_CANCEL" : {
       "comment" : "Button in the quit alert that keeps Moth open.",
       "localizations" : {
@@ -350,6 +625,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quit with unsaved changes?"
+          }
+        }
+      }
+    },
+    "RAW_BODY_LABEL" : {
+      "comment" : "VoiceOver label of the raw body editor.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Body Text"
+          }
+        }
+      }
+    },
+    "RAW_CONTENT_TYPE_HTML" : {
+      "comment" : "Raw body type.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTML"
+          }
+        }
+      }
+    },
+    "RAW_CONTENT_TYPE_JSON" : {
+      "comment" : "Raw body type.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON"
+          }
+        }
+      }
+    },
+    "RAW_CONTENT_TYPE_LABEL" : {
+      "comment" : "Picker of a raw body's type.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Content Type"
+          }
+        }
+      }
+    },
+    "RAW_CONTENT_TYPE_TEXT" : {
+      "comment" : "Raw body type.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text"
+          }
+        }
+      }
+    },
+    "RAW_CONTENT_TYPE_XML" : {
+      "comment" : "Raw body type.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XML"
+          }
+        }
+      }
+    },
+    "REQUEST_EDITOR_ADD_FIELD" : {
+      "comment" : "Button that adds a URL-encoded or form-data row.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Field"
           }
         }
       }
@@ -427,6 +779,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Path Variables"
+          }
+        }
+      }
+    },
+    "REQUEST_EDITOR_REMOVE_FIELD" : {
+      "comment" : "VoiceOver label of the button that removes a URL-encoded or form-data row.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Field"
           }
         }
       }
@@ -570,6 +933,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Response"
+          }
+        }
+      }
+    },
+    "SIDEBAR_AUTHORIZATION" : {
+      "comment" : "Context menu command of a collection or folder that opens its auth sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authorization…"
           }
         }
       }

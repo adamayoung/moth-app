@@ -28,41 +28,6 @@ struct VariableTableSyncTests {
         }
     }
 
-    private actor HoldingSecretStore: SecretStore {
-        private(set) var values: [String: String] = [:]
-        private var holdsNextSave = false
-        private var heldSave: CheckedContinuation<Void, Never>?
-
-        var isHoldingASave: Bool {
-            heldSave != nil
-        }
-
-        func holdNextSave() {
-            holdsNextSave = true
-        }
-
-        func finishHeldSave() {
-            heldSave?.resume()
-            heldSave = nil
-        }
-
-        func save(_ value: String, for identifier: String) async {
-            if holdsNextSave {
-                holdsNextSave = false
-                await withCheckedContinuation { heldSave = $0 }
-            }
-            values[identifier] = value
-        }
-
-        func value(for identifier: String) -> String? {
-            values[identifier]
-        }
-
-        func removeValue(for identifier: String) {
-            values[identifier] = nil
-        }
-    }
-
     let dataModel: DataModel
     private let secretStore = RecordingSecretStore()
     let model: VariableTableModel
@@ -115,11 +80,9 @@ struct VariableTableSyncTests {
         try table.variablesDidChange(savedVariables)
         await table.loadSecrets()
         table.update(token.id) { $0.secret?.value = .available(value) }
-        await store.holdNextSave()
+        store.holdNextSave()
         let commit = Task { await table.commit(token.id) }
-        while await !store.isHoldingASave {
-            await Task.yield()
-        }
+        await store.waitUntilHolding()
         return (table, commit)
     }
 
@@ -195,11 +158,11 @@ struct VariableTableSyncTests {
         table.update(token.id) { $0.secret?.value = .available("abc") }
         let secondCommit = Task { await table.commit(token.id) }
         try await letOtherWorkRun()
-        await store.finishHeldSave()
+        store.finishHeldSave()
         await firstCommit.value
         await secondCommit.value
 
-        #expect(await store.value(for: reference.identifier) == "abc")
+        #expect(store.value(for: reference.identifier) == "abc")
     }
 
     @Test("Turning off Secret while its last edit saves leaves nothing in the store")
@@ -209,11 +172,11 @@ struct VariableTableSyncTests {
 
         let turningOff = Task { await table.setSecret(false, for: token.id) }
         try await letOtherWorkRun()
-        await store.finishHeldSave()
+        store.finishHeldSave()
         await commit.value
         await turningOff.value
 
-        #expect(await store.values.isEmpty)
+        #expect(store.values.isEmpty)
         #expect(try savedVariables.last?.currentValue == "ab")
     }
 

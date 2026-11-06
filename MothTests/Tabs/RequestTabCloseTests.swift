@@ -44,8 +44,8 @@ final class RequestTabCloseTests {
         )
     }
 
-    private func openedTabs(saving save: @escaping RequestDrafts.Save = { _, _ in }) throws -> RequestTabsModel {
-        let drafts = RequestDrafts(save: save)
+    private func openedTabs(saving save: @escaping RecordedSave = { _, _ in }) throws -> RequestTabsModel {
+        let drafts = RequestDrafts(recording: save)
         drafts.savedRequestDidChange(request)
         let tabs = RequestTabsModel(store: RequestTabStore(defaults: defaults, key: "Tabs"), drafts: drafts)
         try tabs.collectionDidChange(snapshot())
@@ -53,7 +53,7 @@ final class RequestTabCloseTests {
         return tabs
     }
 
-    private func editedTabs(saving save: @escaping RequestDrafts.Save = { _, _ in }) throws -> RequestTabsModel {
+    private func editedTabs(saving save: @escaping RecordedSave = { _, _ in }) throws -> RequestTabsModel {
         let tabs = try openedTabs(saving: save)
         tabs.drafts.update(request.id) { $0.url += "/more" }
         return tabs

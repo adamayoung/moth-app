@@ -162,4 +162,39 @@ struct AuthTests {
         #expect(kept.service == "execute-api")
     }
 
+    @Test("Every reference a kind holds is listed, because a Save that misses one would lose track of it")
+    func secretReferencesCoverEveryKind() {
+        let references = (0 ..< 4).map { SecretReference(identifier: "reference-\($0)") }
+        let oauth2 = OAuth2Auth(
+            grantType: .passwordCredentials,
+            authorizationURL: "",
+            accessTokenURL: "",
+            callbackURL: "",
+            clientID: "",
+            clientSecret: references[0],
+            scope: "",
+            password: references[1],
+            accessToken: references[2],
+            refreshToken: references[3]
+        )
+        let sigV4 = AWSSigV4Auth(
+            accessKeyID: references[0],
+            secretAccessKey: references[1],
+            sessionToken: references[2],
+            region: "",
+            service: ""
+        )
+
+        #expect(Auth.inherit.secretReferences.isEmpty)
+        #expect(Auth.none.secretReferences.isEmpty)
+        #expect(Auth.basic(BasicAuth(username: "", password: password)).secretReferences == [password])
+        #expect(Auth.bearer(BearerAuth(token: token)).secretReferences == [token])
+        #expect(
+            Auth.apiKey(APIKeyAuth(name: "", value: token, location: .query)).secretReferences == [token]
+        )
+        #expect(Auth.digest(DigestAuth(username: "", password: password)).secretReferences == [password])
+        #expect(Auth.oauth2(oauth2).secretReferences == Set(references))
+        #expect(Auth.awsSigV4(sigV4).secretReferences == Set(references.prefix(3)))
+    }
+
 }

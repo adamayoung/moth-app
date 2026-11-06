@@ -42,8 +42,45 @@ struct RequestEditorScreen {
         pane.textFields.matching(identifier: "\(section).key").count
     }
 
+    func addRowButton(_ section: String) -> XCUIElement {
+        pane.buttons["\(section).add"]
+    }
+
     func addRow(_ section: String) {
-        pane.buttons["\(section).add"].click()
+        addRowButton(section).click()
+    }
+
+    func removeButtonCount(_ section: String) -> Int {
+        pane.buttons.matching(identifier: "\(section).remove").count
+    }
+
+    var bodyKindPicker: XCUIElement {
+        pane.popUpButtons["body.kind"]
+    }
+
+    var rawTypePicker: XCUIElement {
+        pane.popUpButtons["body.rawType"]
+    }
+
+    var rawBody: XCUIElement {
+        pane.textViews["body.raw"]
+    }
+
+    var bodyNotSupported: XCUIElement {
+        pane.staticTexts["body.notSupported"]
+    }
+
+    var formDataNotSupported: XCUIElement {
+        pane.staticTexts["formData.notSupported"]
+    }
+
+    var authFields: AuthFieldsScreen {
+        AuthFieldsScreen(root: pane)
+    }
+
+    func chooseBodyKind(_ title: String) {
+        bodyKindPicker.click()
+        bodyKindPicker.menuItems[title].click()
     }
 
     func removeRow(_ section: String, at row: Int) {

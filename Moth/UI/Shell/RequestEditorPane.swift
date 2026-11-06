@@ -45,9 +45,15 @@ struct RequestEditorPane: View {
                 description: Text("REQUEST_EDITOR_UNREADABLE_DESCRIPTION")
             )
         } else if let draft = drafts.draft(for: tab.id) {
-            RequestEditorForm(name: tab.name, draft: draft, section: $section) { change in
-                edit(tab.id, change)
-            }
+            RequestEditorForm(
+                name: tab.name,
+                draft: draft,
+                inheritedAuth: tab.inheritedAuth,
+                section: $section,
+                credential: { drafts.credential($0, in: tab.id) },
+                loadCredential: { await drafts.loadCredential($0, in: tab.id) },
+                update: { change in edit(tab.id, change) }
+            )
             .id(tab.id)
         }
     }
@@ -55,7 +61,7 @@ struct RequestEditorPane: View {
 }
 
 #Preview("No Request") {
-    let drafts = RequestDrafts(save: { _, _ in })
+    let drafts = RequestDrafts.preview
 
     return RequestEditorPane(tab: nil, drafts: drafts, edit: drafts.update)
         .frame(width: 600, height: 300)
@@ -71,7 +77,7 @@ struct RequestEditorPane: View {
         ],
         pathParameters: [KeyValue(key: "id", value: "42")]
     )
-    let drafts = RequestDrafts(save: { _, _ in })
+    let drafts = RequestDrafts.preview
     drafts.savedRequestDidChange(request)
 
     return RequestEditorPane(
@@ -84,7 +90,7 @@ struct RequestEditorPane: View {
 
 #Preview("Unreadable Request") {
     let tab = RequestTab(id: UUID(), name: "List Users", method: .get)
-    let drafts = RequestDrafts(save: { _, _ in })
+    let drafts = RequestDrafts.preview
     drafts.savedRequestIsUnreadable(tab.id)
 
     return RequestEditorPane(tab: tab, drafts: drafts, edit: drafts.update)

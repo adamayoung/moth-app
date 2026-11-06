@@ -52,7 +52,15 @@ enum SeedData {
                 ),
                 CollectionItem(
                     sortOrder: 1,
-                    node: .request(Request(id: identifier(7), name: "Create User", method: .post))
+                    node: .request(Request(
+                        id: identifier(7),
+                        name: "Create User",
+                        method: .post,
+                        body: .formData([
+                            FormDataField(id: identifier(26), key: "name", value: .text("Ada")),
+                            FormDataField(id: identifier(27), key: "photo", value: .file(paths: ["/tmp/photo.png"]))
+                        ])
+                    ))
                 ),
                 CollectionItem(
                     sortOrder: 2,
@@ -61,7 +69,8 @@ enum SeedData {
                         name: "Update User",
                         method: .patch,
                         urlTemplate: "{{host}}/users/:id",
-                        pathParameters: [KeyValue(id: identifier(25), key: "id", value: "42")]
+                        pathParameters: [KeyValue(id: identifier(25), key: "id", value: "42")],
+                        body: .graphQL(query: "{ user { id } }", variables: "")
                     ))
                 ),
                 CollectionItem(sortOrder: 3, node: .folder(admins))
@@ -75,7 +84,16 @@ enum SeedData {
             ],
             children: [
                 CollectionItem(sortOrder: 0, node: .folder(users)),
-                CollectionItem(sortOrder: 1, node: .request(Request(id: identifier(11), name: "Health")))
+                CollectionItem(sortOrder: 1, node: .request(Request(
+                    id: identifier(11),
+                    name: "Health",
+                    body: .binary(filePath: "/tmp/health.bin"),
+                    auth: .apiKey(APIKeyAuth(
+                        name: "X-Key",
+                        value: SecretReference(identifier: "seeded-api-key"),
+                        location: .header
+                    ))
+                )))
             ]
         )
 

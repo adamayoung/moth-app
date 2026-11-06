@@ -3,7 +3,13 @@
 //
 //  Copyright © 2026 Adam Young.
 
-nonisolated extension RequestModel {
+nonisolated extension RequestModel: StoredAuthRow {
+
+    var storedAuth: Auth {
+        get throws {
+            try StoredJSON.decode(Auth.self, from: authData, default: .inherit)
+        }
+    }
 
     convenience init(_ request: Request, sortOrder: Int) throws {
         self.init()
@@ -23,12 +29,20 @@ nonisolated extension RequestModel {
         }
     }
 
-    func apply(_ edit: RequestEdit) throws {
+    /// Rewrites a body or auth only when it changed, because encoding a decoded value drops any key this build can't
+    /// read.
+    func apply(_ edit: RequestEdit, from base: RequestEdit) throws {
         assign(edit.method.rawValue, to: \.methodRawValue)
         assign(edit.urlTemplate, to: \.urlTemplate)
         try assign(StoredJSON.encode(edit.queryParameters), to: \.queryParametersData)
         try assign(StoredJSON.encode(edit.pathParameters), to: \.pathParametersData)
         try assign(StoredJSON.encode(edit.headers), to: \.headersData)
+        if !edit.body.hasSameContent(as: base.body) {
+            try assign(StoredJSON.encode(edit.body), to: \.bodyData)
+        }
+        if edit.auth != base.auth {
+            try assign(StoredJSON.encode(edit.auth), to: \.authData)
+        }
     }
 
     /// An equal value still counts as a change to a row, and a sync would carry it to every Mac.
@@ -48,7 +62,7 @@ nonisolated extension RequestModel {
             pathParameters: StoredJSON.decode([KeyValue].self, from: pathParametersData, default: []),
             headers: StoredJSON.decode([KeyValue].self, from: headersData, default: []),
             body: StoredJSON.decode(RequestBody.self, from: bodyData, default: .none),
-            auth: StoredJSON.decode(Auth.self, from: authData, default: .inherit),
+            auth: storedAuth,
             settings: StoredJSON.decode(RequestSettings.self, from: settingsData, default: RequestSettings()),
             variables: variables.inSortOrder.map { $0.asDomain() }
         )

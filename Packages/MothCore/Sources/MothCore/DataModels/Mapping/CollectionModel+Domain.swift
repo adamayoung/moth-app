@@ -3,7 +3,13 @@
 //
 //  Copyright © 2026 Adam Young.
 
-nonisolated extension CollectionModel {
+nonisolated extension CollectionModel: StoredAuthRow {
+
+    var storedAuth: Auth {
+        get throws {
+            try StoredJSON.decode(Auth.self, from: authData, default: .none)
+        }
+    }
 
     convenience init(_ collection: RequestCollection, sortOrder: Int) throws {
         self.init()
@@ -23,7 +29,7 @@ nonisolated extension CollectionModel {
         try RequestCollection(
             id: id,
             name: name,
-            auth: StoredJSON.decode(Auth.self, from: authData, default: .none),
+            auth: storedAuth,
             variables: variables.inSortOrder.map { $0.asDomain() },
             children: ChildRows.items(folders: folders, requests: requests)
         )
@@ -31,7 +37,13 @@ nonisolated extension CollectionModel {
 
 }
 
-nonisolated extension FolderModel {
+nonisolated extension FolderModel: StoredAuthRow {
+
+    var storedAuth: Auth {
+        get throws {
+            try StoredJSON.decode(Auth.self, from: authData, default: .inherit)
+        }
+    }
 
     convenience init(_ folder: Folder, sortOrder: Int) throws {
         self.init()
@@ -48,7 +60,7 @@ nonisolated extension FolderModel {
         try Folder(
             id: id,
             name: name,
-            auth: StoredJSON.decode(Auth.self, from: authData, default: .inherit),
+            auth: storedAuth,
             children: ChildRows.items(folders: subfolders, requests: requests)
         )
     }

@@ -11,6 +11,8 @@ public nonisolated struct RequestDraft: Sendable {
 
     public var method: HTTPMethod
     public var headers: [KeyValue]
+    public var body: BodyDraft
+    public var auth: AuthDraft
     public private(set) var pathParameters: [KeyValue]
     private var composedURL: String
     private var queryRows: [KeyValue]
@@ -28,6 +30,8 @@ public nonisolated struct RequestDraft: Sendable {
         let rows = text.queryPairs.map { KeyValue(key: $0.key, value: $0.value) } + edit.queryParameters
         self.method = edit.method
         self.headers = edit.headers
+        self.body = BodyDraft(edit.body)
+        self.auth = AuthDraft(edit.auth)
         let names = text.pathVariableNames
         self.pathParameters = names.map { name in
             edit.pathParameters.first { $0.key == name } ?? KeyValue(key: name, value: "")
@@ -43,7 +47,9 @@ public nonisolated struct RequestDraft: Sendable {
             urlTemplate: URLTemplateText(composedURL).withoutQuery,
             queryParameters: queryRows,
             pathParameters: pathParameters + unseenPathRows,
-            headers: headers
+            headers: headers,
+            body: body.requestBody,
+            auth: auth.requestAuth
         )
     }
 
@@ -54,6 +60,8 @@ public nonisolated struct RequestDraft: Sendable {
             && queryRows.hasSameContent(as: other.queryRows)
             && pathParameters.hasSameContent(as: other.pathParameters)
             && headers.hasSameContent(as: other.headers)
+            && body.hasSameContent(as: other.body)
+            && auth.hasSameContent(as: other.auth)
     }
 
     /// Enables the row, because the editor shows no control for it and a disabled row is not sent.
@@ -125,7 +133,7 @@ public nonisolated struct RequestDraft: Sendable {
 
 }
 
-private nonisolated extension [KeyValue] {
+nonisolated extension [KeyValue] {
 
     func hasSameContent(as other: [KeyValue]) -> Bool {
         elementsEqual(other) { $0.key == $1.key && $0.value == $1.value && $0.isEnabled == $1.isEnabled }

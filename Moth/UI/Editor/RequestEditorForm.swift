@@ -32,7 +32,10 @@ struct RequestEditorForm: View {
 
     let name: String
     let draft: RequestDraft
+    let inheritedAuth: InheritedAuth
     @Binding var section: RequestEditorSection
+    let credential: (SecretReference) -> SecretValue
+    let loadCredential: (SecretReference) async -> Void
     let update: ((inout RequestDraft) -> Void) -> Void
 
     @FocusState private var focusedRow: KeyValue.ID?
@@ -47,17 +50,8 @@ struct RequestEditorForm: View {
 
             sectionBar
 
-            ScrollViewReader { proxy in
-                ScrollView {
-                    sectionContent
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .onChange(of: focusedRow) { _, row in
-                    if let row {
-                        proxy.scrollTo(row)
-                    }
-                }
-            }
+            sectionContent
+                .frame(maxHeight: .infinity, alignment: .top)
         }
         .padding()
     }
@@ -97,17 +91,37 @@ struct RequestEditorForm: View {
             switch section {
             case .params:
                 Button("REQUEST_EDITOR_ADD_PARAMETER") {
-                    addRow(to: \.queryParameters)
+                    addRow(KeyValue(key: "", value: ""), to: \.queryParameters)
                 }
                 .accessibilityIdentifier("params.add")
             case .headers:
                 Button("REQUEST_EDITOR_ADD_HEADER") {
-                    addRow(to: \.headers)
+                    addRow(KeyValue(key: "", value: ""), to: \.headers)
                 }
                 .accessibilityIdentifier("headers.add")
-            case .body, .auth:
+            case .body:
+                addBodyRowButton
+            case .auth:
                 EmptyView()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var addBodyRowButton: some View {
+        switch draft.body.kind {
+        case .urlEncoded:
+            Button("REQUEST_EDITOR_ADD_FIELD") {
+                addRow(KeyValue(key: "", value: ""), to: \.body.urlEncodedRows)
+            }
+            .accessibilityIdentifier("urlEncoded.add")
+        case .formData:
+            Button("REQUEST_EDITOR_ADD_FIELD") {
+                addRow(FormDataField(key: "", value: .text("")), to: \.body.formDataFields)
+            }
+            .accessibilityIdentifier("formData.add")
+        case .none, .raw, .binary, .graphQL:
+            EmptyView()
         }
     }
 
@@ -115,39 +129,55 @@ struct RequestEditorForm: View {
     private var sectionContent: some View {
         switch section {
         case .params:
-            VStack(alignment: .leading, spacing: 16) {
-                KeyValueGrid(
-                    rows: draft.queryParameters,
-                    identifierPrefix: "params",
-                    removeLabel: "REQUEST_EDITOR_REMOVE_PARAMETER",
-                    focusedRow: $focusedRow
-                ) { change in
-                    update { change(&$0.queryParameters) }
-                }
+            ScrollingRows(focusedRow: focusedRow) {
+                VStack(alignment: .leading, spacing: 16) {
+                    KeyValueGrid(
+                        rows: draft.queryParameters,
+                        identifierPrefix: "params",
+                        removeLabel: "REQUEST_EDITOR_REMOVE_PARAMETER",
+                        focusedRow: $focusedRow
+                    ) { change in
+                        update { change(&$0.queryParameters) }
+                    }
 
-                if !draft.pathParameters.isEmpty {
-                    PathVariablesGrid(rows: draft.pathParameters) { value, id in
-                        update { $0.setPathValue(value, for: id) }
+                    if !draft.pathParameters.isEmpty {
+                        PathVariablesGrid(rows: draft.pathParameters) { value, id in
+                            update { $0.setPathValue(value, for: id) }
+                        }
                     }
                 }
             }
         case .headers:
-            KeyValueGrid(
-                rows: draft.headers,
-                identifierPrefix: "headers",
-                removeLabel: "REQUEST_EDITOR_REMOVE_HEADER",
-                focusedRow: $focusedRow
-            ) { change in
-                update { change(&$0.headers) }
+            ScrollingRows(focusedRow: focusedRow) {
+                KeyValueGrid(
+                    rows: draft.headers,
+                    identifierPrefix: "headers",
+                    removeLabel: "REQUEST_EDITOR_REMOVE_HEADER",
+                    focusedRow: $focusedRow
+                ) { change in
+                    update { change(&$0.headers) }
+                }
             }
-        case .body, .auth:
-            EmptyView()
+        case .body:
+            BodyEditor(draft: draft.body, focusedRow: $focusedRow) { change in
+                update { change(&$0.body) }
+            }
+        case .auth:
+            ScrollView {
+                AuthEditor(
+                    draft: draft.auth,
+                    inherited: inheritedAuth,
+                    credential: credential,
+                    load: loadCredential
+                ) { change in
+                    update { change(&$0.auth) }
+                }
+            }
         }
     }
 
     /// Focus moves on the next turn, because the new row's field does not exist until this change has rendered.
-    private func addRow(to rows: WritableKeyPath<RequestDraft, [KeyValue]>) {
-        let row = KeyValue(key: "", value: "")
+    private func addRow<Row: EditableRow>(_ row: Row, to rows: WritableKeyPath<RequestDraft, [Row]>) {
         update { $0[keyPath: rows].append(row) }
         Task {
             focusedRow = row.id

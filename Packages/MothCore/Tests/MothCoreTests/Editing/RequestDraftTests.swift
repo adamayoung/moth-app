@@ -263,4 +263,73 @@ struct RequestDraftTests {
         RequestDraft(Request(name: "Draft", urlTemplate: "https://example.com", queryParameters: queryParameters))
     }
 
+    @Test("A saved request's body and auth come back unchanged in its edit")
+    func editCarriesBodyAndAuth() {
+        let body = RequestBody.raw(content: "{}", contentType: "application/json")
+        let auth = Auth.bearer(BearerAuth(token: SecretReference(identifier: "token")))
+
+        let edit = RequestDraft(Request(name: "Create", body: body, auth: auth)).edit
+
+        #expect(edit.body == body)
+        #expect(edit.auth == auth)
+    }
+
+    @Test("A body the editor can't change comes back unchanged in the edit")
+    func editKeepsUnsupportedBody() {
+        let body = RequestBody.graphQL(query: "{ me }", variables: "")
+
+        var draft = RequestDraft(Request(name: "Query", body: body))
+        draft.url = "https://example.com/graphql"
+
+        #expect(draft.edit.body == body)
+    }
+
+    @Test("An auth the editor can't change comes back unchanged in the edit")
+    func editKeepsUnsupportedAuth() {
+        let auth = Auth.digest(DigestAuth(username: "ada", password: SecretReference(identifier: "digest")))
+
+        var draft = RequestDraft(Request(name: "Digest", auth: auth))
+        draft.url = "https://example.com"
+
+        #expect(draft.edit.auth == auth)
+    }
+
+    @Test("A body edit is a change, and undoing it clears that")
+    func bodyEditIsAChange() {
+        let saved = RequestDraft(Request(name: "Create"))
+        var draft = saved
+
+        draft.body.kind = .raw
+        #expect(!draft.hasSameContent(as: saved))
+
+        draft.body.kind = .none
+        #expect(draft.hasSameContent(as: saved))
+    }
+
+    @Test("An auth edit is a change, and undoing it clears that")
+    func authEditIsAChange() {
+        let saved = RequestDraft(Request(name: "Create"))
+        var draft = saved
+
+        draft.auth.kind = .bearer
+        #expect(!draft.hasSameContent(as: saved))
+
+        draft.auth.kind = .inherit
+        #expect(draft.hasSameContent(as: saved))
+    }
+
+    @Test("A typed credential is a change, and stays out of the edit")
+    func typedCredentialStaysOutOfTheEdit() throws {
+        let token = SecretReference(identifier: "token")
+        let auth = Auth.bearer(BearerAuth(token: token))
+        let saved = RequestDraft(Request(name: "Create", auth: auth))
+        var draft = saved
+
+        draft.auth.setCredential("s3cret", for: token)
+
+        #expect(!draft.hasSameContent(as: saved))
+        let encoded = try JSONEncoder().encode(draft.edit.auth)
+        #expect(try !#require(String(bytes: encoded, encoding: .utf8)).contains("s3cret"))
+    }
+
 }

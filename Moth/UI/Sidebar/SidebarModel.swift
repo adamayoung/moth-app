@@ -16,6 +16,7 @@ final class SidebarModel {
     var expanded: Set<TreeNodeID> = []
     var pendingDeletion: PendingDeletion?
     var presentedVariables: VariableSheetTarget?
+    var presentedAuthorization: AuthorizationSheetTarget?
     var renameDraft = ""
     private(set) var renaming: TreeNodeID?
     private(set) var tree = CollectionTree.empty
@@ -109,6 +110,25 @@ final class SidebarModel {
 
     func variableTable(for target: VariableSheetTarget) -> VariableTableModel {
         VariableTableModel(scope: target.scope, writer: writer, secretStore: secretStore)
+    }
+
+    /// A container whose auth can't be read stays closed, because a Save would overwrite what it holds.
+    func presentAuthorization(of node: TreeNode) {
+        guard let container = TreeContainerID(node.id), let auth = node.auth else {
+            return
+        }
+        presentedAuthorization = AuthorizationSheetTarget(
+            container: container,
+            title: node.name,
+            auth: auth,
+            inherited: tree.inheritedAuth(of: node.id)
+        )
+    }
+
+    func authorizationModel(for target: AuthorizationSheetTarget) -> AuthorizationModel {
+        AuthorizationModel(target: target, secretStore: secretStore) { [writer] auth, held in
+            try await writer.updateAuth(of: target.container, to: auth, replacing: held)
+        }
     }
 
     func requestDeletion(of node: TreeNode) {

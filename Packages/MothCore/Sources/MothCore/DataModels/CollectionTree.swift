@@ -42,11 +42,21 @@ public nonisolated enum TreeContainerID: Hashable, Sendable {
 
 }
 
+/// Where an `.inherit` gets its auth, for the editor to say.
+public nonisolated enum InheritedAuth: Hashable, Sendable {
+
+    case from(String)
+    case nothing
+
+}
+
 public nonisolated struct TreeNode: Identifiable, Hashable, Sendable {
 
     public let id: TreeNodeID
     public let name: String
     public let method: HTTPMethod?
+    /// `nil` for a request, whose auth the tree leaves undecoded, and for a container whose stored auth can't be read.
+    public let auth: Auth?
     public let children: [TreeNode]
 
     public var requestCount: Int {
@@ -79,6 +89,16 @@ public nonisolated struct CollectionTree: Hashable, Sendable {
         Self.path(to: id, in: roots)?.dropLast().map(\.id) ?? []
     }
 
+    /// Walks as `RequestCollection.effectiveAuth(of:)` does, so what this says is what sending will find. A container
+    /// whose auth can't be read still ends the walk, because it holds something.
+    public func inheritedAuth(of id: TreeNodeID) -> InheritedAuth {
+        let ancestors = (Self.path(to: id, in: roots) ?? []).dropLast()
+        guard let source = ancestors.last(where: { $0.auth != .inherit }), source.auth != Auth.none else {
+            return .nothing
+        }
+        return .from(source.name)
+    }
+
     public func node(_ id: TreeNodeID) -> TreeNode? {
         Self.path(to: id, in: roots)?.last
     }
@@ -109,6 +129,7 @@ public nonisolated struct CollectionTree: Hashable, Sendable {
                 id: .collection(row.id),
                 name: row.name,
                 method: nil,
+                auth: try? row.storedAuth,
                 children: index.children(of: .collection(row.id))
             )
         }
@@ -155,6 +176,7 @@ private nonisolated struct ChildIndex {
             id: .folder(row.id),
             name: row.name,
             method: nil,
+            auth: try? row.storedAuth,
             children: children(of: .folder(row.id))
         )
     }
@@ -164,6 +186,7 @@ private nonisolated struct ChildIndex {
             id: .request(row.id),
             name: row.name,
             method: HTTPMethod(rawValue: row.methodRawValue),
+            auth: nil,
             children: []
         )
     }
