@@ -104,18 +104,17 @@ struct PostmanVariableMappingTests {
         #expect(result.secrets.isEmpty)
     }
 
-    @Test("A secret left empty is saved as written")
-    func emptySecretIsSaved() async throws {
-        let store = InMemorySecretStore()
+    @Test("A secret left empty saves nothing, so Moth reports it as missing instead of sending it blank")
+    func emptySecretSavesNothing() async throws {
         let result = try await Fixture.importingSnippet(
             items: "[]",
-            extraKeys: #""variable": [{ "key": "a", "value": "", "type": "secret" }],"#,
-            secretStore: store
+            extraKeys: #""variable": [{ "key": "a", "value": "", "type": "secret" }],"#
         )
 
-        let reference = try #require(result.secrets.first)
+        let variable = try #require(result.collection?.variables.first)
 
-        #expect(await store.value(for: reference.identifier)?.isEmpty == true)
+        #expect(variable.isSecret)
+        #expect(result.secrets.isEmpty)
     }
 
 }

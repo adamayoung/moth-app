@@ -19,6 +19,7 @@ public nonisolated struct PostmanImporter: Sendable {
         PostmanSchema(rawValue: schema) != nil
     }
 
+    @concurrent
     public func importFile(
         _ data: Data,
         existingCollectionNames: Set<String>,
@@ -69,7 +70,8 @@ private nonisolated enum PostmanFile {
 
         if let collection = try? decoder.decode(PostmanCollection.self, from: data) {
             self = .collection(collection)
-        } else if let environment = try? decoder.decode(PostmanEnvironment.self, from: data) {
+        } else if let environment = try? decoder.decode(PostmanEnvironment.self, from: data),
+                  environment.scope ?? "environment" == "environment" {
             self = .environment(environment)
         } else {
             throw PostmanImportError.unrecognisedFile

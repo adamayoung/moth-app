@@ -114,6 +114,38 @@ struct PostmanRequestURLTests {
         #expect(request.urlTemplate == "https://a.test:8080/b/c#d")
     }
 
+    @Test("A row written already encoded is stored decoded, because RequestBuilder encodes rows")
+    func decodesEncodedQueryRows() async throws {
+        let request = try await Fixture.snippetRequest(#"""
+        {
+            "url": {
+                "raw": "https://a.test/?q%201=hello%20world",
+                "query": [
+                    { "key": "q%201", "value": "hello%20world" },
+                    { "key": "rate", "value": "100%" }
+                ]
+            }
+        }
+        """#)
+
+        #expect(request.queryParameters.map(\.key) == ["q 1", "rate"])
+        #expect(request.queryParameters.map(\.value) == ["hello world", "100%"])
+    }
+
+    @Test("A path variable written already encoded is stored decoded")
+    func decodesEncodedPathVariables() async throws {
+        let request = try await Fixture.snippetRequest(#"""
+        {
+            "url": {
+                "raw": "https://a.test/:id",
+                "variable": [{ "key": "id", "value": "a%2Fb" }]
+            }
+        }
+        """#)
+
+        #expect(request.pathParameters.map(\.value) == ["a/b"])
+    }
+
     @Test("A request with no URL has an empty template, and no method means GET")
     func handlesMissingURLAndMethod() async throws {
         let request = try await Fixture.snippetRequest("{}")

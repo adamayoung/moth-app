@@ -11,7 +11,7 @@ struct PostmanBodyMappingTests {
 
     private static let formFilePrefix = "/Users/vishalkumar.shingala@postman.com/pm/postman-code-generators/"
 
-    @Test("Raw text with no language keeps its content and leaves the content type to its header")
+    @Test("Raw text with no language is plain text, and keeps its content and its own header")
     func mapsRawWithNoLanguage() async throws {
         let collection = try await Fixture.collection("postman-code-generators/basicCollection.json")
         let request = try collection.request(named: "POST Raw Text")
@@ -23,7 +23,7 @@ struct PostmanBodyMappingTests {
 
         #expect(content.hasPrefix("Duis posuere augue vel cursus pharetra."))
         #expect(content.hasSuffix("!@#$%^&*()_+-=,.<>/?"))
-        #expect(contentType.isEmpty)
+        #expect(contentType == "text/plain")
         #expect(request.headers.map(\.value) == ["text/plain"])
     }
 
@@ -48,7 +48,7 @@ struct PostmanBodyMappingTests {
             ("html", "text/html"),
             ("javascript", "application/javascript"),
             ("text", "text/plain"),
-            ("yaml", "")
+            ("yaml", "text/plain")
         ]
     )
     func mapsEachRawLanguage(language: String, contentType: String) async throws {

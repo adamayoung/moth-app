@@ -27,12 +27,19 @@ nonisolated struct PostmanMapper {
         )
     }
 
-    /// A value the file doesn't hold saves nothing, so Moth reports the secret as missing.
+    /// An empty secret saves nothing, so Moth reports it as missing instead of sending it blank.
     mutating func secret(_ value: String?) -> SecretReference {
         let reference = SecretReference()
-        if let value {
+        if let value, !value.isEmpty {
             pendingSecrets.append(PendingSecret(reference: reference, value: value))
         }
+        return reference
+    }
+
+    /// Always saved, because Basic and Digest can send a username alone, which `secret(_:)` would report as missing.
+    mutating func password(_ value: String?) -> SecretReference {
+        let reference = SecretReference()
+        pendingSecrets.append(PendingSecret(reference: reference, value: value ?? ""))
         return reference
     }
 
@@ -94,15 +101,16 @@ nonisolated struct PostmanMapper {
 
     private mutating func request(_ postman: PostmanRequestItem) -> Request {
         imported.requests += 1
+        skipped.exampleResponses += postman.savedResponseCount
         countScripts(postman.events)
         countDescription(postman.description, postman.request.description)
         let url = postman.request.url
 
         return Request(
             name: ImportedName.given(postman.name),
-            method: postman.request.method.map(HTTPMethod.init(rawValue:)) ?? .get,
+            method: postman.request.method.map { HTTPMethod(rawValue: $0.uppercased()) } ?? .get,
             urlTemplate: url?.template ?? "",
-            queryParameters: keyValues(url?.query ?? []),
+            queryParameters: keyValues(url?.query ?? []).map(\.percentDecoded),
             pathParameters: pathParameters(url?.variables ?? []),
             headers: keyValues(postman.request.headers),
             body: body(postman.request.body),
@@ -117,7 +125,7 @@ nonisolated struct PostmanMapper {
             countDescription(variable.description)
             parameters.append(KeyValue(
                 key: variable.key ?? variable.id ?? "",
-                value: variable.value?.text ?? "",
+                value: variable.value?.text?.percentDecoded ?? "",
                 isEnabled: variable.isEnabled
             ))
         }
@@ -126,9 +134,29 @@ nonisolated struct PostmanMapper {
 
 }
 
-nonisolated struct PendingSecret {
+nonisolated struct PendingSecret: Sendable {
 
     let reference: SecretReference
     let value: String
+
+}
+
+/// Postman sends a URL's rows as typed, and `RequestBuilder` encodes them, so a typed `%20` would go out as `%2520`.
+private nonisolated extension KeyValue {
+
+    var percentDecoded: KeyValue {
+        var row = self
+        row.key = key.percentDecoded
+        row.value = value.percentDecoded
+        return row
+    }
+
+}
+
+private nonisolated extension String {
+
+    var percentDecoded: String {
+        removingPercentEncoding ?? self
+    }
 
 }

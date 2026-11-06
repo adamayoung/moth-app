@@ -24,6 +24,15 @@ struct PostmanCollectionTests {
         #expect(request.request.method == "GET")
     }
 
+    @Test("A request counts its saved responses, which PostmanKit doesn't otherwise decode")
+    func countsSavedResponses() throws {
+        let saved = try Fixture.collection("openapi-to-postman/collection.json")
+        let none = try Fixture.collection("postman-code-generators/formdataCollection.json")
+
+        #expect(saved.items.requestItems.map(\.savedResponseCount) == [6])
+        #expect(none.items.requestItems.map(\.savedResponseCount) == [0])
+    }
+
     @Test("A collection's requests keep file order")
     func keepsFileOrder() throws {
         let collection = try Fixture.collection("postman-code-generators/basicCollection.json")

@@ -65,6 +65,35 @@ struct PostmanAuthMappingTests {
         #expect(await Fixture.stored(basic.password, in: store) == "kane")
     }
 
+    @Test(
+        "An empty or absent password still saves, because Basic and Digest send a username alone",
+        arguments: [
+            #"{ "type": "basic", "basic": [{ "key": "password", "value": "" }] }"#,
+            #"{ "type": "basic", "basic": [{ "key": "username", "value": "key" }] }"#,
+            #"{ "type": "digest", "digest": [{ "key": "password", "value": "" }] }"#
+        ]
+    )
+    func keepsEmptyPassword(auth: String) async throws {
+        let store = InMemorySecretStore()
+        let result = try await Fixture.importingSnippet(
+            items: #"[{ "name": "a", "request": { "auth": \#(auth) } }]"#,
+            secretStore: store
+        )
+
+        let reference = try #require(result.secrets.first)
+
+        #expect(await Fixture.stored(reference, in: store) == "")
+    }
+
+    @Test("An empty Bearer token saves nothing, so Moth reports it as missing")
+    func emptyBearerTokenSavesNothing() async throws {
+        let result = try await Fixture.importingAuth(#"""
+        { "type": "bearer", "bearer": [{ "key": "token", "value": "" }] }
+        """#)
+
+        #expect(result.secrets.isEmpty)
+    }
+
     @Test("Bearer sends its token to the secret store")
     func mapsBearer() async throws {
         let store = InMemorySecretStore()

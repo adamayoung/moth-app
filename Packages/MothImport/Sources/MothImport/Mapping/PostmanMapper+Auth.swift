@@ -53,11 +53,11 @@ nonisolated extension PostmanMapper {
     }
 
     private mutating func basic(_ postman: PostmanAuth) -> Auth {
-        .basic(BasicAuth(username: postman.text("username") ?? "", password: secret(postman.text("password"))))
+        .basic(BasicAuth(username: postman.text("username") ?? "", password: password(postman.text("password"))))
     }
 
     private mutating func digest(_ postman: PostmanAuth) -> Auth {
-        .digest(DigestAuth(username: postman.text("username") ?? "", password: secret(postman.text("password"))))
+        .digest(DigestAuth(username: postman.text("username") ?? "", password: password(postman.text("password"))))
     }
 
     private mutating func apiKey(_ postman: PostmanAuth) -> Auth {

@@ -35,15 +35,14 @@ nonisolated extension PostmanMapper {
         }
     }
 
-    /// An empty type adds no header, so with no language, or an unknown one, a request's own header carries it.
+    /// Never empty: URLSession labels an untyped body `application/x-www-form-urlencoded`. A request's own header wins.
     private static func contentType(ofLanguage language: String?) -> String {
         switch language {
         case "json": "application/json"
         case "xml": "application/xml"
         case "html": "text/html"
         case "javascript": "application/javascript"
-        case "text": "text/plain"
-        default: ""
+        default: "text/plain"
         }
     }
 

@@ -45,6 +45,7 @@ public nonisolated struct PostmanSkippedCounts: Sendable, Hashable {
     public internal(set) var folderVariables = 0
     public internal(set) var descriptions = 0
     public internal(set) var bodies = 0
+    public internal(set) var exampleResponses = 0
     /// No Moth kind exists for these, so their credentials were dropped.
     public internal(set) var auth: [PostmanAuthKind: Int] = [:]
 

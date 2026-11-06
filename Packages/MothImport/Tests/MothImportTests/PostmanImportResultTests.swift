@@ -58,6 +58,20 @@ struct PostmanImportResultTests {
         #expect(result.skipped.descriptions == expected)
     }
 
+    @Test(
+        "Saved example responses have nowhere to go, so they're counted",
+        arguments: [
+            ("openapi-to-postman/collection.json", 6),
+            ("openapi-to-postman/internalRefsCollection.json", 3),
+            ("postman-code-generators/unsupportedMethods.json", 1)
+        ]
+    )
+    func countsExampleResponses(path: String, expected: Int) async throws {
+        let result = try await Fixture.importing(path)
+
+        #expect(result.skipped.exampleResponses == expected)
+    }
+
     @Test("The result reports an environment's name and variables")
     func reportsEnvironment() async throws {
         let result = try await Fixture.importing("postman-cli-action/postman-echo-environment.json")

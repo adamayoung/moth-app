@@ -33,6 +33,17 @@ struct PostmanImportRejectionTests {
         }
     }
 
+    @Test("A globals export has an environment's shape and is refused, from a snippet as no licensed fixture has one")
+    func refusesGlobals() async {
+        let data = Data(#"""
+        { "name": "Globals", "values": [], "_postman_variable_scope": "globals" }
+        """#.utf8)
+
+        await #expect(throws: PostmanImportError.unrecognisedFile) {
+            try await Self.importing(data)
+        }
+    }
+
     @Test("A file that isn't JSON is refused")
     func refusesNonJSON() async {
         await #expect(throws: PostmanImportError.unrecognisedFile) {

@@ -51,6 +51,13 @@ struct PostmanCollectionTreeTests {
         ])
     }
 
+    @Test("A lower-case method is upper-cased, as postman-collection's Request does")
+    func upperCasesMethods() async throws {
+        let request = try await Fixture.snippetRequest(#"{ "method": "post" }"#)
+
+        #expect(request.method == .post)
+    }
+
     @Test("A method Moth has no constant for keeps its spelling")
     func keepsCustomMethods() async throws {
         let collection = try await Fixture.collection("postman-code-generators/unsupportedMethods.json")
