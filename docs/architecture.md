@@ -581,7 +581,8 @@ binary as text. `JSONReindenter` lays out the text the server sent, because
 stays raw. `ReadOnlyTextView` shows it, because `Text` lays out megabytes on the main
 thread.
 
-A request that can't be built was not sent, so it carries no "sent as written" note.
+A credential with no value sends no auth, and the response says so. A request that
+can't be built was not sent, so it carries no "sent as written" note.
 That includes `{{host}}` in the host with no active environment, which reads "This
 URL isn’t valid." A failure after that keeps its notes, because the request went out.
 

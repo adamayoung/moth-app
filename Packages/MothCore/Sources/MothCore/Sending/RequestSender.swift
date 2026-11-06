@@ -39,7 +39,11 @@ public nonisolated struct RequestSender: Sendable {
             let resolved = try await resolve(outgoing, scopes: scopes)
             let built = try await RequestBuilder().build(resolved)
             urlRequest = built.urlRequest
-            notes = ResponseNote.notes(unresolved: resolved.unresolved, notices: built.notices)
+            notes = ResponseNote.notes(
+                unresolved: resolved.unresolved,
+                notices: built.notices,
+                unresolvedCredentials: resolved.unresolvedCredentials
+            )
         } catch is CancellationError {
             return .cancelled
         } catch {

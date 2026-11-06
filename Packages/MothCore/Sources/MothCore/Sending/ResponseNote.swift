@@ -7,10 +7,15 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
 
     case undefinedVariable(String)
     case undefinedVariables(Int)
+    case missingCredential
     case unsupportedAuth
     case unsupportedBody
 
-    public static func notes(unresolved: [UnresolvedVariable], notices: [RequestBuildNotice]) -> [ResponseNote] {
+    public static func notes(
+        unresolved: [UnresolvedVariable],
+        notices: [RequestBuildNotice],
+        unresolvedCredentials: [SecretReference] = []
+    ) -> [ResponseNote] {
         var notes: [ResponseNote] = []
 
         if unresolved.count == 1, let variable = unresolved.first {
@@ -20,6 +25,8 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
         }
         if notices.contains(where: \.isUnsupportedAuth) {
             notes.append(.unsupportedAuth)
+        } else if !unresolvedCredentials.isEmpty {
+            notes.append(.missingCredential)
         }
         if notices.contains(where: \.isUnsupportedBody) {
             notes.append(.unsupportedBody)

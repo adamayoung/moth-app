@@ -70,16 +70,40 @@ struct SendContextTests {
     func storedRequest() throws {
         let (dataModel, tree) = try tree()
 
-        let context = try #require(try dataModel.sendContext(for: request.id, in: tree, environment: nil))
+        let context = try dataModel.sendContext(for: request.id, in: tree, environment: nil)
 
         #expect(context.request.urlTemplate == "https://example.com")
     }
 
-    @Test("A request with no row has no context")
+    @Test("A request with no row refuses, because nothing can be sent")
     func missingRow() throws {
         let (dataModel, tree) = try tree()
 
-        #expect(try dataModel.sendContext(for: UUID(), in: tree, environment: nil) == nil)
+        #expect(throws: RequestSendError.requestNotFound) {
+            try dataModel.sendContext(for: UUID(), in: tree, environment: nil)
+        }
+    }
+
+    @Test("A request that has gone reads in plain English")
+    func missingRowDescription() {
+        #expect(RequestSendError.requestNotFound.errorDescription == "This request no longer exists.")
+    }
+
+    @Test("A variable another context added to the request is read fresh")
+    func freshRequestVariables() throws {
+        let (dataModel, tree) = try tree()
+        let row = try #require(dataModel.mainContext.fetch(RequestModel.withID(request.id)).first)
+        #expect(row.variables?.isEmpty == true)
+        let writing = ModelContext(dataModel.container)
+        let stored = try #require(writing.fetch(RequestModel.withID(request.id)).first)
+        let variable = VariableModel(.plain("id", "42"), sortOrder: 0)
+        writing.insert(variable)
+        variable.request = stored
+        try writing.save()
+
+        let context = try dataModel.sendContext(for: request.id, in: tree, environment: nil)
+
+        #expect(context.request.variables.map(\.name) == ["id"])
     }
 
     @Test("Each scope comes from its own rows, in order")
@@ -99,7 +123,7 @@ struct SendContextTests {
         ))
         let tree = try CollectionTree(savedIn: dataModel)
 
-        let context = try #require(try dataModel.sendContext(for: request.id, in: tree, environment: chosen.id))
+        let context = try dataModel.sendContext(for: request.id, in: tree, environment: chosen.id)
 
         #expect(context.scopes.collection.map(\.name) == ["collection"])
         #expect(context.scopes.environment.map(\.name) == ["first", "second"])
@@ -110,7 +134,7 @@ struct SendContextTests {
     func noEnvironment() throws {
         let (dataModel, tree) = try tree()
 
-        let context = try #require(try dataModel.sendContext(for: request.id, in: tree, environment: nil))
+        let context = try dataModel.sendContext(for: request.id, in: tree, environment: nil)
 
         #expect(context.scopes.environment.isEmpty)
     }
@@ -123,14 +147,14 @@ struct SendContextTests {
             environments: [environment]
         ))
         let tree = try CollectionTree(savedIn: dataModel)
-        let context = try #require(try dataModel.sendContext(for: request.id, in: tree, environment: environment.id))
+        let context = try dataModel.sendContext(for: request.id, in: tree, environment: environment.id)
         let variable = try #require(context.scopes.environment.first)
         var changed = variable
         changed.value = .plain(initial: "new", current: "new")
 
         try await dataModel.writer.updateVariable(changed, replacing: nil)
 
-        let fresh = try #require(try dataModel.sendContext(for: request.id, in: tree, environment: environment.id))
+        let fresh = try dataModel.sendContext(for: request.id, in: tree, environment: environment.id)
         #expect(fresh.scopes.environment.first?.currentValue == "new")
     }
 

@@ -24,6 +24,7 @@ extension ResponseNote {
         switch self {
         case .undefinedVariable(let name): String(localized: "RESPONSE_NOTE_UNDEFINED_VARIABLE_\(name)")
         case .undefinedVariables(let count): String(localized: "RESPONSE_NOTE_UNDEFINED_VARIABLES_\(count)")
+        case .missingCredential: String(localized: "RESPONSE_NOTE_MISSING_CREDENTIAL")
         case .unsupportedAuth: String(localized: "RESPONSE_NOTE_UNSUPPORTED_AUTH")
         case .unsupportedBody: String(localized: "RESPONSE_NOTE_UNSUPPORTED_BODY")
         }

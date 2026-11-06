@@ -125,6 +125,24 @@ struct ResponseContentTests {
         )
     }
 
+    @Test("A text type with no charset falls back to Latin-1 when its bytes aren't UTF-8")
+    func undeclaredLegacyText() {
+        let body = Data([0x63, 0x61, 0x66, 0xE9])
+
+        #expect(ResponseContent(body: body, contentType: "text/html") == .text("café"))
+        #expect(ResponseContent(body: body, contentType: "TEXT/plain; format=flowed") == .text("café"))
+    }
+
+    @Test("A non-text type gets no Latin-1 fallback")
+    func noFallbackForOtherTypes() {
+        let body = Data([0x63, 0x61, 0x66, 0xE9])
+
+        #expect(
+            ResponseContent(body: body, contentType: "application/octet-stream")
+                == .binary(contentType: "application/octet-stream", size: 4)
+        )
+    }
+
     @Test("A declared UTF-8 charset doesn't make binary bytes into text")
     func binaryDeclaredAsUTF8() {
         let contentType = "text/plain; charset=utf-8"

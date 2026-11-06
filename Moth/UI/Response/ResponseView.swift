@@ -154,26 +154,29 @@ struct ResponseTimingView: View {
     let total: Duration
 
     var body: some View {
-        Grid(alignment: .topLeading, horizontalSpacing: 16, verticalSpacing: 6) {
-            ForEach(timing, id: \.phase) { row in
+        ScrollView {
+            Grid(alignment: .topLeading, horizontalSpacing: 16, verticalSpacing: 6) {
+                ForEach(timing, id: \.phase) { row in
+                    GridRow {
+                        Text(verbatim: row.phase.title)
+                            .accessibilityIdentifier("response.timing.phase")
+
+                        Text(verbatim: row.duration.responseText())
+                            .accessibilityIdentifier("response.timing.duration")
+                    }
+                }
+
                 GridRow {
-                    Text(verbatim: row.phase.title)
+                    Text("RESPONSE_TIMING_TOTAL")
+                        .fontWeight(.medium)
                         .accessibilityIdentifier("response.timing.phase")
 
-                    Text(verbatim: row.duration.responseText())
+                    Text(verbatim: total.responseText())
+                        .fontWeight(.medium)
                         .accessibilityIdentifier("response.timing.duration")
                 }
             }
-
-            GridRow {
-                Text("RESPONSE_TIMING_TOTAL")
-                    .fontWeight(.medium)
-                    .accessibilityIdentifier("response.timing.phase")
-
-                Text(verbatim: total.responseText())
-                    .fontWeight(.medium)
-                    .accessibilityIdentifier("response.timing.duration")
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

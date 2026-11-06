@@ -46,6 +46,28 @@ struct ResponseNoteTests {
         #expect(ResponseNote.notes(unresolved: [], notices: [.unsupportedBody(kind)]) == [.unsupportedBody])
     }
 
+    @Test("A credential with no value is noted, because the request went out without auth")
+    func missingCredential() {
+        let notes = ResponseNote.notes(
+            unresolved: [],
+            notices: [],
+            unresolvedCredentials: [SecretReference(identifier: "token")]
+        )
+
+        #expect(notes == [.missingCredential])
+    }
+
+    @Test("An unsupported auth with no credential is noted once, as unsupported")
+    func unsupportedAuthWithNoCredential() {
+        let notes = ResponseNote.notes(
+            unresolved: [],
+            notices: [.unsupportedAuth(.apiKey)],
+            unresolvedCredentials: [SecretReference(identifier: "key")]
+        )
+
+        #expect(notes == [.unsupportedAuth])
+    }
+
     @Test("Notes keep one order, with variables first")
     func order() {
         let notes = ResponseNote.notes(

@@ -36,13 +36,19 @@ public nonisolated enum ResponseContent: Sendable, Hashable {
         self = .text(JSONReindenter.reindented(text) ?? text)
     }
 
-    /// Goes by the bytes rather than the content type, because servers mislabel binary as text.
+    /// Goes by the bytes first, because servers mislabel binary as text. Text that isn't UTF-8 and names no charset is
+    /// a legacy encoding, and Latin-1 decodes any byte.
     private static func decoded(_ body: Data, contentType: String?) -> String? {
-        let encoding = declaredEncoding(in: contentType) ?? .utf8
+        let declared = declaredEncoding(in: contentType)
+        let encoding = declared ?? .utf8
         guard wideEncodings.contains(encoding) || !body.contains(0) else {
             return nil
         }
-        return String(data: body, encoding: encoding)
+        if let text = String(data: body, encoding: encoding) {
+            return text
+        }
+        let isText = contentType?.lowercased().hasPrefix("text/") == true
+        return declared == nil && isText ? String(data: body, encoding: .isoLatin1) : nil
     }
 
     private static func declaredEncoding(in contentType: String?) -> String.Encoding? {

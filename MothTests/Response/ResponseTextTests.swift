@@ -32,6 +32,7 @@ struct ResponseTextTests {
             ),
             (ResponseNote.undefinedVariables(3), "3 variables aren\u{2019}t defined and were sent as written."),
             (ResponseNote.undefinedVariables(1), "1 variable isn\u{2019}t defined and was sent as written."),
+            (ResponseNote.missingCredential, "Sent without auth, because its credential has no value."),
             (ResponseNote.unsupportedAuth, "Sent without its unsupported auth."),
             (ResponseNote.unsupportedBody, "Sent without its unsupported body.")
         ]

@@ -1025,6 +1025,17 @@
         }
       }
     },
+    "RESPONSE_NOTE_MISSING_CREDENTIAL" : {
+      "comment" : "Shown above a response when the request's password or token has no stored value, so it went out with no auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without auth, because its credential has no value."
+          }
+        }
+      }
+    },
     "RESPONSE_NOTE_UNDEFINED_VARIABLE_%@" : {
       "comment" : "Shown above a response when one variable had no value. The argument is its name. RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld covers several.",
       "localizations" : {

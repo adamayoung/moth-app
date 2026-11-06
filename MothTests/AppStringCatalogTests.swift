@@ -164,6 +164,7 @@ struct AppStringCatalogTests {
             ("RESPONSE_TIMING_DOWNLOAD", "Download"),
             ("RESPONSE_TIMING_TOTAL", "Total"),
             ("RESPONSE_NOTE_UNDEFINED_VARIABLE_%@", "{{%@}} isn\u{2019}t defined, so it was sent as written."),
+            ("RESPONSE_NOTE_MISSING_CREDENTIAL", "Sent without auth, because its credential has no value."),
             ("RESPONSE_NOTE_UNSUPPORTED_AUTH", "Sent without its unsupported auth."),
             ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body.")
         ]

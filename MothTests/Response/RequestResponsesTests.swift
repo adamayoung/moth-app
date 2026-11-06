@@ -117,6 +117,24 @@ struct RequestResponsesTests {
         }
     }
 
+    @Test("A request whose row has gone shows why, and isn't reported as cancelled")
+    func missingRow() async throws {
+        let transport = RecordingHTTPTransport()
+        let request = Request(name: "List", urlTemplate: "https://example.com")
+        let (dataModel, responses, tree) = try responses(holding: request, through: transport)
+        let gone = Request(name: "Gone", urlTemplate: "https://example.com")
+
+        await responses.send(gone.id, draft: RequestDraft(gone), tree: tree).value
+
+        withExtendedLifetime(dataModel) {
+            #expect(transport.requests.isEmpty)
+            #expect(responses.state(for: gone.id) == .finished(.failed(
+                SendFailure(kind: .notSent, description: "This request no longer exists."),
+                notes: []
+            )))
+        }
+    }
+
     @Test("A request with no response yet has no state")
     func noState() {
         #expect(RequestResponses.preview.state(for: UUID()) == nil)

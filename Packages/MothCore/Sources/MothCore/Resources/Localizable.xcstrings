@@ -34,6 +34,17 @@
         }
       }
     },
+    "REQUEST_SEND_NOT_FOUND" : {
+      "comment" : "Shown when a request cannot be sent because its row has gone, such as after a delete on another Mac.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This request no longer exists."
+          }
+        }
+      }
+    },
     "REQUEST_SEND_UNREADABLE_INHERITED_AUTH" : {
       "comment" : "Shown when a request cannot be sent because a folder or collection it inherits auth from can't be read.",
       "localizations" : {

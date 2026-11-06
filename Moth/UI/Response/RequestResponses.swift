@@ -23,8 +23,8 @@ final class RequestResponses {
 
     private struct InFlight {
 
-        let token = UUID()
-        var task: Task<Void, Never>?
+        let token: UUID
+        let task: Task<Void, Never>
 
     }
 
@@ -45,13 +45,7 @@ final class RequestResponses {
         let sender = RequestSender(transport: transport, secretStore: secretStore)
         self.init { id, draft, tree in
             do {
-                guard let context = try dataModel.sendContext(
-                    for: id,
-                    in: tree,
-                    environment: activeEnvironment.id
-                ) else {
-                    return .cancelled
-                }
+                let context = try dataModel.sendContext(for: id, in: tree, environment: activeEnvironment.id)
                 let outgoing = try draft.outgoing(from: context.request, in: tree)
                 return await sender.send(outgoing, scopes: context.scopes)
             } catch {
@@ -61,7 +55,7 @@ final class RequestResponses {
     }
 
     isolated deinit {
-        inFlight.values.forEach { $0.task?.cancel() }
+        inFlight.values.forEach { $0.task.cancel() }
     }
 
     /// New on every use, because previews share one process and one would otherwise show another's responses.
@@ -83,14 +77,13 @@ final class RequestResponses {
         if let current = inFlight[id]?.task {
             return current
         }
-        let send = InFlight()
-        inFlight[id] = send
-        states[id] = .sending
+        let token = UUID()
         let task = Task { [weak self, perform] in
             let result = await perform(id, draft, tree)
-            self?.finish(id, token: send.token, with: result)
+            self?.finish(id, token: token, with: result)
         }
-        inFlight[id]?.task = task
+        inFlight[id] = InFlight(token: token, task: task)
+        states[id] = .sending
         return task
     }
 
@@ -100,13 +93,13 @@ final class RequestResponses {
         guard let send = inFlight.removeValue(forKey: id) else {
             return
         }
-        send.task?.cancel()
+        send.task.cancel()
         states[id] = .finished(.cancelled)
     }
 
     func keep(_ ids: Set<Request.ID>) {
         for (id, send) in inFlight where !ids.contains(id) {
-            send.task?.cancel()
+            send.task.cancel()
             inFlight[id] = nil
         }
         if states.keys.contains(where: { !ids.contains($0) }) {

@@ -147,6 +147,25 @@ struct RequestSenderTests {
         #expect(response.notes == [.undefinedVariable("token")])
     }
 
+    @Test("A credential with no value sends no auth, and says so")
+    func missingCredential() async {
+        let transport = RecordingTransport()
+        let request = Request(
+            name: "List",
+            urlTemplate: "https://example.com",
+            auth: .bearer(BearerAuth(token: SecretReference(identifier: "unsaved")))
+        )
+
+        let result = await send(request, through: transport)
+
+        #expect(transport.requests.first?.value(forHTTPHeaderField: "Authorization") == nil)
+        guard case .response(let response) = result else {
+            Issue.record("Expected a response, got \(result)")
+            return
+        }
+        #expect(response.notes == [.missingCredential])
+    }
+
     @Test("An unsupported auth and body are noted")
     func unsupportedNotes() async {
         let request = Request(
