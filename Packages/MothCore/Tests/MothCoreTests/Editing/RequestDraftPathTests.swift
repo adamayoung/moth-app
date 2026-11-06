@@ -143,6 +143,43 @@ struct RequestDraftPathTests {
         #expect(draft.edit.pathParameters.map(\.value) == ["", "1"])
     }
 
+    @Test("A stored path row with no segment in the template survives a Save, because a variable can hold the segment")
+    func unseenPathRowSurvivesASave() {
+        let row = KeyValue(key: "id", value: "42")
+        var draft = RequestDraft(Request(name: "Path", urlTemplate: "{{userUrl}}", pathParameters: [row]))
+
+        draft.headers = [KeyValue(key: "Accept", value: "text/plain")]
+
+        #expect(draft.pathParameters.isEmpty)
+        #expect(draft.edit.pathParameters == [row])
+        #expect(RequestDraft(draft.edit).edit.pathParameters == [row])
+    }
+
+    @Test("Typing the segment of a row that was not shown brings that row back")
+    func typingAnUnseenSegmentShowsItsRow() {
+        let row = KeyValue(key: "id", value: "42")
+        var draft = RequestDraft(Request(name: "Path", urlTemplate: "{{userUrl}}", pathParameters: [row]))
+
+        draft.url = "{{userUrl}}/:id"
+
+        #expect(draft.pathParameters == [row])
+        #expect(draft.edit.pathParameters == [row])
+    }
+
+    @Test("Pasting several new segments over one gives none of them its value")
+    func pastingSeveralSegments() {
+        var draft = RequestDraft(Request(
+            name: "Path",
+            urlTemplate: "https://example.com/users/:id",
+            pathParameters: [KeyValue(key: "id", value: "42")]
+        ))
+
+        draft.url = "https://example.com/orgs/:org/users/:user"
+
+        #expect(draft.pathParameters.map(\.key) == ["org", "user"])
+        #expect(draft.pathParameters.map(\.value) == ["", ""])
+    }
+
     private func draft() -> RequestDraft {
         RequestDraft(Request(name: "Draft", urlTemplate: "https://example.com"))
     }

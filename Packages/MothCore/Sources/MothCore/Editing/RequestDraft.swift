@@ -15,6 +15,10 @@ public nonisolated struct RequestDraft: Sendable {
     private var composedURL: String
     private var queryRows: [KeyValue]
 
+    /// Kept and saved unseen, because sending substitutes path variables after `{{variables}}` resolve, so a variable
+    /// can hold the segment that this row fills.
+    private var unseenPathRows: [KeyValue]
+
     public init(_ request: Request) {
         self.init(RequestEdit(request))
     }
@@ -24,7 +28,11 @@ public nonisolated struct RequestDraft: Sendable {
         let rows = text.queryPairs.map { KeyValue(key: $0.key, value: $0.value) } + edit.queryParameters
         self.method = edit.method
         self.headers = edit.headers
-        self.pathParameters = Self.pathRows(in: text, keeping: edit.pathParameters)
+        let names = text.pathVariableNames
+        self.pathParameters = names.map { name in
+            edit.pathParameters.first { $0.key == name } ?? KeyValue(key: name, value: "")
+        }
+        self.unseenPathRows = edit.pathParameters.filter { !names.contains($0.key) }
         self.queryRows = rows
         self.composedURL = text.replacingQuery(with: rows)
     }
@@ -34,7 +42,7 @@ public nonisolated struct RequestDraft: Sendable {
             method: method,
             urlTemplate: URLTemplateText(composedURL).withoutQuery,
             queryParameters: queryRows,
-            pathParameters: pathParameters,
+            pathParameters: pathParameters + unseenPathRows,
             headers: headers
         )
     }
@@ -63,7 +71,7 @@ public nonisolated struct RequestDraft: Sendable {
             let text = URLTemplateText(newValue)
             composedURL = newValue
             queryRows = Self.filling(queryRows, from: text.queryPairs)
-            pathParameters = Self.pathRows(in: text, renaming: pathParameters)
+            updatePathRows(for: text.pathVariableNames)
         }
     }
 
@@ -97,25 +105,22 @@ public nonisolated struct RequestDraft: Sendable {
         return filled + remaining.map { KeyValue(key: $0.key, value: $0.value) }
     }
 
-    private static func pathRows(in text: URLTemplateText, keeping rows: [KeyValue]) -> [KeyValue] {
-        text.pathVariableNames.map { name in
-            rows.first { $0.key == name } ?? KeyValue(key: name, value: "")
-        }
-    }
-
-    /// A row whose segment has gone takes a new one, so typing over `:id` keeps its value: sending leaves a segment
-    /// with no value as written, and the literal `:id` would go out with no error.
-    private static func pathRows(in text: URLTemplateText, renaming rows: [KeyValue]) -> [KeyValue] {
-        let names = text.pathVariableNames
-        var unclaimed = rows.filter { !names.contains($0.key) }[...]
-        return names.map { name in
-            if let row = rows.first(where: { $0.key == name }) {
+    /// One segment changing its name keeps its row: sending leaves a segment with no value as written, so the literal
+    /// `:id` would go out with no error. A wider change is a different URL, and an old value would mean nothing there.
+    private mutating func updatePathRows(for names: [String]) {
+        let known = pathParameters + unseenPathRows
+        let gone = pathParameters.filter { !names.contains($0.key) }
+        let added = names.filter { name in !known.contains { $0.key == name } }
+        let renamed = gone.count == 1 && added.count == 1 ? gone.first : nil
+        pathParameters = names.map { name in
+            if let row = known.first(where: { $0.key == name }) {
                 return row
             }
-            var row = unclaimed.popFirst() ?? KeyValue(key: name, value: "")
+            var row = renamed ?? KeyValue(key: name, value: "")
             row.key = name
             return row
         }
+        unseenPathRows.removeAll { names.contains($0.key) }
     }
 
 }

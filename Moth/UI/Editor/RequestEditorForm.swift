@@ -121,8 +121,8 @@ struct RequestEditorForm: View {
                     identifierPrefix: "params",
                     removeLabel: "REQUEST_EDITOR_REMOVE_PARAMETER",
                     focusedRow: $focusedRow
-                ) { rows in
-                    update { $0.queryParameters = rows }
+                ) { change in
+                    update { change(&$0.queryParameters) }
                 }
 
                 if !draft.pathParameters.isEmpty {
@@ -137,8 +137,8 @@ struct RequestEditorForm: View {
                 identifierPrefix: "headers",
                 removeLabel: "REQUEST_EDITOR_REMOVE_HEADER",
                 focusedRow: $focusedRow
-            ) { rows in
-                update { $0.headers = rows }
+            ) { change in
+                update { change(&$0.headers) }
             }
         case .body, .auth:
             EmptyView()

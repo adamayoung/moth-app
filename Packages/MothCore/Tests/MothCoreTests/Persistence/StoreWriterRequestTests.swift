@@ -87,6 +87,27 @@ struct StoreWriterRequestTests {
         #expect(rows.allSatisfy { $0.urlTemplate == edit.urlTemplate })
     }
 
+    @Test("Saving an edit refuses a row this build can't read, because it may hold fields the editor never showed")
+    func refusesUnreadableRow() async throws {
+        let request = Request(name: "Request")
+        let dataModel = try TreeFixtures.dataModel(
+            holding: RequestCollection(name: "API", children: [TreeFixtures.item(0, request)])
+        )
+        let unreadable = Data("not JSON".utf8)
+        let context = ModelContext(dataModel.container)
+        let row = try #require(context.fetch(RequestModel.withID(request.id)).first)
+        row.queryParametersData = unreadable
+        try context.save()
+
+        await #expect(throws: (any Error).self) {
+            try await dataModel.writer.updateRequest(request.id, with: edit)
+        }
+
+        let saved = try #require(TreeFixtures.savedRows(RequestModel.self, in: dataModel).first)
+        #expect(saved.queryParametersData == unreadable)
+        #expect(saved.urlTemplate == request.urlTemplate)
+    }
+
     @Test("Saving an edit to a request that has gone writes nothing")
     func requestHasGone() async throws {
         let dataModel = try TreeFixtures.dataModel(holding: RequestCollection(name: "API"))

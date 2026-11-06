@@ -180,6 +180,20 @@ final class RequestEditorTests: MothTestCase {
     }
 
     @MainActor
+    func testRevertRemovesARowThatHasFocus() {
+        let (screen, editor) = screenWithListUsersOpen()
+        editor.addRow("params")
+        XCTAssertTrue(editor.keyField("params", at: 2).waitForExistence(timeout: 10))
+        app.typeText("page")
+        XCTAssertTrue(screen.editedDot(on: "List Users").waitForExistence(timeout: 10))
+
+        screen.chooseFromFileMenu("Revert to Saved")
+
+        XCTAssertTrue(screen.waitForEditedDotToClear(on: "List Users"))
+        XCTAssertEqual(editor.rowCount("params"), 2)
+    }
+
+    @MainActor
     func testClosingAnEditedTabAsksAndSaveClosesIt() {
         let (screen, editor) = screenWithEditedListUsers()
 

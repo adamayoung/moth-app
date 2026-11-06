@@ -291,9 +291,11 @@ into rows by text, because `{{host}}/users` is no URL until it is resolved. The
 enabled rows take the parsed pairs by position, so they keep their identities. A
 `+` in the query reads as the space a server reads, because `RequestBuilder` would
 send a row's `+` as `%2B`. Path rows come from the URL by the rule sending uses.
-Typing over a segment keeps its row, and removing the segment removes it. Save
-shows the stored form, so `?flag` reads `?flag=`: a `KeyValue` has no null value,
-and that is what `RequestBuilder` sends.
+Renaming one segment keeps its row, and removing a segment removes it, down to a
+bare `:`. A wider change keeps no value by position. A stored row with no segment
+in the template stays hidden and is saved as it was, because a variable can hold
+the segment. Save shows the stored form, so `?flag` reads `?flag=`: a `KeyValue`
+has no null value, and that is what `RequestBuilder` sends.
 
 Rows can't hold everything a template's own query can, and a Save moves that
 query into rows. A whole query in one variable, `?{{query}}`, becomes a key. A

@@ -12,7 +12,7 @@ struct KeyValueGrid: View {
     let identifierPrefix: String
     let removeLabel: LocalizedStringKey
     var focusedRow: FocusState<KeyValue.ID?>.Binding
-    let change: ([KeyValue]) -> Void
+    let change: ((inout [KeyValue]) -> Void) -> Void
 
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
@@ -56,7 +56,7 @@ struct KeyValueGrid: View {
                 .accessibilityIdentifier("\(identifierPrefix).value")
 
             Button {
-                change(rows.filter { $0.id != row.id })
+                change { rows in rows.removeAll { $0.id == row.id } }
             } label: {
                 Image(systemName: "minus.circle")
             }
@@ -66,17 +66,17 @@ struct KeyValueGrid: View {
         }
     }
 
+    /// Writes by identifier, not from `rows`, because a field torn down with focus commits late, and a copy of the rows
+    /// from its last render would bring back a row that Revert has just removed.
     private func binding<Value>(_ row: KeyValue, _ property: WritableKeyPath<KeyValue, Value>) -> Binding<Value> {
         Binding {
             row[keyPath: property]
         } set: { value in
-            change(rows.map { current in
-                var changed = current
-                if current.id == row.id {
-                    changed[keyPath: property] = value
+            change { rows in
+                if let index = rows.firstIndex(where: { $0.id == row.id }) {
+                    rows[index][keyPath: property] = value
                 }
-                return changed
-            })
+            }
         }
     }
 
