@@ -28,6 +28,19 @@ struct StoredCredentials {
 
 }
 
+extension SecretValue {
+
+    /// What a credential field shows, before anything has been typed.
+    var text: String {
+        if case .available(let value) = self {
+            value
+        } else {
+            ""
+        }
+    }
+
+}
+
 extension AuthDraft {
 
     /// Text typed back to what is stored leaves nothing to save, and an empty field matches a missing value.

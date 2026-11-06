@@ -45,9 +45,15 @@ struct RequestEditorPane: View {
                 description: Text("REQUEST_EDITOR_UNREADABLE_DESCRIPTION")
             )
         } else if let draft = drafts.draft(for: tab.id) {
-            RequestEditorForm(name: tab.name, draft: draft, section: $section) { change in
-                edit(tab.id, change)
-            }
+            RequestEditorForm(
+                name: tab.name,
+                draft: draft,
+                inheritedAuth: tab.inheritedAuth,
+                section: $section,
+                credential: { drafts.credential($0, in: tab.id) },
+                loadCredential: { await drafts.loadCredential($0, in: tab.id) },
+                update: { change in edit(tab.id, change) }
+            )
             .id(tab.id)
         }
     }

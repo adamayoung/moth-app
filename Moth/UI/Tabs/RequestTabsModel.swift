@@ -98,7 +98,12 @@ final class RequestTabsModel {
         guard let node = tree.node(.request(id)), let method = node.method else {
             return nil
         }
-        return RequestTab(id: id, name: node.name, method: method)
+        return RequestTab(
+            id: id,
+            name: node.name,
+            method: method,
+            inheritedAuth: tree.inheritedAuth(of: .request(id))
+        )
     }
 
 }

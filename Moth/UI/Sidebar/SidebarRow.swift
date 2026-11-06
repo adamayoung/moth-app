@@ -64,6 +64,10 @@ struct SidebarRow: View {
                 model.presentedVariables = VariableSheetTarget(scope: .collection(id), title: node.name)
             }
         }
+        Button("SIDEBAR_AUTHORIZATION") {
+            model.presentAuthorization(of: node)
+        }
+        .disabled(node.auth == nil)
         Divider()
         itemMenu
     }
