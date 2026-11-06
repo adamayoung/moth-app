@@ -15,15 +15,18 @@ final class SidebarModel {
     var selection: TreeNodeID?
     var expanded: Set<TreeNodeID> = []
     var pendingDeletion: PendingDeletion?
+    var presentedVariables: VariableSheetTarget?
     var renameDraft = ""
     private(set) var renaming: TreeNodeID?
     private(set) var tree = CollectionTree.empty
 
     private var hasReceivedTree = false
     private let writer: StoreWriter
+    private let secretStore: any SecretStore
 
-    init(writer: StoreWriter) {
+    init(writer: StoreWriter, secretStore: any SecretStore) {
         self.writer = writer
+        self.secretStore = secretStore
     }
 
     /// Where File > New Folder and New Request put their item. A selected request's parent is the target, because a
@@ -98,6 +101,10 @@ final class SidebarModel {
 
     func cancelRename() {
         renaming = nil
+    }
+
+    func variableTable(for target: VariableSheetTarget) -> VariableTableModel {
+        VariableTableModel(scope: target.scope, writer: writer, secretStore: secretStore)
     }
 
     func requestDeletion(of node: TreeNode) {

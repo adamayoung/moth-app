@@ -21,6 +21,17 @@ enum SeedData {
                 )
             ]
         )
+        let staging = WorkspaceEnvironment(
+            id: identifier(12),
+            name: "Staging",
+            variables: ["host", "port", "scheme", "version", "region", "timeout"].enumerated().map { index, name in
+                Variable(
+                    id: identifier(13 + UInt8(index)),
+                    name: name,
+                    value: .plain(initial: "staging", current: "staging")
+                )
+            }
+        )
         let admins = Folder(
             id: identifier(9),
             name: "Admins",
@@ -53,6 +64,9 @@ enum SeedData {
         let collection = RequestCollection(
             id: identifier(2),
             name: "Seeded Collection",
+            variables: [
+                Variable(id: identifier(19), name: "apiVersion", value: .plain(initial: "v1", current: "v1"))
+            ],
             children: [
                 CollectionItem(sortOrder: 0, node: .folder(users)),
                 CollectionItem(sortOrder: 1, node: .request(Request(id: identifier(11), name: "Health")))
@@ -62,7 +76,7 @@ enum SeedData {
         return Workspace(
             id: identifier(1),
             collections: [collection],
-            environments: [environment],
+            environments: [environment, staging],
             activeEnvironmentID: environment.id
         )
     }()

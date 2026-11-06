@@ -16,7 +16,6 @@ struct AppStringCatalogTests {
             ("SIDEBAR_COLLECTIONS_SECTION", "Collections"),
             ("SIDEBAR_COLLECTIONS_EMPTY", "No Collections"),
             ("SIDEBAR_ENVIRONMENTS_SECTION", "Environments"),
-            ("SIDEBAR_ENVIRONMENTS_EMPTY", "No Environments"),
             ("SIDEBAR_HISTORY_SECTION", "History"),
             ("SIDEBAR_HISTORY_EMPTY", "No History"),
             ("REQUEST_EDITOR_EMPTY_TITLE", "No Request Open"),
@@ -29,9 +28,11 @@ struct AppStringCatalogTests {
             ("MENU_NEW_COLLECTION", "New Collection"),
             ("MENU_NEW_FOLDER", "New Folder"),
             ("MENU_NEW_REQUEST", "New Request"),
+            ("MENU_NEW_ENVIRONMENT", "New Environment"),
             ("DEFAULT_COLLECTION_NAME", "New Collection"),
             ("DEFAULT_FOLDER_NAME", "New Folder"),
             ("DEFAULT_REQUEST_NAME", "New Request"),
+            ("DEFAULT_ENVIRONMENT_NAME", "New Environment"),
             ("SIDEBAR_RENAME", "Rename"),
             ("SIDEBAR_RENAME_FIELD_LABEL", "Name"),
             ("SIDEBAR_DELETE", "Delete\u{2026}"),
@@ -39,6 +40,23 @@ struct AppStringCatalogTests {
             ("SIDEBAR_DELETE_MESSAGE", "You can\u{2019}t undo this."),
             ("SIDEBAR_DELETE_CONFIRM", "Delete"),
             ("SIDEBAR_DELETE_CANCEL", "Cancel"),
+            ("SIDEBAR_GLOBALS", "Globals"),
+            ("SIDEBAR_EDIT", "Edit\u{2026}"),
+            ("SIDEBAR_VARIABLES", "Variables\u{2026}"),
+            ("VARIABLES_COLUMN_ENABLED", "Enabled"),
+            ("VARIABLES_COLUMN_VARIABLE", "Variable"),
+            ("VARIABLES_COLUMN_INITIAL", "Initial Value"),
+            ("VARIABLES_COLUMN_CURRENT", "Current Value"),
+            ("VARIABLES_COLUMN_SECRET", "Secret"),
+            ("VARIABLES_ADD", "Add Variable"),
+            ("VARIABLES_REMOVE", "Remove Variable"),
+            ("VARIABLES_DONE", "Done"),
+            ("VARIABLES_SECRET_VALUE_LABEL", "Secret Value"),
+            ("VARIABLES_SECRET_SHOW", "Show"),
+            ("VARIABLES_SECRET_HIDE", "Hide"),
+            ("VARIABLES_SECRET_UNAVAILABLE", "Not available on this Mac yet"),
+            ("ENVIRONMENT_PICKER_LABEL", "Environment"),
+            ("ENVIRONMENT_PICKER_NONE", "No Environment"),
             ("SIDEBAR_ICLOUD_SYNC_OFF", "iCloud Sync Off"),
             ("SIDEBAR_ICLOUD_SYNC_OFF_HELP", "This build has no iCloud container, so your data stays on this Mac."),
             ("STORE_FAILURE_ALERT_TITLE", "Moth can’t open your data."),
@@ -64,15 +82,17 @@ struct AppStringCatalogTests {
     @Test(
         "The delete alert's count reads correctly in the singular and the plural",
         arguments: [
-            (1, "This deletes its 1 request. You can\u{2019}t undo this."),
-            (4, "This deletes its 4 requests. You can\u{2019}t undo this.")
+            ("SIDEBAR_DELETE_CONTAINER_MESSAGE_%lld", 1, "This deletes its 1 request. You can\u{2019}t undo this."),
+            ("SIDEBAR_DELETE_CONTAINER_MESSAGE_%lld", 4, "This deletes its 4 requests. You can\u{2019}t undo this."),
+            ("SIDEBAR_DELETE_ENVIRONMENT_MESSAGE_%lld", 1, "This deletes its 1 variable. You can\u{2019}t undo this."),
+            ("SIDEBAR_DELETE_ENVIRONMENT_MESSAGE_%lld", 6, "This deletes its 6 variables. You can\u{2019}t undo this.")
         ]
     )
-    func deleteMessageVariesByCount(count: Int, expected: String) throws {
+    func deleteMessageVariesByCount(key: String, count: Int, expected: String) throws {
         let englishURL = try #require(Bundle.main.url(forResource: "en-GB", withExtension: "lproj"))
         let english = try #require(Bundle(url: englishURL))
         let format = english.localizedString(
-            forKey: "SIDEBAR_DELETE_CONTAINER_MESSAGE_%lld",
+            forKey: key,
             value: Self.missingValue,
             table: nil
         )

@@ -10,6 +10,7 @@ import SwiftUI
 struct SidebarCommandContext {
 
     let model: SidebarModel
+    let environments: EnvironmentsModel
     let newItemContainer: TreeContainerID?
 
 }
@@ -46,6 +47,13 @@ struct SidebarCommands: Commands {
                 }
             }
             .disabled(context?.newItemContainer == nil)
+
+            Button("MENU_NEW_ENVIRONMENT") {
+                if let environments = context?.environments {
+                    Task { await environments.newEnvironment() }
+                }
+            }
+            .disabled(context == nil)
         }
     }
 
