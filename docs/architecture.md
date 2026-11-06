@@ -287,6 +287,21 @@ A seed is the one write outside `StoreWriter`. `DataModel.inMemory(seed:)` write
 it into a new in-memory store before any reader exists, so a seeded launch has its
 data at the first frame.
 
+### Open Tabs
+
+Open tabs belong to this Mac, so they stay out of both stores. `RequestTabStore`
+keeps them in `UserDefaults`, which never syncs. It is not `@SceneStorage`, because
+UI tests launch with saved state ignored and could not prove a relaunch.
+
+Tabs hold request identifiers only. A tab reads its name and method from
+`CollectionTree`, and `RequestTabsModel` closes any tab whose request is not in the
+tree. A window's first tree is the whole store, so the same rule drops a saved tab
+whose request has gone.
+
+A seeded launch uses its own key, so a UI test never touches the user's tabs. Each
+window loads the saved tabs and saves its own, so with two windows the last write
+wins.
+
 ## Secrets
 
 Secret variables, auth credentials and tokens live in the Keychain with

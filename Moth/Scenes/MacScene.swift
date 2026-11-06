@@ -11,12 +11,17 @@ struct MacScene: Scene {
 
     var body: some Scene {
         WindowGroup {
-            MainWindowView(dataModel: dependencies.dataModel, isSyncedToICloud: dependencies.isSyncedToICloud)
+            MainWindowView(
+                dataModel: dependencies.dataModel,
+                tabStore: dependencies.requestTabStore,
+                isSyncedToICloud: dependencies.isSyncedToICloud
+            )
         }
         .defaultSize(width: 1100, height: 720)
         .windowResizability(.contentMinSize)
         .commands {
             SidebarCommands()
+            RequestTabCommands()
         }
     }
 

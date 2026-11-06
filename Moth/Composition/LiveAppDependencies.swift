@@ -16,6 +16,7 @@ final class LiveAppDependencies: AppDependencies {
     let iCloudContainerIdentifier: String?
     let isSyncedToICloud: Bool
     let launchReconcile: Task<Void, Never>
+    let requestTabStore = RequestTabStore(defaults: .standard, key: "RequestTabs")
 
     /// `openDataModel` has no default, so that no test can reach the real store or CloudKit by leaving it out.
     init(

@@ -10,6 +10,7 @@ struct SidebarRowLabel<Menu: View>: View {
 
     let node: TreeNode
     @Bindable var model: SidebarModel
+    let tabs: RequestTabsModel
     @ViewBuilder
     let menu: () -> Menu
 
@@ -22,6 +23,7 @@ struct SidebarRowLabel<Menu: View>: View {
             title
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
+                .simultaneousGesture(TapGesture().onEnded(openRequest))
                 .contextMenu { menu() }
                 .draggable(SidebarDragItem(id: node.id))
         }
@@ -40,6 +42,14 @@ struct SidebarRowLabel<Menu: View>: View {
             }
             Text(verbatim: node.name)
                 .lineLimit(1)
+        }
+    }
+
+    /// A click, not a change of selection: arrow keys would open a tab per row, and a row still selected after its tab
+    /// closed could not open again.
+    private func openRequest() {
+        if case .request(let id) = node.id {
+            tabs.open(id)
         }
     }
 

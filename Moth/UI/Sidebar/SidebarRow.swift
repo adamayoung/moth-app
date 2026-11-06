@@ -11,18 +11,19 @@ struct SidebarRow: View {
 
     let node: TreeNode
     @Bindable var model: SidebarModel
+    let tabs: RequestTabsModel
 
     var body: some View {
         if let container = TreeContainerID(node.id) {
             DisclosureGroup(isExpanded: isExpanded) {
                 ForEach(node.children) { child in
-                    SidebarRow(node: child, model: model)
+                    SidebarRow(node: child, model: model, tabs: tabs)
                 }
                 .dropDestination(for: SidebarDragItem.self) { items, offset in
                     drop(items, into: .container(container), atOffset: offset)
                 }
             } label: {
-                SidebarRowLabel(node: node, model: model) {
+                SidebarRowLabel(node: node, model: model, tabs: tabs) {
                     containerMenu(for: container)
                 }
                 .dropDestination(for: SidebarDragItem.self, isEnabled: true) { items, _ in
@@ -31,7 +32,7 @@ struct SidebarRow: View {
             }
             .tag(node.id)
         } else {
-            SidebarRowLabel(node: node, model: model) {
+            SidebarRowLabel(node: node, model: model, tabs: tabs) {
                 itemMenu
             }
             .tag(node.id)

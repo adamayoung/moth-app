@@ -110,6 +110,7 @@ struct LaunchOutcomeTests {
             (AppLaunchMode.uiTestingStoreFailure, true),
             (AppLaunchMode.uiTesting, false),
             (AppLaunchMode.uiTestingWithICloudSync, false),
+            (AppLaunchMode.uiTestingRestoringTabs, false),
             (AppLaunchMode.demo, false),
             (AppLaunchMode.testHost, false)
         ]
