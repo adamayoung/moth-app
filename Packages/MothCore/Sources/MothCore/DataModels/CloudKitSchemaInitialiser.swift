@@ -23,8 +23,7 @@
                 location: .directory(directory),
                 containerIdentifier: containerIdentifier
             )
-            try StoreSchemaCheck(knownSchemas: MothMigrationPlan.schemas)
-                .verify(storesAt: configurations.onDiskStoreURLs)
+            try configurations.verifyStoresAreKnown()
             try autoreleasepool {
                 guard let model = NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.syncedModels) else {
                     throw Failure.noManagedObjectModel

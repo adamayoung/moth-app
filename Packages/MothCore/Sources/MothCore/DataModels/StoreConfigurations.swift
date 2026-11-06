@@ -23,8 +23,9 @@ nonisolated struct StoreConfigurations {
         [synced, local]
     }
 
-    var onDiskStoreURLs: [URL] {
-        all.filter { !$0.isStoredInMemoryOnly }.map(\.url)
+    func verifyStoresAreKnown() throws {
+        try StoreSchemaCheck(knownSchemas: MothMigrationPlan.schemas)
+            .verify(storesAt: all.filter { !$0.isStoredInMemoryOnly }.map(\.url))
     }
 
     init(location: DataModelLocation, containerIdentifier: String?) {

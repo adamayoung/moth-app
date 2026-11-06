@@ -29,7 +29,7 @@ enum CoreDataStoreFixture {
         models: [any PersistentModel.Type],
         change: (NSManagedObjectModel) throws -> Void
     ) throws {
-        let liveDirectory = try StoreFiles.makeDirectory()
+        let liveDirectory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: liveDirectory) }
         let liveURL = liveDirectory.appending(path: url.lastPathComponent)
         let container = try load(at: liveURL, models: models, change: change)
@@ -88,13 +88,6 @@ enum CoreDataStoreFixture {
 }
 
 enum StoreFiles {
-
-    static func makeDirectory() throws -> URL {
-        let directory = FileManager.default.temporaryDirectory
-            .appending(path: "StoreFiles-\(UUID().uuidString)", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory
-    }
 
     static func removeStore(named name: String, in directory: URL) throws {
         for suffix in ["", "-wal", "-shm"] {

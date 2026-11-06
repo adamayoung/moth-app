@@ -236,8 +236,17 @@ The check reads a copy of the store's files, so a refused store keeps every byte
 It compares hashes, not `NSStoreModelVersionIdentifiers`, and it allows a store to
 hold fewer entities than the schema, because `CloudKitSchemaInitialiser` makes a
 store of the synced models only. So a newer schema that only removes models
-passes. A file with no readable metadata is left to SwiftData, which fails on a
-damaged store and starts afresh on an empty file.
+passes. An empty file is left to SwiftData, which starts a new store over it, and
+any other file the check cannot read stops the launch, with no claim about why.
+
+Hashes cover the schema's shape. They do not see the JSON in a `Data` attribute, so
+a newer build that adds a key to that JSON passes the check, and an older build
+drops the key the next time it writes that value.
+
+A hash that drifts refuses a good store: if an OS update changed how SwiftData
+derives hashes, a shipped build would refuse the stores it wrote. That fails safe,
+because the data stays intact and an update of Moth can accept the old hashes, where
+a false pass loses data for good. Pinned hashes catch this on a new SDK.
 
 The check guards the files on this Mac. A newer Mac's changes reach an older one
 through CloudKit, which leaves the older Mac's file on its own schema, so no check

@@ -22,7 +22,7 @@ nonisolated struct StoreSchemaCheck {
     let knownSchemas: [any VersionedSchema.Type]
 
     func verify(storesAt urls: [URL]) throws {
-        let storeURLs = urls.filter(Self.fileExists)
+        let storeURLs = try urls.filter(Self.holdsData)
         guard !storeURLs.isEmpty else {
             return
         }
@@ -34,13 +34,20 @@ nonisolated struct StoreSchemaCheck {
             return model.entityVersionHashesByName
         }
         for url in storeURLs {
-            guard let storeHashes = try Self.entityVersionHashes(ofStoreAt: url) else {
-                continue
-            }
-            guard knownHashes.contains(where: { Self.holdsSameEntities($0, as: storeHashes) }) else {
+            let storeHashes = try Self.entityVersionHashes(ofStoreAt: url)
+            let isKnown = knownHashes.contains { Self.holdsSameEntities($0, as: storeHashes) }
+            guard !storeHashes.isEmpty, isKnown else {
                 throw UnknownStoreSchemaError(storeName: url.lastPathComponent)
             }
         }
+    }
+
+    /// An empty file stays SwiftData's decision, because it starts a new store over one.
+    private static func holdsData(_ url: URL) throws -> Bool {
+        guard fileExists(url) else {
+            return false
+        }
+        return try url.resourceValues(forKeys: [.fileSizeKey]).fileSize != 0
     }
 
     /// A subset, not equality: SwiftData lists a schema's every entity in each store's metadata, but a store made by
@@ -49,9 +56,9 @@ nonisolated struct StoreSchemaCheck {
         store.allSatisfy { known[$0.key] == $0.value }
     }
 
-    /// Reads a copy, because a metadata read changes the `-shm` file of a store with writes in its `-wal`. A file with
-    /// no readable metadata stays SwiftData's decision: it fails on a damaged store and starts afresh on an empty file.
-    private static func entityVersionHashes(ofStoreAt url: URL) throws -> [String: Data]? {
+    /// Reads a copy, because a metadata read changes the `-shm` file of a store with writes in its `-wal`. Any failure
+    /// stops the launch: a store this cannot read might still open, and lose its newer columns.
+    private static func entityVersionHashes(ofStoreAt url: URL) throws -> [String: Data] {
         let copyDirectory = URL.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: copyDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: copyDirectory) }
@@ -62,11 +69,11 @@ nonisolated struct StoreSchemaCheck {
                 try FileManager.default.copyItem(at: file, to: copyDirectory.appending(path: file.lastPathComponent))
             }
         }
-        let metadata = try? NSPersistentStoreCoordinator.metadataForPersistentStore(
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(
             type: .sqlite,
             at: copyDirectory.appending(path: url.lastPathComponent)
         )
-        return metadata?[NSStoreModelVersionHashesKey] as? [String: Data]
+        return metadata[NSStoreModelVersionHashesKey] as? [String: Data] ?? [:]
     }
 
     private static func fileExists(_ url: URL) -> Bool {

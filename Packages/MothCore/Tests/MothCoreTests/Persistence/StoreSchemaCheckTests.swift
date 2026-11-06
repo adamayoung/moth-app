@@ -13,7 +13,7 @@ struct StoreSchemaCheckTests {
 
     @Test("A newer store of either kind stops the launch, and neither store is touched", arguments: StoreKind.allCases)
     func newerStoreIsRefusedAndBothStoresStayIntact(kind: StoreKind) async throws {
-        let directory = try StoreFiles.makeDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         do {
             let dataModel = try DataModel(location: .directory(directory), containerIdentifier: nil)
@@ -37,7 +37,7 @@ struct StoreSchemaCheckTests {
 
     @Test("A store from a schema that added a model stops the launch")
     func storeWithAnAddedModelIsRefused() throws {
-        let directory = try StoreFiles.makeDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         try CoreDataStoreFixture.makeStore(
             at: directory.appending(path: "Synced.store"),
@@ -52,7 +52,7 @@ struct StoreSchemaCheckTests {
 
     @Test("A refused store's unflushed write-ahead log and its index keep every byte")
     func refusedStoreWithAPendingLogKeepsEveryByte() throws {
-        let directory = try StoreFiles.makeDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         try CoreDataStoreFixture.makeStoreWithPendingLog(
             at: directory.appending(path: "Synced.store"),
@@ -71,7 +71,7 @@ struct StoreSchemaCheckTests {
 
     @Test("A newer store is found in a directory with a space in its name, like Application Support")
     func newerStoreIsFoundWhenThePathNeedsEncoding() throws {
-        let parent = try StoreFiles.makeDirectory()
+        let parent = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: parent) }
         let directory = parent.appending(path: "Application Support", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -88,7 +88,7 @@ struct StoreSchemaCheckTests {
 
     @Test("A store from any version in the plan passes, and one from outside the plan does not")
     func onlyStoresFromAPlannedVersionPass() throws {
-        let directory = try StoreFiles.makeDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let earlier = try Self.makeStore(for: PlannedFixtureV1.self, in: directory)
         let current = try Self.makeStore(for: PlannedFixtureV2.self, in: directory)
@@ -104,7 +104,7 @@ struct StoreSchemaCheckTests {
 
     @Test("A launch with no store files opens and creates them")
     func noStoreFilesOpens() throws {
-        let directory = try StoreFiles.makeDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let dataModel = try DataModel(location: .directory(directory), containerIdentifier: nil)
@@ -116,7 +116,7 @@ struct StoreSchemaCheckTests {
 
     @Test("A launch with one of the two store files opens", arguments: StoreKind.allCases)
     func oneStoreFileOpens(kind: StoreKind) throws {
-        let directory = try StoreFiles.makeDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         do {
             _ = try DataModel(location: .directory(directory), containerIdentifier: nil)
@@ -128,9 +128,36 @@ struct StoreSchemaCheckTests {
         #expect(try dataModel.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).isEmpty)
     }
 
+    @Test("A file the check cannot read stops the launch, because SwiftData might still open it")
+    func unreadableStoreStopsTheCheck() throws {
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = directory.appending(path: "Synced.store")
+        try Data("not a store".utf8).write(to: store)
+
+        #expect(throws: (any Error).self) {
+            try StoreSchemaCheck(knownSchemas: MothMigrationPlan.schemas).verify(storesAt: [store])
+        }
+    }
+
+    @Test("A store that lists no entities is refused, because nothing shows it is known")
+    func storeWithNoEntitiesIsRefused() throws {
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try CoreDataStoreFixture.makeStore(
+            at: directory.appending(path: "Synced.store"),
+            models: SchemaV1.syncedModels,
+            change: { $0.entities = [] }
+        )
+
+        #expect(throws: UnknownStoreSchemaError(storeName: "Synced.store")) {
+            try DataModel(location: .directory(directory), containerIdentifier: nil)
+        }
+    }
+
     @Test("An empty store file is left to SwiftData, which starts a new store over it")
     func emptyStoreFileOpens() throws {
-        let directory = try StoreFiles.makeDirectory()
+        let directory = try CharacterisationStore.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         try Data().write(to: directory.appending(path: "Synced.store"))
 
@@ -142,7 +169,7 @@ struct StoreSchemaCheckTests {
     #if DEBUG
         @Test("The CloudKit schema initialiser refuses a newer store before it opens it")
         func initialiserRefusesANewerStore() throws {
-            let directory = try StoreFiles.makeDirectory()
+            let directory = try CharacterisationStore.makeTemporaryDirectory()
             defer { try? FileManager.default.removeItem(at: directory) }
             try CoreDataStoreFixture.makeStore(
                 at: directory.appending(path: "Synced.store"),
