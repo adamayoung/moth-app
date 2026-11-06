@@ -12,30 +12,29 @@ struct MainWindowView: View {
     private let dataModel: DataModel
     private let isSyncedToICloud: Bool
     @State private var sidebar: SidebarModel
+    @State private var tabs: RequestTabsModel
 
-    init(dataModel: DataModel, isSyncedToICloud: Bool) {
+    init(dataModel: DataModel, tabStore: RequestTabStore, isSyncedToICloud: Bool) {
         self.dataModel = dataModel
         self.isSyncedToICloud = isSyncedToICloud
         self.sidebar = SidebarModel(writer: dataModel.writer)
+        self.tabs = RequestTabsModel(store: tabStore)
     }
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(model: sidebar, isSyncedToICloud: isSyncedToICloud)
+            SidebarView(model: sidebar, tabs: tabs, isSyncedToICloud: isSyncedToICloud)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
-            VStack(spacing: 0) {
-                TabStripView()
-                Divider()
-                VSplitView {
-                    RequestEditorPane()
-                        .frame(minHeight: 160)
-                    ResponsePane()
-                        .frame(minHeight: 160)
-                }
-            }
+            RequestDetailView(tabs: tabs)
         }
         .frame(minWidth: 800, minHeight: 500)
+        .background {
+            CollectionTreeObserver { snapshot in
+                sidebar.treeDidChange(snapshot.tree)
+                tabs.collectionDidChange(snapshot)
+            }
+        }
         .modelContainer(dataModel.container)
     }
 
@@ -43,7 +42,7 @@ struct MainWindowView: View {
 
 #Preview {
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
-        MainWindowView(dataModel: dataModel, isSyncedToICloud: false)
+        MainWindowView(dataModel: dataModel, tabStore: .preview, isSyncedToICloud: false)
             .frame(width: 1100, height: 720)
     }
 }

@@ -39,6 +39,7 @@ struct DependencyProvider {
                 openDataModel: openLiveDataModel
             )
         case .uiTesting, .demo: try SeededAppDependencies(seed: SeedData.workspace)
+        case .uiTestingRestoringTabs: try SeededAppDependencies(seed: SeedData.workspace, restoresTabs: true)
         case .uiTestingWithICloudSync: try SeededAppDependencies(seed: SeedData.workspace, isSyncedToICloud: true)
         case .uiTestingStoreFailure: throw SimulatedStoreFailure()
         case .testHost: try SeededAppDependencies(seed: nil)

@@ -10,6 +10,7 @@ import SwiftUI
 struct SidebarView: View {
 
     @Bindable var model: SidebarModel
+    let tabs: RequestTabsModel
     let isSyncedToICloud: Bool
 
     var body: some View {
@@ -21,7 +22,7 @@ struct SidebarView: View {
                     }
                 } else {
                     ForEach(model.tree.roots) { node in
-                        SidebarRow(node: node, model: model)
+                        SidebarRow(node: node, model: model, tabs: tabs)
                     }
                     .dropDestination(for: SidebarDragItem.self) { items, offset in
                         Task { await model.drop(items.map(\.id), on: .root, atOffset: offset) }
@@ -43,6 +44,7 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .accessibilityIdentifier("sidebar")
+        .onKeyPress(.return, action: openSelectedRequest)
         .safeAreaBar(edge: .bottom, spacing: 0) {
             if !isSyncedToICloud {
                 ICloudSyncOffFooter()
@@ -64,9 +66,14 @@ struct SidebarView: View {
             \.sidebarCommands,
             SidebarCommandContext(model: model, newItemContainer: model.newItemContainer)
         )
-        .background {
-            SidebarTreeObserver(model: model)
+    }
+
+    private func openSelectedRequest() -> KeyPress.Result {
+        guard model.renaming == nil, case .request(let id) = model.selection else {
+            return .ignored
         }
+        tabs.open(id)
+        return .handled
     }
 
     private var deletionTitle: String {
@@ -78,7 +85,11 @@ struct SidebarView: View {
 @ViewBuilder
 private func seededSidebar(isSyncedToICloud: Bool) -> some View {
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
-        SidebarView(model: SidebarModel(writer: dataModel.writer), isSyncedToICloud: isSyncedToICloud)
+        let model = SidebarModel(writer: dataModel.writer)
+        SidebarView(model: model, tabs: RequestTabsModel(store: .preview), isSyncedToICloud: isSyncedToICloud)
+            .background {
+                CollectionTreeObserver { model.treeDidChange($0.tree) }
+            }
             .modelContainer(dataModel.container)
             .frame(width: 240, height: 500)
     }

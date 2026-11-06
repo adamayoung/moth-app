@@ -14,6 +14,8 @@ protocol AppDependencies: AnyObject {
 
     var dataModel: DataModel { get }
 
+    var requestTabStore: RequestTabStore { get }
+
     var iCloudContainerIdentifier: String? { get }
 
     var isSyncedToICloud: Bool { get }

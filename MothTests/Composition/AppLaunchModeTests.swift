@@ -35,7 +35,8 @@ final class AppLaunchModeTests {
             (["Moth", "-DemoMode", "1"], AppLaunchMode.demo),
             (["Moth", "-ApplePersistenceIgnoreState", "YES", "-UITesting", "1"], AppLaunchMode.uiTesting),
             (["Moth", "-UITesting", "1", "-UITestICloudSync", "1"], AppLaunchMode.uiTestingWithICloudSync),
-            (["Moth", "-UITesting", "1", "-UITestStoreFailure", "1"], AppLaunchMode.uiTestingStoreFailure)
+            (["Moth", "-UITesting", "1", "-UITestStoreFailure", "1"], AppLaunchMode.uiTestingStoreFailure),
+            (["Moth", "-UITesting", "1", "-UITestRestoresTabs", "1"], AppLaunchMode.uiTestingRestoringTabs)
         ]
     )
     func argumentPairSelectsMode(arguments: [String], expected: AppLaunchMode) throws {
@@ -46,7 +47,7 @@ final class AppLaunchModeTests {
 
     @Test(
         "A UI test launch pair stops a launch that is not a UI test",
-        arguments: ["-UITestICloudSync", "-UITestStoreFailure"]
+        arguments: ["-UITestICloudSync", "-UITestStoreFailure", "-UITestRestoresTabs"]
     )
     func uiTestPairNeedsUITesting(flag: String) {
         #expect(throws: LaunchConfigurationError.needsUITesting(flag: flag)) {
@@ -54,9 +55,16 @@ final class AppLaunchModeTests {
         }
     }
 
-    @Test("Both UI test launch pairs together stop the launch")
-    func conflictingUITestPairsStopLaunch() {
-        let arguments = ["Moth", "-UITesting", "1", "-UITestICloudSync", "1", "-UITestStoreFailure", "1"]
+    @Test(
+        "Two UI test launch pairs together stop the launch",
+        arguments: [
+            ("-UITestICloudSync", "-UITestStoreFailure"),
+            ("-UITestICloudSync", "-UITestRestoresTabs"),
+            ("-UITestStoreFailure", "-UITestRestoresTabs")
+        ]
+    )
+    func conflictingUITestPairsStopLaunch(first: String, second: String) {
+        let arguments = ["Moth", "-UITesting", "1", first, "1", second, "1"]
 
         #expect(throws: LaunchConfigurationError.conflictingUITestPairs) {
             try AppLaunchMode(arguments: arguments, defaults: defaults, environment: [:])
@@ -233,7 +241,7 @@ final class AppLaunchModeTests {
             (LaunchConfigurationError.invalidEnvironment(key: "MOTH_TEST_HOST", value: "0"), "MOTH_TEST_HOST=1"),
             (LaunchConfigurationError.invalidDefault(key: "DemoMode", value: "sometimes"), "DemoMode"),
             (LaunchConfigurationError.needsUITesting(flag: "-UITestStoreFailure"), "-UITesting 1"),
-            (LaunchConfigurationError.conflictingUITestPairs, "-UITestICloudSync 1 or -UITestStoreFailure 1"),
+            (LaunchConfigurationError.conflictingUITestPairs, "-UITestRestoresTabs 1"),
             (LaunchConfigurationError.cloudKitSchemaNeedsContainer, "MOTH_ICLOUD_CONTAINER"),
             (LaunchConfigurationError.storeUnavailable(detail: "disk full"), "disk full")
         ]

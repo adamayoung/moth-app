@@ -136,6 +136,45 @@ struct MainWindowScreen {
         return XCTWaiter.wait(for: [gone], timeout: 10) == .completed
     }
 
+    var requestTabs: XCUIElementQuery {
+        tabStrip.descendants(matching: .any).matching(identifier: "requestTab")
+    }
+
+    func requestTab(_ label: String) -> XCUIElement {
+        requestTabs.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    func requestTabCloseButton(_ label: String) -> XCUIElement {
+        tabStrip.descendants(matching: .any)
+            .matching(identifier: "requestTabClose")
+            .matching(NSPredicate(format: "label == %@", label))
+            .firstMatch
+    }
+
+    func closeTabKey() {
+        app.typeKey("w", modifierFlags: .command)
+    }
+
+    func closeWindowKey() {
+        app.typeKey("w", modifierFlags: [.command, .shift])
+    }
+
+    func waitForTabToClose(_ label: String) -> Bool {
+        let gone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: requestTab(label)
+        )
+        return XCTWaiter.wait(for: [gone], timeout: 10) == .completed
+    }
+
+    func waitForEveryWindowToClose() -> Bool {
+        let closed = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "count == 0"),
+            object: app.windows
+        )
+        return XCTWaiter.wait(for: [closed], timeout: 10) == .completed
+    }
+
     func requestEditorText(_ text: String) -> XCUIElement {
         requestEditorPane.staticTexts[text]
     }
