@@ -42,7 +42,7 @@ struct SidebarModelTests {
         self.folder = folder
         self.collection = collection
         self.dataModel = try .inMemory(seed: Workspace(collections: [collection, other]))
-        self.model = SidebarModel(writer: dataModel.writer)
+        self.model = SidebarModel(writer: dataModel.writer, secretStore: InMemorySecretStore())
         try deliverTree()
     }
 
@@ -290,7 +290,7 @@ struct SidebarModelTests {
 
     @Test("The empty state waits for the first tree, so a launch with collections never shows it")
     func emptyStateWaitsForTheFirstTree() {
-        let unfed = SidebarModel(writer: dataModel.writer)
+        let unfed = SidebarModel(writer: dataModel.writer, secretStore: InMemorySecretStore())
 
         #expect(!unfed.showsEmptyState)
 

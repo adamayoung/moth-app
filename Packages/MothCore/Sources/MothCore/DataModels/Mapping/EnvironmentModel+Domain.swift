@@ -39,6 +39,29 @@ nonisolated extension VariableModel {
         }
     }
 
+    func isIn(_ scope: VariableScope) -> Bool {
+        switch scope {
+        case .globals: isGlobal
+        case .environment(let id): environment?.id == id
+        case .collection(let id): collection?.id == id
+        }
+    }
+
+    func apply(_ variable: Variable) {
+        assign(variable.name, to: \.name)
+        assign(variable.isEnabled, to: \.isEnabled)
+        assign(variable.initialValue ?? "", to: \.initialValue)
+        assign(variable.currentValue ?? "", to: \.currentValue)
+        assign(variable.secretReference?.identifier, to: \.secretIdentifier)
+    }
+
+    /// Compares first because an equal-value assignment still rewrites the row.
+    private func assign<Value: Equatable>(_ value: Value, to property: ReferenceWritableKeyPath<VariableModel, Value>) {
+        if self[keyPath: property] != value {
+            self[keyPath: property] = value
+        }
+    }
+
     public func asDomain() -> Variable {
         let value: VariableValue = if let secretIdentifier {
             .secret(SecretReference(identifier: secretIdentifier))

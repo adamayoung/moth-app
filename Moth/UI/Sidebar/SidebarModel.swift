@@ -15,15 +15,18 @@ final class SidebarModel {
     var selection: TreeNodeID?
     var expanded: Set<TreeNodeID> = []
     var pendingDeletion: PendingDeletion?
+    var presentedVariables: VariableSheetTarget?
     var renameDraft = ""
     private(set) var renaming: TreeNodeID?
     private(set) var tree = CollectionTree.empty
 
     private var hasReceivedTree = false
     private let writer: StoreWriter
+    private let secretStore: any SecretStore
 
-    init(writer: StoreWriter) {
+    init(writer: StoreWriter, secretStore: any SecretStore) {
         self.writer = writer
+        self.secretStore = secretStore
     }
 
     /// Where File > New Folder and New Request put their item. A selected request's parent is the target, because a
@@ -100,6 +103,10 @@ final class SidebarModel {
         renaming = nil
     }
 
+    func variableTable(for target: VariableSheetTarget) -> VariableTableModel {
+        VariableTableModel(scope: target.scope, writer: writer, secretStore: secretStore)
+    }
+
     func requestDeletion(of node: TreeNode) {
         pendingDeletion = PendingDeletion(
             id: node.id,
@@ -110,7 +117,13 @@ final class SidebarModel {
 
     /// The selection moves when the query delivers the tree without this row.
     func confirmDeletion(_ deletion: PendingDeletion) async {
-        await perform { [writer] in try await writer.delete(deletion.id) }
+        await perform { [writer, secretStore] in
+            if case .collection(let id) = deletion.id {
+                try await secretStore.remove(writer.deleteCollection(id))
+            } else {
+                try await writer.delete(deletion.id)
+            }
+        }
     }
 
     func move(_ id: TreeNodeID, to parent: SidebarParent, before: TreeNodeID?) async {

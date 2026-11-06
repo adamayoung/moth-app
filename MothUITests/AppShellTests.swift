@@ -15,7 +15,7 @@ final class AppShellTests: MothTestCase {
 
         for text in [
             "Collections", "Seeded Collection",
-            "Environments", "No Environments",
+            "Environments", "Globals", "Seeded Environment",
             "History", "No History"
         ] {
             XCTAssertTrue(screen.sidebarText(text).exists, "Sidebar is missing \"\(text)\"")

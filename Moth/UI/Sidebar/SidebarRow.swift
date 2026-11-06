@@ -59,6 +59,11 @@ struct SidebarRow: View {
         Button("MENU_NEW_REQUEST") {
             Task { await model.newRequest(in: container) }
         }
+        if case .collection(let id) = container {
+            Button("SIDEBAR_VARIABLES") {
+                model.presentedVariables = VariableSheetTarget(scope: .collection(id), title: node.name)
+            }
+        }
         Divider()
         itemMenu
     }

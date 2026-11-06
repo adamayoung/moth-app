@@ -18,11 +18,9 @@ struct SidebarRowLabel<Menu: View>: View {
     /// indent stays out of reach, because `NSOutlineView` lays the cell out after it.
     private let rowPadding: CGFloat = 8
 
-    @FocusState private var isFieldFocused: Bool
-
     var body: some View {
         if model.renaming == node.id {
-            renameField
+            SidebarRenameField(text: $model.renameDraft, onCommit: commit, onCancel: model.cancelRename)
         } else {
             title
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -65,24 +63,6 @@ struct SidebarRowLabel<Menu: View>: View {
         } else {
             "folder"
         }
-    }
-
-    /// Takes focus from `.task`, because `onAppear` runs before the row is in its window and the request is lost.
-    private var renameField: some View {
-        TextField("SIDEBAR_RENAME_FIELD_LABEL", text: $model.renameDraft)
-            .labelsHidden()
-            .focused($isFieldFocused)
-            .accessibilityIdentifier("sidebar.renameField")
-            .task {
-                isFieldFocused = true
-            }
-            .onSubmit(commit)
-            .onExitCommand(perform: model.cancelRename)
-            .onChange(of: isFieldFocused) { _, isFocused in
-                if !isFocused {
-                    commit()
-                }
-            }
     }
 
     private func commit() {

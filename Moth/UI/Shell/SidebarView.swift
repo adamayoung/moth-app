@@ -10,6 +10,7 @@ import SwiftUI
 struct SidebarView: View {
 
     @Bindable var model: SidebarModel
+    @Bindable var environments: EnvironmentsModel
     let tabs: RequestTabsModel
     let isSyncedToICloud: Bool
 
@@ -31,8 +32,8 @@ struct SidebarView: View {
             }
 
             Section("SIDEBAR_ENVIRONMENTS_SECTION") {
-                ContentUnavailableView {
-                    Text("SIDEBAR_ENVIRONMENTS_EMPTY")
+                EnvironmentRows(environments: environments) { target in
+                    model.presentedVariables = target
                 }
             }
 
@@ -62,9 +63,24 @@ struct SidebarView: View {
                 Text("SIDEBAR_DELETE_MESSAGE")
             }
         }
+        .alert(environmentDeletionTitle, item: $environments.pendingDeletion) { row in
+            Button("SIDEBAR_DELETE_CONFIRM", role: .destructive) {
+                Task { await environments.confirmDeletion(row) }
+            }
+            Button("SIDEBAR_DELETE_CANCEL", role: .cancel) {}
+        } message: { row in
+            if row.variableCount > 0 {
+                Text("SIDEBAR_DELETE_ENVIRONMENT_MESSAGE_\(row.variableCount)")
+            } else {
+                Text("SIDEBAR_DELETE_MESSAGE")
+            }
+        }
+        .sheet(item: $model.presentedVariables) { target in
+            VariableSheet(title: target.title, table: model.variableTable(for: target))
+        }
         .focusedSceneValue(
             \.sidebarCommands,
-            SidebarCommandContext(model: model, newItemContainer: model.newItemContainer)
+            SidebarCommandContext(model: model, environments: environments, newItemContainer: model.newItemContainer)
         )
     }
 
@@ -80,18 +96,34 @@ struct SidebarView: View {
         String(localized: "SIDEBAR_DELETE_TITLE_\(model.pendingDeletion?.name ?? "")")
     }
 
+    private var environmentDeletionTitle: String {
+        String(localized: "SIDEBAR_DELETE_TITLE_\(environments.pendingDeletion?.name ?? "")")
+    }
+
 }
 
 @ViewBuilder
 private func seededSidebar(isSyncedToICloud: Bool) -> some View {
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
-        let model = SidebarModel(writer: dataModel.writer)
-        SidebarView(model: model, tabs: RequestTabsModel(store: .preview), isSyncedToICloud: isSyncedToICloud)
-            .background {
-                CollectionTreeObserver { model.treeDidChange($0.tree) }
-            }
-            .modelContainer(dataModel.container)
-            .frame(width: 240, height: 500)
+        let secretStore = InMemorySecretStore()
+        let model = SidebarModel(writer: dataModel.writer, secretStore: secretStore)
+        let environments = EnvironmentsModel(
+            writer: dataModel.writer,
+            secretStore: secretStore,
+            activeEnvironment: ActiveEnvironment(inMemory: nil)
+        )
+        SidebarView(
+            model: model,
+            environments: environments,
+            tabs: RequestTabsModel(store: .preview),
+            isSyncedToICloud: isSyncedToICloud
+        )
+        .background { EnvironmentsObserver(model: environments) }
+        .background {
+            CollectionTreeObserver { model.treeDidChange($0.tree) }
+        }
+        .modelContainer(dataModel.container)
+        .frame(width: 240, height: 500)
     }
 }
 

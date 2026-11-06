@@ -20,4 +20,6 @@ protocol AppDependencies: AnyObject {
 
     var isSyncedToICloud: Bool { get }
 
+    var activeEnvironment: ActiveEnvironment { get }
+
 }

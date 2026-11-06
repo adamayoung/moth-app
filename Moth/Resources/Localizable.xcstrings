@@ -12,6 +12,17 @@
         }
       }
     },
+    "DEFAULT_ENVIRONMENT_NAME" : {
+      "comment" : "Name a new environment starts with.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Environment"
+          }
+        }
+      }
+    },
     "DEFAULT_FOLDER_NAME" : {
       "comment" : "Name a new folder starts with.",
       "localizations" : {
@@ -30,6 +41,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Request"
+          }
+        }
+      }
+    },
+    "ENVIRONMENT_PICKER_LABEL" : {
+      "comment" : "Label of the toolbar picker that chooses the active environment.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Environment"
+          }
+        }
+      }
+    },
+    "ENVIRONMENT_PICKER_NONE" : {
+      "comment" : "Toolbar picker item for having no active environment.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Environment"
           }
         }
       }
@@ -74,6 +107,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Collection"
+          }
+        }
+      }
+    },
+    "MENU_NEW_ENVIRONMENT" : {
+      "comment" : "File menu command that adds an environment.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Environment"
           }
         }
       }
@@ -244,6 +288,29 @@
         }
       }
     },
+    "SIDEBAR_DELETE_ENVIRONMENT_MESSAGE_%lld" : {
+      "comment" : "Message of the alert that confirms deleting an environment. The argument is how many variables the delete removes.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "This deletes its %lld variable. You can’t undo this."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "This deletes its %lld variables. You can’t undo this."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "SIDEBAR_DELETE_MESSAGE" : {
       "comment" : "Message of the delete alert when there are no requests to count.",
       "localizations" : {
@@ -266,13 +333,13 @@
         }
       }
     },
-    "SIDEBAR_ENVIRONMENTS_EMPTY" : {
-      "comment" : "Sidebar empty state when there are no environments.",
+    "SIDEBAR_EDIT" : {
+      "comment" : "Context menu command that opens an environment's variables.",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Environments"
+            "value" : "Edit…"
           }
         }
       }
@@ -284,6 +351,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Environments"
+          }
+        }
+      }
+    },
+    "SIDEBAR_GLOBALS" : {
+      "comment" : "Sidebar row and sheet title for the variables every environment shares.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Globals"
           }
         }
       }
@@ -354,6 +432,17 @@
         }
       }
     },
+    "SIDEBAR_VARIABLES" : {
+      "comment" : "Context menu command that opens a collection's variables.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Variables…"
+          }
+        }
+      }
+    },
     "STORE_FAILURE_ALERT_MESSAGE" : {
       "comment" : "Message of the alert shown when the data store cannot open.",
       "localizations" : {
@@ -416,6 +505,138 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Request Tabs"
+          }
+        }
+      }
+    },
+    "VARIABLES_ADD" : {
+      "comment" : "Variable sheet button that adds a row.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Variable"
+          }
+        }
+      }
+    },
+    "VARIABLES_COLUMN_CURRENT" : {
+      "comment" : "Variable sheet column heading.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current Value"
+          }
+        }
+      }
+    },
+    "VARIABLES_COLUMN_ENABLED" : {
+      "comment" : "Variable sheet column heading: whether a variable applies.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enabled"
+          }
+        }
+      }
+    },
+    "VARIABLES_COLUMN_INITIAL" : {
+      "comment" : "Variable sheet column heading.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initial Value"
+          }
+        }
+      }
+    },
+    "VARIABLES_COLUMN_SECRET" : {
+      "comment" : "Variable sheet column heading: whether the value is kept in the Keychain.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secret"
+          }
+        }
+      }
+    },
+    "VARIABLES_COLUMN_VARIABLE" : {
+      "comment" : "Variable sheet column heading: a variable's name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Variable"
+          }
+        }
+      }
+    },
+    "VARIABLES_DONE" : {
+      "comment" : "Button that closes the variable sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "VARIABLES_REMOVE" : {
+      "comment" : "Accessibility label of a variable row's remove button.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Variable"
+          }
+        }
+      }
+    },
+    "VARIABLES_SECRET_HIDE" : {
+      "comment" : "Button that hides a revealed secret variable's value.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide"
+          }
+        }
+      }
+    },
+    "VARIABLES_SECRET_SHOW" : {
+      "comment" : "Button that reveals a secret variable's value.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show"
+          }
+        }
+      }
+    },
+    "VARIABLES_SECRET_UNAVAILABLE" : {
+      "comment" : "Shown for a secret whose value has not reached this Mac.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not available on this Mac yet"
+          }
+        }
+      }
+    },
+    "VARIABLES_SECRET_VALUE_LABEL" : {
+      "comment" : "Accessibility label of a secret variable's one field.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secret Value"
           }
         }
       }

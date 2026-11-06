@@ -26,13 +26,13 @@ struct SeedDataTests {
         #expect(try workspaces.map { try $0.asDomain() } == [SeedData.workspace])
     }
 
-    @Test("The seed holds one collection and one environment, with fixed identifiers")
+    @Test("The seed holds one collection and two environments, with fixed identifiers")
     func seedIsFixed() throws {
         let collection = try #require(SeedData.workspace.collections.first)
         let environment = try #require(SeedData.workspace.environments.first)
 
         #expect(SeedData.workspace.collections.count == 1)
-        #expect(SeedData.workspace.environments.count == 1)
+        #expect(SeedData.workspace.environments.map(\.name) == ["Seeded Environment", "Staging"])
         #expect(collection.id.uuidString == "00000000-0000-0000-0000-000000000002")
         #expect(environment.id.uuidString == "00000000-0000-0000-0000-000000000004")
     }
@@ -51,6 +51,29 @@ struct SeedDataTests {
         #expect(users.children.count == 4)
         #expect(admins.name == "Admins")
         #expect(admins.children.count == 1)
+    }
+
+    @Test("The seed gives each variable sheet and delete alert what MothUITests expects")
+    func seedHoldsVariables() throws {
+        let environments = SeedData.workspace.environments
+        let collection = try #require(SeedData.workspace.collections.first)
+
+        #expect(environments.map(\.variables.count) == [1, 6])
+        #expect(environments.first?.variables.first?.currentValue == "https://example.com")
+        #expect(collection.variables.map(\.name) == ["apiVersion"])
+        #expect(SeedData.workspace.globals.isEmpty)
+    }
+
+    @Test("A seeded launch starts on the seed's active environment")
+    func seededLaunchStartsOnTheActiveEnvironment() throws {
+        let dependencies = try DependencyProvider(
+            launchMode: .uiTesting,
+            infoDictionary: [:],
+            signature: signature,
+            openLiveDataModel: { _ in try .inMemory() }
+        ).dependencies
+
+        #expect(dependencies.activeEnvironment.id == SeedData.workspace.activeEnvironmentID)
     }
 
     @Test("The test host's store is empty")

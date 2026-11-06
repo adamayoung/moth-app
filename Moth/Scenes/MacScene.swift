@@ -13,6 +13,8 @@ struct MacScene: Scene {
         WindowGroup {
             MainWindowView(
                 dataModel: dependencies.dataModel,
+                secretStore: dependencies.secretStore,
+                activeEnvironment: dependencies.activeEnvironment,
                 tabStore: dependencies.requestTabStore,
                 isSyncedToICloud: dependencies.isSyncedToICloud
             )

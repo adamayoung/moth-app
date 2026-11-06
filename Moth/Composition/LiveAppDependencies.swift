@@ -15,6 +15,7 @@ final class LiveAppDependencies: AppDependencies {
     let dataModel: DataModel
     let iCloudContainerIdentifier: String?
     let isSyncedToICloud: Bool
+    let activeEnvironment = ActiveEnvironment(defaults: .standard)
     let launchReconcile: Task<Void, Never>
     let requestTabStore = RequestTabStore(defaults: .standard, key: "RequestTabs")
 
