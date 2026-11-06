@@ -13,9 +13,29 @@ struct TabStripView: View {
 
     var body: some View {
         let openTabs = tabs.openTabs
+
+        Group {
+            if openTabs.isEmpty {
+                Color.clear
+            } else {
+                tabScroller(openTabs)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 36)
+        .background(.bar, ignoresSafeAreaEdges: [])
+        .accessibilityElement(children: openTabs.isEmpty ? .ignore : .contain)
+        .accessibilityLabel("TAB_STRIP_LABEL")
+        .accessibilityIdentifier("tabStrip")
+    }
+
+    /// Only with tabs open, because a horizontal `ScrollView` reaches under the sidebar through the leading safe area,
+    /// and
+    /// the strip's element measures its children: the empty strip has to keep the width of the panes below it.
+    private func tabScroller(_ openTabs: [RequestTab]) -> some View {
         let selected = tabs.selectedTab?.id
 
-        ScrollViewReader { proxy in
+        return ScrollViewReader { proxy in
             ScrollView(.horizontal) {
                 HStack(spacing: 2) {
                     ForEach(openTabs) { tab in
@@ -37,13 +57,6 @@ struct TabStripView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 36)
-        .background(.bar)
-        // A `.contain` group measures only its children, so the empty strip needs `.ignore` to keep its own frame.
-        .accessibilityElement(children: openTabs.isEmpty ? .ignore : .contain)
-        .accessibilityLabel("TAB_STRIP_LABEL")
-        .accessibilityIdentifier("tabStrip")
     }
 
 }
