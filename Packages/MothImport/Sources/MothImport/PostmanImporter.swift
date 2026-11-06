@@ -43,6 +43,27 @@ public nonisolated struct PostmanImporter: Sendable {
         )
     }
 
+    @concurrent
+    public func importFile(
+        _ data: Data,
+        existingCollectionNames: Set<String>,
+        existingEnvironmentNames: Set<String>,
+        into store: @Sendable (PostmanImportContent) async throws -> Void
+    ) async throws -> PostmanImportResult {
+        let result = try await importFile(
+            data,
+            existingCollectionNames: existingCollectionNames,
+            existingEnvironmentNames: existingEnvironmentNames
+        )
+        do {
+            try await store(result.content)
+        } catch {
+            await remove(result.secrets)
+            throw error
+        }
+        return result
+    }
+
     private func save(_ secrets: [PendingSecret]) async throws {
         var saved: [SecretReference] = []
         do {
@@ -51,10 +72,14 @@ public nonisolated struct PostmanImporter: Sendable {
                 saved.append(secret.reference)
             }
         } catch {
-            for reference in saved {
-                try? await secretStore.removeValue(for: reference.identifier)
-            }
+            await remove(saved)
             throw error
+        }
+    }
+
+    private func remove(_ secrets: [SecretReference]) async {
+        for reference in secrets {
+            try? await secretStore.removeValue(for: reference.identifier)
         }
     }
 
