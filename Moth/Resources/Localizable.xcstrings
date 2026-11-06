@@ -67,6 +67,50 @@
         }
       }
     },
+    "IMPORT_FAILED" : {
+      "comment" : "Shown in the import result sheet when a file could not be read or stored.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth couldn’t import this file. Nothing was added."
+          }
+        }
+      }
+    },
+    "IMPORT_PROGRESS" : {
+      "comment" : "Shown at the bottom of the sidebar while an import runs.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing…"
+          }
+        }
+      }
+    },
+    "IMPORT_REJECTED" : {
+      "comment" : "Shown in the import result sheet when a file is neither a collection nor an environment.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file isn’t a Postman Collection v2.1 or Environment."
+          }
+        }
+      }
+    },
+    "IMPORT_RESULT_DONE" : {
+      "comment" : "The button that closes the import result sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
     "MENU_CLOSE" : {
       "comment" : "File menu command that closes the window, shown in place of Close Tab when no tab is open.",
       "localizations" : {
@@ -96,6 +140,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close Window"
+          }
+        }
+      }
+    },
+    "MENU_IMPORT" : {
+      "comment" : "File menu command that imports a Postman file.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import…"
           }
         }
       }

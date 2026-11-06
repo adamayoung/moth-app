@@ -27,6 +27,10 @@ final class EnvironmentsModel {
         self.activeEnvironment = activeEnvironment
     }
 
+    var names: Set<String> {
+        Set(rows.map(\.name))
+    }
+
     /// Nil for a choice with no row here, which stays saved in case the row has yet to sync.
     var activeID: UUID? {
         rows.first { $0.id == activeEnvironment.id }?.id
