@@ -1,0 +1,162 @@
+//  PostmanMapper.swift
+//  MothImport
+//
+//  Copyright © 2026 Adam Young.
+
+import MothCore
+import PostmanKit
+
+nonisolated struct PostmanMapper {
+
+    var imported = PostmanImportedCounts()
+    var skipped = PostmanSkippedCounts()
+    private(set) var pendingSecrets: [PendingSecret] = []
+
+    mutating func collection(
+        _ postman: PostmanCollection,
+        avoiding existingNames: Set<String>
+    ) -> RequestCollection {
+        countScripts(postman.events)
+        countDescription(postman.info.description)
+
+        return RequestCollection(
+            name: ImportedName.unique(ImportedName.given(postman.info.name), avoiding: existingNames),
+            auth: auth(postman.auth, whenUnset: .none),
+            variables: variables(postman.variables),
+            children: items(postman.items)
+        )
+    }
+
+    /// An empty secret saves nothing, so Moth reports it as missing instead of sending it blank.
+    mutating func secret(_ value: String?) -> SecretReference {
+        let reference = SecretReference()
+        if let value, !value.isEmpty {
+            pendingSecrets.append(PendingSecret(reference: reference, value: value))
+        }
+        return reference
+    }
+
+    /// Always saved, because Basic and Digest can send a username alone, which `secret(_:)` would report as missing.
+    mutating func password(_ value: String?) -> SecretReference {
+        let reference = SecretReference()
+        pendingSecrets.append(PendingSecret(reference: reference, value: value ?? ""))
+        return reference
+    }
+
+    /// A `nil` reference means the kind has no such credential, and Postman writes empty fields for those.
+    mutating func optionalSecret(_ value: String?) -> SecretReference? {
+        guard let value, !value.isEmpty else {
+            return nil
+        }
+        return secret(value)
+    }
+
+    mutating func keyValues(_ rows: [PostmanKeyValue]) -> [KeyValue] {
+        var keyValues: [KeyValue] = []
+        for row in rows {
+            countDescription(row.description)
+            keyValues.append(KeyValue(key: row.key ?? "", value: row.value ?? "", isEnabled: row.isEnabled))
+        }
+        return keyValues
+    }
+
+    /// Takes each place one thing's description can sit, because a request has two.
+    mutating func countDescription(_ descriptions: PostmanDescription?...) {
+        if descriptions.contains(where: { $0?.content?.isBlank == false }) {
+            skipped.descriptions += 1
+        }
+    }
+
+    private mutating func countScripts(_ events: [PostmanEvent]) {
+        skipped.scripts += events.count { event in
+            event.script?.exec.contains { !$0.isBlank } == true
+        }
+    }
+
+    private mutating func items(_ postman: [PostmanItem]) -> [CollectionItem] {
+        var items: [CollectionItem] = []
+        for (index, item) in postman.enumerated() {
+            switch item {
+            case .folder(let folder):
+                items.append(CollectionItem(sortOrder: index, node: .folder(self.folder(folder))))
+            case .request(let request):
+                items.append(CollectionItem(sortOrder: index, node: .request(self.request(request))))
+            }
+        }
+        return items
+    }
+
+    private mutating func folder(_ postman: PostmanFolder) -> Folder {
+        imported.folders += 1
+        skipped.folderVariables += postman.variables.count
+        countScripts(postman.events)
+        countDescription(postman.description)
+
+        return Folder(
+            name: ImportedName.given(postman.name),
+            auth: auth(postman.auth, whenUnset: .inherit),
+            children: items(postman.items)
+        )
+    }
+
+    private mutating func request(_ postman: PostmanRequestItem) -> Request {
+        imported.requests += 1
+        skipped.exampleResponses += postman.savedResponseCount
+        countScripts(postman.events)
+        countDescription(postman.description, postman.request.description)
+        let url = postman.request.url
+
+        return Request(
+            name: ImportedName.given(postman.name),
+            method: postman.request.method.map { HTTPMethod(rawValue: $0.uppercased()) } ?? .get,
+            urlTemplate: url?.template ?? "",
+            queryParameters: keyValues(url?.query ?? []).map(\.percentDecoded),
+            pathParameters: pathParameters(url?.variables ?? []),
+            headers: keyValues(postman.request.headers),
+            body: body(postman.request.body),
+            auth: auth(postman.request.auth, whenUnset: .inherit),
+            variables: variables(postman.variables)
+        )
+    }
+
+    private mutating func pathParameters(_ variables: [PostmanVariable]) -> [KeyValue] {
+        var parameters: [KeyValue] = []
+        for variable in variables {
+            countDescription(variable.description)
+            parameters.append(KeyValue(
+                key: variable.key ?? variable.id ?? "",
+                value: variable.value?.text?.percentDecoded ?? "",
+                isEnabled: variable.isEnabled
+            ))
+        }
+        return parameters
+    }
+
+}
+
+nonisolated struct PendingSecret: Sendable {
+
+    let reference: SecretReference
+    let value: String
+
+}
+
+/// Postman sends a URL's rows as typed, and `RequestBuilder` encodes them, so a typed `%20` would go out as `%2520`.
+private nonisolated extension KeyValue {
+
+    var percentDecoded: KeyValue {
+        var row = self
+        row.key = key.percentDecoded
+        row.value = value.percentDecoded
+        return row
+    }
+
+}
+
+private nonisolated extension String {
+
+    var percentDecoded: String {
+        removingPercentEncoding ?? self
+    }
+
+}
