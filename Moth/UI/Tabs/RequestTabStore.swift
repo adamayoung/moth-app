@@ -8,7 +8,12 @@ import Foundation
 /// `UserDefaults` rather than `@SceneStorage`, because UI tests launch with saved state ignored. Defaults never sync.
 struct RequestTabStore {
 
-    static let preview = RequestTabStore(defaults: .standard, key: "PreviewRequestTabs")
+    /// Empty on every use, because previews share one process and one would otherwise show another's tabs.
+    static var preview: RequestTabStore {
+        let store = RequestTabStore(defaults: .standard, key: "PreviewRequestTabs")
+        store.clear()
+        return store
+    }
 
     let defaults: UserDefaults
     let key: String
