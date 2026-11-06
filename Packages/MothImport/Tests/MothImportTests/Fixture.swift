@@ -5,7 +5,7 @@
 
 import Foundation
 import MothCore
-import MothImport
+@testable import MothImport
 import Testing
 
 enum Fixture {

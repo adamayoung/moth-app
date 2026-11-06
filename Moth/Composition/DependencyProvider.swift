@@ -11,6 +11,8 @@ struct DependencyProvider {
 
     private struct SimulatedStoreFailure: Error {}
 
+    static let uiTestImportFileKey = "MOTH_UI_TEST_IMPORT_FILE"
+
     /// `App.main()` calls a parameterless `init()`, so the launcher and the `App` can only share one graph here.
     static let currentOutcome = makeCurrentOutcome()
 
@@ -28,6 +30,7 @@ struct DependencyProvider {
         launchMode: AppLaunchMode,
         infoDictionary: [String: Any],
         signature: AppSignature,
+        environment: [String: String] = [:],
         openLiveDataModel: (_ containerIdentifier: String?) throws -> DataModel
     ) throws {
         self.launchMode = launchMode
@@ -38,7 +41,12 @@ struct DependencyProvider {
                 signature: signature,
                 openDataModel: openLiveDataModel
             )
-        case .uiTesting, .demo: try SeededAppDependencies(seed: SeedData.workspace)
+        case .uiTesting:
+            try SeededAppDependencies(
+                seed: SeedData.workspace,
+                importFile: environment[Self.uiTestImportFileKey].map { Data($0.utf8) }
+            )
+        case .demo: try SeededAppDependencies(seed: SeedData.workspace)
         case .uiTestingRestoringTabs: try SeededAppDependencies(seed: SeedData.workspace, restoresTabs: true)
         case .uiTestingWithICloudSync: try SeededAppDependencies(seed: SeedData.workspace, isSyncedToICloud: true)
         case .uiTestingStoreFailure: throw SimulatedStoreFailure()
@@ -50,6 +58,7 @@ struct DependencyProvider {
         launchMode: AppLaunchMode,
         infoDictionary: [String: Any],
         signature: AppSignature,
+        environment: [String: String] = [:],
         openLiveDataModel: (_ containerIdentifier: String?) throws -> DataModel
     ) throws(LaunchConfigurationError) -> LaunchOutcome {
         do {
@@ -58,6 +67,7 @@ struct DependencyProvider {
                     launchMode: launchMode,
                     infoDictionary: infoDictionary,
                     signature: signature,
+                    environment: environment,
                     openLiveDataModel: openLiveDataModel
                 )
             )
@@ -79,6 +89,7 @@ struct DependencyProvider {
                 launchMode: resolveLaunchMode(),
                 infoDictionary: Bundle.main.infoDictionary ?? [:],
                 signature: .current(),
+                environment: ProcessInfo.processInfo.environment,
                 openLiveDataModel: openLiveDataModel
             )
         } catch {

@@ -18,6 +18,7 @@ final class LiveAppDependencies: AppDependencies {
     let activeEnvironment = ActiveEnvironment(defaults: .standard)
     let launchReconcile: Task<Void, Never>
     let requestTabStore = RequestTabStore(defaults: .standard, key: "RequestTabs")
+    let importFileSource = ImportFileSource.panel
 
     /// `openDataModel` has no default, so that no test can reach the real store or CloudKit by leaving it out.
     init(

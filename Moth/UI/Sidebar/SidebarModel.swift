@@ -41,6 +41,10 @@ final class SidebarModel {
         return tree.ancestors(of: selection).last.flatMap(TreeContainerID.init)
     }
 
+    var collectionNames: Set<String> {
+        Set(tree.roots.map(\.name))
+    }
+
     /// False until the first tree arrives, so a launch with collections never flashes the empty state.
     var showsEmptyState: Bool {
         hasReceivedTree && tree.roots.isEmpty

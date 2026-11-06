@@ -27,6 +27,14 @@ keeps the tabs the last seeded launch saved, and every other seeded launch start
 with none. A test class passes one by overriding `additionalLaunchArguments` on
 `MothTestCase`, or adds it to `app.launchArguments` before a relaunch.
 
+`MOTH_UI_TEST_IMPORT_FILE` in `launchEnvironment` holds a file's text, and on a
+`-UITesting 1` launch File > Import… skips the system panel and imports that text.
+It holds the text and not a path because the sandboxed app can't read the runner's
+disk, and it is an environment variable because AppKit parses a launch argument's
+value. Any other launch ignores it. `ImportTests` sets it and relaunches, because a
+test needs its own file, and reads the licensed fixtures in place through
+`#filePath`.
+
 `SeedData.workspace` holds one collection, "Seeded Collection", and two
 environments: "Seeded Environment", which is the active one and holds `host`, and
 "Staging", which holds six variables, so a delete alert can count one or six. The

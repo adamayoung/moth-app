@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import Foundation
 @testable import HTTPKit
 @testable import Moth
 import MothCore
@@ -18,6 +19,7 @@ struct DependencyProviderTests {
         .uiTesting, .uiTestingWithICloudSync, .uiTestingRestoringTabs, .demo, .testHost
     ]
     private nonisolated static let allModes: [AppLaunchMode] = [.live] + seededModes
+    private static let importFileEnvironment = [DependencyProvider.uiTestImportFileKey: "{}"]
 
     private let adHoc = AppSignature(teamIdentifier: nil, keychainAccessGroup: nil)
     private let teamSigned = AppSignature(teamIdentifier: "ABCDE12345", keychainAccessGroup: nil)
@@ -99,6 +101,28 @@ struct DependencyProviderTests {
         #expect(provider.dependencies is SeededAppDependencies)
     }
 
+    @Test("A UI test launch takes its import file from the environment")
+    func uiTestLaunchTakesItsImportFile() throws {
+        let dependencies = try provider(for: .uiTesting, environment: Self.importFileEnvironment).dependencies
+
+        #expect(dependencies.importFileSource == .uiTest(Data("{}".utf8)))
+    }
+
+    @Test("A UI test launch with no import file uses the panel")
+    func uiTestLaunchWithNoFileUsesThePanel() throws {
+        #expect(try dependencies(for: .uiTesting).importFileSource == .panel)
+    }
+
+    @Test(
+        "Every other launch uses the panel, whatever the environment says",
+        arguments: [AppLaunchMode.live, .uiTestingWithICloudSync, .uiTestingRestoringTabs, .demo, .testHost]
+    )
+    func otherLaunchesIgnoreTheImportFile(mode: AppLaunchMode) throws {
+        let dependencies = try provider(for: mode, environment: Self.importFileEnvironment).dependencies
+
+        #expect(dependencies.importFileSource == .panel)
+    }
+
     @Test("A live store that will not open stops the graph being built")
     func liveStoreFailureThrows() {
         #expect(throws: OpenFailure.self) {
@@ -153,11 +177,16 @@ struct DependencyProviderTests {
         try provider(for: mode).dependencies
     }
 
-    private func provider(for mode: AppLaunchMode, signature: AppSignature? = nil) throws -> DependencyProvider {
+    private func provider(
+        for mode: AppLaunchMode,
+        signature: AppSignature? = nil,
+        environment: [String: String] = [:]
+    ) throws -> DependencyProvider {
         try DependencyProvider(
             launchMode: mode,
             infoDictionary: [:],
             signature: signature ?? adHoc,
+            environment: environment,
             openLiveDataModel: { _ in try .inMemory() }
         )
     }
