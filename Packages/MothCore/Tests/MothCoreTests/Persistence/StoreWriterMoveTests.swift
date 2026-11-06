@@ -173,4 +173,43 @@ struct StoreWriterMoveTests {
         #expect(try CollectionTree(savedIn: dataModel).roots.map(\.name) == ["First", "Second", "Third"])
     }
 
+    @Test("Moving a row that has gone leaves its would-be siblings' positions alone")
+    func moveOfAMissingRowChangesNothing() async throws {
+        let first = Request(name: "First")
+        let second = Request(name: "Second")
+        let third = Request(name: "Third")
+        let collection = RequestCollection(name: "API", children: [
+            TreeFixtures.item(0, first),
+            TreeFixtures.item(2, second),
+            TreeFixtures.item(5, third)
+        ])
+        let dataModel = try TreeFixtures.dataModel(holding: collection)
+
+        try await dataModel.writer.moveItem(.request(UUID()), to: .collection(collection.id), before: nil)
+
+        let positions = try TreeFixtures.savedRows(RequestModel.self, in: dataModel).map(\.sortOrder).sorted()
+        #expect(positions == [0, 2, 5])
+    }
+
+    @Test("Moving a collection that has gone leaves the others' positions alone")
+    func moveOfAMissingCollectionChangesNothing() async throws {
+        let dataModel = try DataModel.inMemory()
+        for name in ["First", "Second", "Third"] {
+            try await dataModel.writer.createCollection(RequestCollection(name: name))
+        }
+        try await dataModel.writer.delete(.collection(
+            #require(CollectionTree(savedIn: dataModel).roots.first.flatMap { root -> UUID? in
+                if case .collection(let id) = root.id {
+                    return id
+                }
+                return nil
+            })
+        ))
+
+        try await dataModel.writer.moveCollection(UUID(), before: nil)
+
+        let positions = try TreeFixtures.savedRows(CollectionModel.self, in: dataModel).map(\.sortOrder).sorted()
+        #expect(positions == [1, 2])
+    }
+
 }

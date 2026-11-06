@@ -170,4 +170,26 @@ struct StoreWriterTreeTests {
         #expect(try TreeFixtures.names(of: .folder(folder.id), in: reopened) == ["Moved"])
     }
 
+    @Test("A delete reaches a child saved by another context after the writer last read the parent")
+    func deleteReachesAChildAddedElsewhere() async throws {
+        let folder = Folder(name: "Folder")
+        let collection = RequestCollection(name: "API", children: [TreeFixtures.item(0, folder)])
+        let dataModel = try TreeFixtures.dataModel(holding: collection)
+        try await dataModel.writer.createRequest(Request(name: "Known"), in: .folder(folder.id))
+        let context = ModelContext(dataModel.container)
+        let parent = try #require(context.fetch(FolderModel.withID(folder.id)).first)
+        let imported = try RequestModel(
+            Request(name: "Imported", variables: [DomainFixtures.variable(named: "imported")]),
+            sortOrder: 1
+        )
+        context.insert(imported)
+        imported.place(in: .folder(parent))
+        try context.save()
+
+        try await dataModel.writer.delete(.folder(folder.id))
+
+        #expect(try TreeFixtures.savedRows(RequestModel.self, in: dataModel).isEmpty)
+        #expect(try TreeFixtures.savedRows(VariableModel.self, in: dataModel).isEmpty)
+    }
+
 }

@@ -57,6 +57,9 @@ extension StoreWriter {
         }
         try write { context in
             let moved = try Self.childRows(id, in: context)
+            guard !moved.isEmpty else {
+                return
+            }
             let parent = try Self.containerRow(container, in: context)
             try Self.refuseFolderIntoItself(id, parent: parent)
             let siblings = try Self.children(of: container, in: context)
@@ -73,7 +76,11 @@ extension StoreWriter {
         }
         try write { context in
             let collections = try context.fetch(FetchDescriptor<CollectionModel>()).inSortOrder
-            Self.order(collections, moving: collections.filter { $0.id == id }, before: before)
+            let moved = collections.filter { $0.id == id }
+            guard !moved.isEmpty else {
+                return
+            }
+            Self.order(collections, moving: moved, before: before)
         }
     }
 
@@ -140,8 +147,7 @@ extension StoreWriter {
         return row
     }
 
-    /// Fetches every row and walks its relationship, because a parent's own array can miss a row a sync has just
-    /// imported, and a `#Predicate` on a related row's property ignores this context's unsaved changes.
+    /// Fetches rather than reading a parent's array, which can miss a row a sync has just imported.
     private static func children(
         of container: TreeContainerID,
         in context: ModelContext

@@ -100,11 +100,11 @@ public nonisolated struct CollectionTree: Hashable, Sendable {
     }
 
     /// Takes flat rows, not a collection's arrays: a to-many array held by the main context goes stale once the writer
-    /// saves, while a fetch brings each row's parent up to date. Walking down from the collections leaves an orphan, or
-    /// a folder cycle two Macs made between them, out of the tree.
+    /// saves, while a fetch brings each row's parent up to date. Keeping one row per id gives each id one parent, so
+    /// walking down from the collections leaves an orphan, or a folder cycle two Macs made, out of the tree.
     public init(collections: [CollectionModel], folders: [FolderModel], requests: [RequestModel]) {
         let index = ChildIndex(folders: folders, requests: requests)
-        self.roots = collections.inSortOrder.map { row in
+        self.roots = collections.oneRowPerID.map { row in
             TreeNode(
                 id: .collection(row.id),
                 name: row.name,
@@ -122,8 +122,8 @@ private nonisolated struct ChildIndex {
     private let requests: [TreeContainerID: [RequestModel]]
 
     init(folders: [FolderModel], requests: [RequestModel]) {
-        self.folders = Self.grouped(folders, by: \.container)
-        self.requests = Self.grouped(requests, by: \.container)
+        self.folders = Self.grouped(folders.oneRowPerID, by: \.container)
+        self.requests = Self.grouped(requests.oneRowPerID, by: \.container)
     }
 
     /// A folder and a request share one ordering, so their `sortOrder` values interleave.
