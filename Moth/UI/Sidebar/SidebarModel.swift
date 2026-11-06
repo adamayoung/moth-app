@@ -117,7 +117,13 @@ final class SidebarModel {
 
     /// The selection moves when the query delivers the tree without this row.
     func confirmDeletion(_ deletion: PendingDeletion) async {
-        await perform { [writer] in try await writer.delete(deletion.id) }
+        await perform { [writer, secretStore] in
+            if case .collection(let id) = deletion.id {
+                try await secretStore.remove(writer.deleteCollection(id))
+            } else {
+                try await writer.delete(deletion.id)
+            }
+        }
     }
 
     func move(_ id: TreeNodeID, to parent: SidebarParent, before: TreeNodeID?) async {

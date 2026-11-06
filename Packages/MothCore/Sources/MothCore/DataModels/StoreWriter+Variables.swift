@@ -9,6 +9,7 @@ import SwiftData
 public nonisolated enum VariableWriteError: Error, Equatable {
 
     case scopeNotFound(VariableScope)
+    case variableNotFound(UUID)
 
 }
 
@@ -29,6 +30,9 @@ public extension StoreWriter {
     func updateVariable(_ variable: Variable) throws -> Set<SecretReference> {
         try write { context in
             let rows = try context.fetch(VariableModel.withID(variable.id))
+            guard !rows.isEmpty else {
+                throw VariableWriteError.variableNotFound(variable.id)
+            }
             let letGo = rows.filter { $0.secretIdentifier != variable.secretReference?.identifier }
             let released = try Self.secrets(releasedBy: letGo, in: context)
             rows.forEach { $0.apply(variable) }
@@ -56,10 +60,25 @@ public extension StoreWriter {
 
     @discardableResult
     func deleteEnvironment(_ id: UUID) throws -> Set<SecretReference> {
+        try deleteOwner(of: .environment(id)) { try $0.fetch(EnvironmentModel.withID(id)) }
+    }
+
+    @discardableResult
+    func deleteCollection(_ id: UUID) throws -> Set<SecretReference> {
+        try deleteOwner(of: .collection(id)) { try $0.fetch(CollectionModel.withID(id)) }
+    }
+
+    /// Deletes the variables by name as well, because the cascade walks an array that can miss a row a sync has just
+    /// imported, and that row would outlive the value this releases.
+    private func deleteOwner(
+        of scope: VariableScope,
+        rows: (ModelContext) throws -> [some PersistentModel]
+    ) throws -> Set<SecretReference> {
         try write { context in
-            let going = try context.fetch(FetchDescriptor<VariableModel>()).filter { $0.isIn(.environment(id)) }
+            let going = try context.fetch(FetchDescriptor<VariableModel>()).filter { $0.isIn(scope) }
             let released = try Self.secrets(releasedBy: going, in: context)
-            try context.fetch(EnvironmentModel.withID(id)).forEach(context.delete)
+            going.forEach(context.delete)
+            try rows(context).forEach(context.delete)
             return released
         }
     }
@@ -69,12 +88,15 @@ public extension StoreWriter {
         releasedBy going: [VariableModel],
         in context: ModelContext
     ) throws -> Set<SecretReference> {
+        let identifiers = Set(going.compactMap(\.secretIdentifier))
+        guard !identifiers.isEmpty else {
+            return []
+        }
         let goingRows = Set(going.map(\.persistentModelID))
         let held = try context.fetch(FetchDescriptor<VariableModel>())
             .filter { !goingRows.contains($0.persistentModelID) }
             .compactMap(\.secretIdentifier)
-        let released = Set(going.compactMap(\.secretIdentifier)).subtracting(held)
-        return Set(released.map(SecretReference.init(identifier:)))
+        return Set(identifiers.subtracting(held).map(SecretReference.init(identifier:)))
     }
 
     private static func place(_ row: VariableModel, in scope: VariableScope, context: ModelContext) throws {

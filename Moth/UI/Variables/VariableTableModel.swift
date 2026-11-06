@@ -17,6 +17,7 @@ final class VariableTableModel {
 
     @ObservationIgnored private var saved: [UUID: Variable] = [:]
     @ObservationIgnored private var savedSecrets: [UUID: String] = [:]
+    @ObservationIgnored private var changingSecret: Set<UUID> = []
 
     private let writer: StoreWriter
     private let secretStore: any SecretStore
@@ -33,7 +34,7 @@ final class VariableTableModel {
             guard let draft = drafts.first(where: { $0.id == variable.id }) else {
                 return VariableDraft(variable)
             }
-            return draft.variable == saved[variable.id] ? merged(variable, into: draft) : draft
+            return draft.variable == saved[variable.id] ? merged(variable, into: draft) : rebased(draft, onto: variable)
         }
         saved = Dictionary(variables.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     }
@@ -109,9 +110,13 @@ final class VariableTableModel {
     }
 
     func setSecret(_ isSecret: Bool, for id: UUID) async {
-        guard let draft = drafts.first(where: { $0.id == id }), draft.canChangeSecret else {
+        guard let draft = drafts.first(where: { $0.id == id }),
+              draft.canChangeSecret,
+              changingSecret.insert(id).inserted
+        else {
             return
         }
+        defer { changingSecret.remove(id) }
         switch (isSecret, draft.secret?.value) {
         case (true, nil):
             await moveToSecret(draft)
@@ -135,19 +140,19 @@ final class VariableTableModel {
             return
         }
         do {
-            try await writer.updateVariable(secret)
+            let released = try await writer.updateVariable(secret)
+            update(draft.id) { row in
+                row.initial = ""
+                row.current = ""
+                row.secret = SecretDraft(reference: reference, value: .available(value))
+            }
+            saved[draft.id] = secret
+            savedSecrets[draft.id] = value
+            await secretStore.remove(released)
         } catch {
             Self.log("marking a variable secret", error)
             await secretStore.remove([reference])
-            return
         }
-        update(draft.id) { row in
-            row.initial = ""
-            row.current = ""
-            row.secret = SecretDraft(reference: reference, value: .available(value))
-        }
-        saved[draft.id] = secret
-        savedSecrets[draft.id] = value
     }
 
     private func moveToPlain(_ draft: VariableDraft, value: String) async {
@@ -166,6 +171,18 @@ final class VariableTableModel {
         } catch {
             Self.log("making a variable plain", error)
         }
+    }
+
+    /// Keeps what was typed, but not a plain or secret kind the store has moved on from: committing that would undo
+    /// another Mac's change, and lose a value it has already moved.
+    private func rebased(_ draft: VariableDraft, onto variable: Variable) -> VariableDraft {
+        guard draft.secret?.reference != variable.secretReference else {
+            return draft
+        }
+        var rebased = VariableDraft(variable)
+        rebased.name = draft.name
+        rebased.isEnabled = draft.isEnabled
+        return rebased
     }
 
     private func merged(_ variable: Variable, into draft: VariableDraft) -> VariableDraft {
@@ -206,7 +223,7 @@ final class VariableTableModel {
 
     /// The error only, never a value: a variable's text can be a credential.
     private static func log(_ action: StaticString, _ error: any Error) {
-        Logger.variables.error("\(action) failed: \(String(describing: error), privacy: .public)")
+        Logger.variables.error("\(action, privacy: .public) failed: \(String(describing: error), privacy: .public)")
     }
 
 }

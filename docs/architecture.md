@@ -223,7 +223,9 @@ as each field commits: on Return, when focus leaves the field, on a toggle, and
 when the sheet closes. `VariableTableModel` holds value drafts, and a delivery
 from `@Query` replaces a draft only if it has not run ahead of the store. So a
 sync can't take text from under someone typing, and the commit that follows
-overwrites what arrived.
+overwrites what arrived. The exception is a change between plain and secret: the
+draft takes the store's value and keeps only its name and Enabled, because
+committing the old kind would lose a value another Mac has already moved.
 
 ### CloudKit Model Rules
 
@@ -336,8 +338,8 @@ this Mac yet", and its Secret toggle is disabled, because turning it off would
 have no value to keep. A read that fails shows the same message and is logged.
 The sheet reads again after each delivery from the store and each time it opens.
 
-Removing a variable, or deleting its environment, removes the Keychain item
-unless another variable holds that reference.
+Removing a variable, or deleting its environment or collection, removes the
+Keychain item unless another variable holds that reference.
 
 ### Which Store a Build Uses
 

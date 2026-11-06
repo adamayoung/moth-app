@@ -201,6 +201,37 @@ struct StoreWriterVariableTests {
         #expect(released == [own])
     }
 
+    @Test("An update to a variable that has gone is refused")
+    func updateToAGoneVariableIsRefused() async throws {
+        let dataModel = try DataModel.inMemory()
+        let gone = Variable.plain("host", "1")
+
+        await #expect(throws: VariableWriteError.variableNotFound(gone.id)) {
+            try await dataModel.writer.updateVariable(gone)
+        }
+    }
+
+    @Test("Deleting a collection removes it and its variables, and releases secrets nothing else holds")
+    func deleteCollectionReleasesItsSecrets() async throws {
+        let shared = SecretReference()
+        let own = SecretReference()
+        let collection = RequestCollection(name: "API", variables: [
+            Variable(name: "shared", value: .secret(shared)),
+            Variable(name: "own", value: .secret(own))
+        ])
+        let dataModel = try DataModel.inMemory(seed: Workspace(
+            collections: [collection],
+            globals: [Variable(name: "shared", value: .secret(shared))]
+        ))
+
+        let released = try await dataModel.writer.deleteCollection(collection.id)
+
+        let context = ModelContext(dataModel.container)
+        #expect(released == [own])
+        #expect(try context.fetch(FetchDescriptor<CollectionModel>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<VariableModel>()).map(\.name) == ["shared"])
+    }
+
     private static func variables(in scope: VariableScope, of dataModel: DataModel) throws -> [Variable] {
         try ModelContext(dataModel.container).fetch(VariableModel.inScope(scope)).inSortOrder.map { $0.asDomain() }
     }
