@@ -35,7 +35,7 @@ nonisolated extension PostmanMapper {
         }
     }
 
-    /// Postman's own language-to-header table. An unknown language adds no header, so a body's own one stands.
+    /// An empty type adds no header, so with no language, or an unknown one, a request's own header carries it.
     private static func contentType(ofLanguage language: String?) -> String {
         switch language {
         case "json": "application/json"

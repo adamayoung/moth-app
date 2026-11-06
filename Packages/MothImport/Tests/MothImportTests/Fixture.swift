@@ -63,6 +63,18 @@ enum Fixture {
         )
     }
 
+    /// `auth` is the JSON of one request's `auth`.
+    static func importingAuth(_ auth: String) async throws -> PostmanImportResult {
+        try await importingSnippet(items: #"[{ "name": "a", "request": { "auth": \#(auth) } }]"#)
+    }
+
+    static func stored(_ reference: SecretReference?, in store: InMemorySecretStore) async -> String? {
+        guard let reference else {
+            return nil
+        }
+        return await store.value(for: reference.identifier)
+    }
+
     /// `request` is the JSON of one item's `request`.
     static func snippetRequest(_ request: String) async throws -> Request {
         let result = try await importingSnippet(items: #"[{ "name": "Snippet", "request": \#(request) }]"#)

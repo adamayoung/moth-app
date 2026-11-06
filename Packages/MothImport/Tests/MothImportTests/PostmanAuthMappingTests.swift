@@ -11,17 +11,6 @@ struct PostmanAuthMappingTests {
 
     private static let helpers = "postman-collection-transformer/v2.1.0/helpers.json"
 
-    private static func stored(_ reference: SecretReference?, in store: InMemorySecretStore) async -> String? {
-        guard let reference else {
-            return nil
-        }
-        return await store.value(for: reference.identifier)
-    }
-
-    private static func requestAuth(_ auth: String) async throws -> PostmanImportResult {
-        try await Fixture.importingSnippet(items: #"[{ "name": "a", "request": { "auth": \#(auth) } }]"#)
-    }
-
     @Test("A request with no auth entry inherits")
     func unsetRequestInherits() async throws {
         let collection = try await Fixture.collection("postman-code-generators/basicCollection.json")
@@ -29,7 +18,7 @@ struct PostmanAuthMappingTests {
         #expect(collection.requests.allSatisfy { $0.auth == .inherit })
     }
 
-    @Test("A request whose auth is null inherits, as Postman's own loader treats it")
+    @Test("A request whose auth is null inherits, because PostmanKit reads null as no entry")
     func nullRequestAuthInherits() async throws {
         let collection = try await Fixture.collection("openapi-to-postman/internalRefsCollection.json")
 
@@ -73,7 +62,7 @@ struct PostmanAuthMappingTests {
         }
 
         #expect(basic.username == "abhijit")
-        #expect(await Self.stored(basic.password, in: store) == "kane")
+        #expect(await Fixture.stored(basic.password, in: store) == "kane")
     }
 
     @Test("Bearer sends its token to the secret store")
@@ -86,7 +75,7 @@ struct PostmanAuthMappingTests {
             return
         }
 
-        #expect(await Self.stored(bearer.token, in: store) == "wkjehbxoqnunc2k3")
+        #expect(await Fixture.stored(bearer.token, in: store) == "wkjehbxoqnunc2k3")
     }
 
     @Test("Digest is stored by kind, with its password in the secret store, and counted as unsupported")
@@ -101,7 +90,7 @@ struct PostmanAuthMappingTests {
         }
 
         #expect(digest.username == "abhijit")
-        #expect(await Self.stored(digest.password, in: store) == "kane")
+        #expect(await Fixture.stored(digest.password, in: store) == "kane")
         #expect(result.imported.unsupportedAuth[.digest] == 1)
     }
 
@@ -123,141 +112,11 @@ struct PostmanAuthMappingTests {
         #expect(oauth2.clientID == "uniqueClientIdentifier")
         #expect(oauth2.scope == "all")
         #expect(oauth2.username == "postman")
-        #expect(await Self.stored(oauth2.clientSecret, in: store) == "secretClientValue")
-        #expect(await Self.stored(oauth2.password, in: store) == "randomSecretString")
-        #expect(await Self.stored(oauth2.accessToken, in: store) == "secretToken")
-        #expect(await Self.stored(oauth2.refreshToken, in: store) == "refreshToken")
+        #expect(await Fixture.stored(oauth2.clientSecret, in: store) == "secretClientValue")
+        #expect(await Fixture.stored(oauth2.password, in: store) == "randomSecretString")
+        #expect(await Fixture.stored(oauth2.accessToken, in: store) == "secretToken")
+        #expect(await Fixture.stored(oauth2.refreshToken, in: store) == "refreshToken")
         #expect(result.imported.unsupportedAuth[.oauth2] == 1)
-    }
-
-    @Test(
-        "OAuth2's current key spellings map, from a snippet because the fixture has the older ones",
-        arguments: [
-            ("authorization_code", OAuth2GrantType.authorizationCode),
-            ("authorization_code_with_pkce", .authorizationCodeWithPKCE),
-            ("implicit", .implicit),
-            ("password_credentials", .passwordCredentials),
-            ("client_credentials", .clientCredentials)
-        ]
-    )
-    func mapsOAuth2CurrentSpellings(grant: String, grantType: OAuth2GrantType) async throws {
-        let result = try await Self.requestAuth(#"""
-        {
-            "type": "oauth2",
-            "oauth2": [
-                { "key": "grant_type", "value": "\#(grant)" },
-                { "key": "redirect_uri", "value": "https://a.test/cb" }
-            ]
-        }
-        """#)
-
-        guard case .oauth2(let oauth2) = result.collection?.requests.first?.auth else {
-            Issue.record("Expected OAuth2 auth")
-            return
-        }
-
-        #expect(oauth2.grantType == grantType)
-        #expect(oauth2.callbackURL == "https://a.test/cb")
-    }
-
-    @Test("An optional credential left empty has no reference")
-    func emptyOptionalCredentialHasNoReference() async throws {
-        let result = try await Self.requestAuth(#"""
-        { "type": "oauth2", "oauth2": [{ "key": "clientSecret", "value": "" }] }
-        """#)
-
-        guard case .oauth2(let oauth2) = result.collection?.requests.first?.auth else {
-            Issue.record("Expected OAuth2 auth")
-            return
-        }
-
-        #expect(oauth2.clientSecret == nil)
-        #expect(result.secrets.isEmpty)
-    }
-
-    @Test(
-        "An API key maps its name, location and value, from a snippet because no licensed fixture has one",
-        arguments: [("query", APIKeyLocation.query), ("header", .header)]
-    )
-    func mapsAPIKey(location: String, expected: APIKeyLocation) async throws {
-        let store = InMemorySecretStore()
-        let result = try await Fixture.importingSnippet(
-            items: #"""
-            [{
-                "name": "a",
-                "request": {
-                    "auth": {
-                        "type": "apikey",
-                        "apikey": [
-                            { "key": "key", "value": "X-Key" },
-                            { "key": "value", "value": "abc" },
-                            { "key": "in", "value": "\#(location)" }
-                        ]
-                    }
-                }
-            }]
-            """#,
-            secretStore: store
-        )
-
-        guard case .apiKey(let apiKey) = result.collection?.requests.first?.auth else {
-            Issue.record("Expected an API key")
-            return
-        }
-
-        #expect(apiKey.name == "X-Key")
-        #expect(apiKey.location == expected)
-        #expect(await Self.stored(apiKey.value, in: store) == "abc")
-        #expect(result.imported.unsupportedAuth[.apiKey] == 1)
-    }
-
-    @Test("An API key with no location goes in a header, Postman's default")
-    func apiKeyDefaultsToHeader() async throws {
-        let result = try await Self.requestAuth(#"{ "type": "apikey", "apikey": [{ "key": "key", "value": "a" }] }"#)
-
-        guard case .apiKey(let apiKey) = result.collection?.requests.first?.auth else {
-            Issue.record("Expected an API key")
-            return
-        }
-
-        #expect(apiKey.location == .header)
-    }
-
-    @Test("AWS maps each field, from a snippet because no licensed fixture has one")
-    func mapsAWS() async throws {
-        let store = InMemorySecretStore()
-        let result = try await Fixture.importingSnippet(
-            items: #"""
-            [{
-                "name": "a",
-                "request": {
-                    "auth": {
-                        "type": "awsv4",
-                        "awsv4": [
-                            { "key": "accessKey", "value": "AK" },
-                            { "key": "secretKey", "value": "SK" },
-                            { "key": "sessionToken", "value": "ST" },
-                            { "key": "region", "value": "eu-west-2" },
-                            { "key": "service", "value": "s3" }
-                        ]
-                    }
-                }
-            }]
-            """#,
-            secretStore: store
-        )
-
-        guard case .awsSigV4(let sigV4) = result.collection?.requests.first?.auth else {
-            Issue.record("Expected AWS auth")
-            return
-        }
-
-        #expect(sigV4.region == "eu-west-2")
-        #expect(sigV4.service == "s3")
-        #expect(await Self.stored(sigV4.accessKeyID, in: store) == "AK")
-        #expect(await Self.stored(sigV4.secretAccessKey, in: store) == "SK")
-        #expect(await Self.stored(sigV4.sessionToken, in: store) == "ST")
-        #expect(result.imported.unsupportedAuth[.awsSigV4] == 1)
     }
 
     @Test("OAuth 1.0 has no Moth kind, so it's No Auth, counted, and its secrets go nowhere")
@@ -280,7 +139,7 @@ struct PostmanAuthMappingTests {
         ]
     )
     func dropsAuthWithNoKind(type: String, kind: PostmanAuthKind) async throws {
-        let result = try await Self.requestAuth(#"""
+        let result = try await Fixture.importingAuth(#"""
         { "type": "\#(type)", "\#(type)": [{ "key": "password", "value": "hidden" }] }
         """#)
 
@@ -306,8 +165,8 @@ struct PostmanAuthMappingTests {
 
         #expect(collectionAuth.username == "{{username}}")
         #expect(folderAuth.username == "{{username}}")
-        #expect(await Self.stored(collectionAuth.password, in: store) == "{{token}}")
-        #expect(await Self.stored(folderAuth.password, in: store) == "{{token}}")
+        #expect(await Fixture.stored(collectionAuth.password, in: store) == "{{token}}")
+        #expect(await Fixture.stored(folderAuth.password, in: store) == "{{token}}")
     }
 
 }
