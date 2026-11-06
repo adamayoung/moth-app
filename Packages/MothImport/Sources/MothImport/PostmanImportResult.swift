@@ -34,7 +34,6 @@ public nonisolated struct PostmanImportedCounts: Sendable, Hashable {
     public internal(set) var folders = 0
     public internal(set) var requests = 0
     public internal(set) var variables = 0
-    /// Stored by kind with its credentials, though Moth can't send it yet.
     public internal(set) var unsupportedAuth: [PostmanAuthKind: Int] = [:]
 
 }
@@ -46,7 +45,6 @@ public nonisolated struct PostmanSkippedCounts: Sendable, Hashable {
     public internal(set) var descriptions = 0
     public internal(set) var bodies = 0
     public internal(set) var exampleResponses = 0
-    /// No Moth kind exists for these, so their credentials were dropped.
     public internal(set) var auth: [PostmanAuthKind: Int] = [:]
 
 }
