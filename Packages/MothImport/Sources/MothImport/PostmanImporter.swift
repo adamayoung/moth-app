@@ -3,10 +3,11 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import Foundation
 import MothCore
 import PostmanKit
 
-public struct PostmanImporter {
+public nonisolated struct PostmanImporter: Sendable {
 
     private let secretStore: any SecretStore
 
@@ -16,6 +17,23 @@ public struct PostmanImporter {
 
     public func canImport(schema: String) -> Bool {
         PostmanSchema(rawValue: schema) != nil
+    }
+
+    public func importFile(
+        _ data: Data,
+        existingCollectionNames _: Set<String>,
+        existingEnvironmentNames _: Set<String>
+    ) async throws -> PostmanImportResult {
+        let collection = try JSONDecoder().decode(PostmanCollection.self, from: data)
+        var mapper = PostmanMapper()
+        let content = PostmanImportContent.collection(mapper.collection(collection))
+
+        return PostmanImportResult(
+            content: content,
+            imported: PostmanImportedCounts(),
+            skipped: mapper.skipped,
+            secrets: []
+        )
     }
 
 }
