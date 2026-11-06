@@ -17,6 +17,8 @@ public nonisolated struct HTTPMethod: RawRepresentable, Sendable, Hashable, Coda
     public static let trace = HTTPMethod(rawValue: "TRACE")
     public static let connect = HTTPMethod(rawValue: "CONNECT")
 
+    public static let standard = [get, post, put, patch, delete, head, options, trace, connect]
+
     public let rawValue: String
 
     public init(rawValue: String) {
