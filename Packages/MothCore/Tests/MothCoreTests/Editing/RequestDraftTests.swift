@@ -72,7 +72,29 @@ struct RequestDraftTests {
         draft.url = "https://example.com?a=b+c&"
 
         #expect(draft.url == "https://example.com?a=b+c&")
-        #expect(draft.queryParameters.map(\.value) == ["b+c"])
+    }
+
+    @Test("A plus in the URL's query is the space a server reads, so a Save sends the same value")
+    func plusReadsAsSpace() {
+        var draft = draft()
+
+        draft.url = "https://example.com?q=hello+world%2Bmore"
+
+        #expect(draft.queryParameters.map(\.value) == ["hello world+more"])
+    }
+
+    @Test("Whitespace around the URL stays out of rows and the template, as sending trims it")
+    func whitespaceAroundTheURL() {
+        var draft = draft()
+
+        draft.url = "  https://example.com/users/:id?k=v \n"
+
+        #expect(draft.queryParameters.map(\.value) == ["v"])
+        #expect(draft.edit.urlTemplate == "https://example.com/users/:id")
+
+        draft.url = "https://example.com/users/:id "
+
+        #expect(draft.pathParameters.map(\.key) == ["id"])
     }
 
     @Test("A query key with no value gives an empty value, and a pair with no key gives no row")
@@ -256,6 +278,62 @@ struct RequestDraftTests {
 
         draft.url = "https://example.com/users"
         #expect(draft.pathParameters.isEmpty)
+    }
+
+    @Test("Renaming a path segment in place keeps its row and value")
+    func renamingPathSegment() {
+        let row = KeyValue(key: "id", value: "42")
+        var draft = RequestDraft(Request(
+            name: "Path",
+            urlTemplate: "https://example.com/users/:id",
+            pathParameters: [row]
+        ))
+
+        draft.url = "https://example.com/users/:i"
+        draft.url = "https://example.com/users/:userId"
+
+        #expect(draft.pathParameters.map(\.key) == ["userId"])
+        #expect(draft.pathParameters.map(\.value) == ["42"])
+        #expect(draft.pathParameters.map(\.id) == [row.id])
+    }
+
+    @Test("Swapping two path segments keeps each value with its name")
+    func swappingPathSegments() {
+        var draft = RequestDraft(Request(
+            name: "Path",
+            urlTemplate: "https://example.com/:a/:b",
+            pathParameters: [KeyValue(key: "a", value: "1"), KeyValue(key: "b", value: "2")]
+        ))
+
+        draft.url = "https://example.com/:b/:a"
+
+        #expect(draft.pathParameters.map(\.key) == ["b", "a"])
+        #expect(draft.pathParameters.map(\.value) == ["2", "1"])
+    }
+
+    @Test("A stored path row whose segment has gone gives its value to no other segment")
+    func strayPathRowIsNotAdopted() {
+        let request = Request(
+            name: "Path",
+            urlTemplate: "https://example.com/:new",
+            pathParameters: [KeyValue(key: "old", value: "42")]
+        )
+
+        #expect(RequestDraft(request).pathParameters.map(\.value) == [""])
+    }
+
+    @Test("Setting a value enables a path row, because the editor has no control that could")
+    func settingPathValueEnablesTheRow() {
+        let row = KeyValue(key: "id", value: "", isEnabled: false)
+        var draft = RequestDraft(Request(
+            name: "Path",
+            urlTemplate: "https://example.com/:id",
+            pathParameters: [row]
+        ))
+
+        draft.setPathValue("42", for: row.id)
+
+        #expect(draft.pathParameters.map(\.isEnabled) == [true])
     }
 
     @Test("A stored path row whose segment has gone does not load")

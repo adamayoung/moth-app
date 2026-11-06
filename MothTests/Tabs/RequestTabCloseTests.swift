@@ -111,6 +111,19 @@ final class RequestTabCloseTests {
         #expect(tabs.drafts.isEdited(request.id))
     }
 
+    @Test("Text typed during Save leaves the tab open, because no tab would be left to show it")
+    func typingDuringSaveLeavesTabOpen() async throws {
+        var tabs: RequestTabsModel?
+        let id = request.id
+        let model = try editedTabs { _, _ in tabs?.drafts.update(id) { $0.url += "/typed" } }
+        tabs = model
+
+        await model.saveAndClose(id)
+
+        #expect(model.openTabs.map(\.id) == [id])
+        #expect(model.drafts.isEdited(id))
+    }
+
     @Test("Don't Save discards the draft and closes the tab")
     func dontSaveDiscards() throws {
         let tabs = try editedTabs()

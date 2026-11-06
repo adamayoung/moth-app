@@ -51,6 +51,11 @@ final class RequestDrafts {
         entries[id]?.isEdited ?? false
     }
 
+    /// A row that can't be read may hold fields this build can't see, and a Save would overwrite them.
+    func canSave(_ id: Request.ID) -> Bool {
+        isEdited(id) && !isUnreadable(id)
+    }
+
     func isUnreadable(_ id: Request.ID) -> Bool {
         unreadable.contains(id)
     }
@@ -86,6 +91,9 @@ final class RequestDrafts {
     /// Returns whether the draft reached the store. Shows the stored form afterwards, so `?flag` reads `?flag=`, unless
     /// the person typed on during the save.
     func save(_ id: Request.ID) async -> Bool {
+        guard !isUnreadable(id) else {
+            return false
+        }
         guard let entry = entries[id], entry.isEdited else {
             return true
         }

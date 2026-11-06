@@ -12,7 +12,7 @@ struct RequestTabCommandContext {
 
     let tabs: RequestTabsModel
     let hasOpenTabs: Bool
-    let editedRequest: Request.ID?
+    let savableRequest: Request.ID?
 
 }
 
@@ -46,25 +46,25 @@ struct RequestTabCommands: Commands {
             Divider()
 
             Button("MENU_SAVE") {
-                withEditedRequest { tabs, id in
+                withSavableRequest { tabs, id in
                     Task { await tabs.drafts.save(id) }
                 }
             }
             .keyboardShortcut("s")
-            .disabled(context?.editedRequest == nil)
+            .disabled(context?.savableRequest == nil)
 
             Button("MENU_REVERT_TO_SAVED") {
-                withEditedRequest { tabs, id in
+                withSavableRequest { tabs, id in
                     tabs.drafts.revert(id)
                 }
             }
-            .disabled(context?.editedRequest == nil)
+            .disabled(context?.savableRequest == nil)
         }
     }
 
     /// The focused value outlives a sheet or panel taking the keyboard, and a draft must not change behind one.
-    private func withEditedRequest(_ action: (RequestTabsModel, Request.ID) -> Void) {
-        if let context, let id = context.editedRequest, NSApp.keyWindow == NSApp.mainWindow {
+    private func withSavableRequest(_ action: (RequestTabsModel, Request.ID) -> Void) {
+        if let context, let id = context.savableRequest, NSApp.keyWindow == NSApp.mainWindow {
             action(context.tabs, id)
         }
     }

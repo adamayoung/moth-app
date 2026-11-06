@@ -107,7 +107,7 @@ struct RequestDraftsTests {
         #expect(await model.save(request.id))
 
         #expect(!model.isEdited(request.id))
-        #expect(model.draft(for: request.id)?.url == "https://example.com/users?a=b%2Bc")
+        #expect(model.draft(for: request.id)?.url == "https://example.com/users?a=b%20c")
     }
 
     @Test("A store delivery after Save leaves nothing edited")
@@ -157,6 +157,20 @@ struct RequestDraftsTests {
 
         #expect(await drafts.save(request.id))
 
+        #expect(saves == 0)
+    }
+
+    @Test("A request that can't be read refuses Save, so a hidden draft can't overwrite what it couldn't show")
+    func unreadableRefusesSave() async {
+        var saves = 0
+        let drafts = loaded { _, _ in saves += 1 }
+        drafts.update(request.id) { $0.method = .post }
+        #expect(drafts.canSave(request.id))
+
+        drafts.savedRequestIsUnreadable(request.id)
+
+        #expect(!drafts.canSave(request.id))
+        #expect(await !drafts.save(request.id))
         #expect(saves == 0)
     }
 

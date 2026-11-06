@@ -45,7 +45,7 @@ struct RequestDetailView: View {
             RequestTabCommandContext(
                 tabs: tabs,
                 hasOpenTabs: !tabs.openTabs.isEmpty,
-                editedRequest: selected.flatMap { tabs.drafts.isEdited($0.id) ? $0.id : nil }
+                savableRequest: selected.flatMap { tabs.drafts.canSave($0.id) ? $0.id : nil }
             )
         )
     }

@@ -272,10 +272,17 @@ composes the field from the rows that are sent, so a disabled row or one with no
 key stays out of it, and a `{{variable}}` stays literal while everything else is
 percent-encoded. Typing in the field keeps the text as typed and parses it back
 into rows by text, because `{{host}}/users` is no URL until it is resolved. The
-enabled rows take the parsed pairs by position, so they keep their identities.
-Path rows come from the URL by the rule sending uses, and a row goes with its
-segment. Save shows the stored form, so `?flag` reads `?flag=`: a `KeyValue` has
-no null value, and that is what `RequestBuilder` sends.
+enabled rows take the parsed pairs by position, so they keep their identities. A
+`+` in the query reads as the space a server reads, because `RequestBuilder` would
+send a row's `+` as `%2B`. Path rows come from the URL by the rule sending uses.
+Typing over a segment keeps its row, and removing the segment removes it. Save
+shows the stored form, so `?flag` reads `?flag=`: a `KeyValue` has no null value,
+and that is what `RequestBuilder` sends.
+
+Rows can't hold everything a template's own query can, and a Save moves that
+query into rows. A whole query in one variable, `?{{query}}`, becomes a key. A
+variable that holds encoded text is encoded again. An escape that isn't UTF-8,
+`%E9`, stays as literal text and goes out as `%25E9`.
 
 `RequestDrafts` holds a saved form and a draft for each request. There is one for
 the app, on `AppDependencies`, because the quit alert has no view in reach. So two
@@ -286,9 +293,9 @@ in memory. Closing a window keeps them, and the alert still counts them.
 every request on each delivery would read every body. A delivery moves the saved
 form under an edited draft and leaves the draft, so a sync never takes what was
 typed, Revert goes to what is stored now, and the last Save wins. A clean draft
-follows the store. A row that can't be decoded shows a message and no editor,
-because [a default would overwrite the value](#rows-and-stored-json) on Save. A
-failed Save keeps the draft and leaves its tab open.
+follows the store. A row that can't be decoded shows a message and no editor, and
+refuses Save, because [a default would overwrite the value](#rows-and-stored-json).
+A failed Save keeps the draft and leaves its tab open.
 
 ### CloudKit Model Rules
 

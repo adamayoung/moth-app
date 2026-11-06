@@ -33,10 +33,11 @@ final class MothAppDelegate: NSObject, NSApplicationDelegate {
         let modalAlert = NSAlert()
         modalAlert.messageText = alert.title
         modalAlert.informativeText = alert.message
-        modalAlert.addButton(withTitle: alert.quitButton)
+        // The first button takes Return, which must not throw away every draft.
         modalAlert.addButton(withTitle: alert.cancelButton)
+        modalAlert.addButton(withTitle: alert.quitButton)
         NSApp.activate()
-        return modalAlert.runModal() == .alertFirstButtonReturn
+        return modalAlert.runModal() == .alertSecondButtonReturn
     }
 
 }

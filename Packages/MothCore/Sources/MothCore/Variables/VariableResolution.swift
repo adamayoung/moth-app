@@ -12,6 +12,10 @@ nonisolated struct VariableResolution {
     private static let expansionBudget = 64 * 1024 * 1024
     private static let expansionCost = 1024
 
+    static var reference: Regex<(Substring, Substring)> {
+        /\{\{([^{}]*)\}\}/
+    }
+
     private let scopes: [[Variable]]
     private let secretStore: any SecretStore
     private let dynamicVariables: DynamicVariables
@@ -57,7 +61,7 @@ nonisolated struct VariableResolution {
             return []
         }
 
-        return text.matches(of: /\{\{([^{}]*)\}\}/)
+        return text.matches(of: Self.reference)
     }
 
     private mutating func expand(_ template: String, chain: [String]) async throws -> String {

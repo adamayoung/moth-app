@@ -64,9 +64,9 @@ final class RequestTabsModel {
         }
     }
 
-    /// A failed save leaves the tab open, because closing it would lose the only copy of the edits.
+    /// Leaves the tab open if the save failed or text was typed meanwhile, because the tab shows the only copy of it.
     func saveAndClose(_ id: Request.ID) async {
-        if await drafts.save(id) {
+        if await drafts.save(id), !drafts.isEdited(id) {
             close(id)
         }
     }

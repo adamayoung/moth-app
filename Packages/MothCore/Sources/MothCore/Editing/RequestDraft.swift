@@ -48,9 +48,11 @@ public nonisolated struct RequestDraft: Sendable {
             && headers.hasSameContent(as: other.headers)
     }
 
+    /// Enables the row, because the editor shows no control for it and a disabled row is not sent.
     public mutating func setPathValue(_ value: String, for id: KeyValue.ID) {
         if let index = pathParameters.firstIndex(where: { $0.id == id }) {
             pathParameters[index].value = value
+            pathParameters[index].isEnabled = true
         }
     }
 
@@ -61,7 +63,7 @@ public nonisolated struct RequestDraft: Sendable {
             let text = URLTemplateText(newValue)
             composedURL = newValue
             queryRows = Self.filling(queryRows, from: text.queryPairs)
-            pathParameters = Self.pathRows(in: text, keeping: pathParameters)
+            pathParameters = Self.pathRows(in: text, renaming: pathParameters)
         }
     }
 
@@ -98,6 +100,21 @@ public nonisolated struct RequestDraft: Sendable {
     private static func pathRows(in text: URLTemplateText, keeping rows: [KeyValue]) -> [KeyValue] {
         text.pathVariableNames.map { name in
             rows.first { $0.key == name } ?? KeyValue(key: name, value: "")
+        }
+    }
+
+    /// A row whose segment has gone takes a new one, so typing over `:id` keeps its value: sending leaves a segment
+    /// with no value as written, and the literal `:id` would go out with no error.
+    private static func pathRows(in text: URLTemplateText, renaming rows: [KeyValue]) -> [KeyValue] {
+        let names = text.pathVariableNames
+        var unclaimed = rows.filter { !names.contains($0.key) }[...]
+        return names.map { name in
+            if let row = rows.first(where: { $0.key == name }) {
+                return row
+            }
+            var row = unclaimed.popFirst() ?? KeyValue(key: name, value: "")
+            row.key = name
+            return row
         }
     }
 

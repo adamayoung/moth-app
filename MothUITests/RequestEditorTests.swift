@@ -234,7 +234,7 @@ final class RequestEditorTests: MothTestCase {
     }
 
     @MainActor
-    func testQuittingWithEditsAsksAndCancelKeepsMothOpen() {
+    func testQuittingWithEditsAsksAndReturnKeepsMothOpen() {
         let (screen, editor) = screenWithEditedListUsers()
         screen.select("Create User")
         XCTAssertTrue(screen.requestTab("POST Create User").waitForExistence(timeout: 10))
@@ -249,7 +249,8 @@ final class RequestEditorTests: MothTestCase {
         XCTAssertTrue(alert.staticTexts["Quit with unsaved changes?"].exists)
         XCTAssertTrue(alert.staticTexts["Your unsaved edits to 2 requests will be lost."].exists)
         XCTAssertTrue(alert.buttons["Quit Anyway"].exists)
-        alert.buttons["Cancel"].click()
+        XCTAssertTrue(alert.buttons["Cancel"].exists)
+        app.typeKey(.return, modifierFlags: [])
 
         XCTAssertTrue(screen.editedDot(on: "Create User").waitForExistence(timeout: 10))
         XCTAssertEqual(app.state, .runningForeground)

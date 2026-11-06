@@ -13,7 +13,8 @@ nonisolated struct URLTemplateText {
     let fragment: String?
 
     init(_ text: String) {
-        let aroundFragment = text.splitOutsideVariables(on: "#", maxSplits: 1)
+        let aroundFragment = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .splitOutsideVariables(on: "#", maxSplits: 1)
         let aroundQuery = aroundFragment[0].splitOutsideVariables(on: "?", maxSplits: 1)
         self.address = String(aroundQuery[0])
         self.query = aroundQuery.count > 1 ? String(aroundQuery[1]) : nil
@@ -29,7 +30,7 @@ nonisolated struct URLTemplateText {
             guard !pair[0].isEmpty else {
                 return nil
             }
-            return (pair[0].decodedOutsideVariables, pair.count > 1 ? pair[1].decodedOutsideVariables : "")
+            return (pair[0].decodedQueryText, pair.count > 1 ? pair[1].decodedQueryText : "")
         }
     }
 
@@ -63,9 +64,8 @@ nonisolated struct URLTemplateText {
 
 private nonisolated extension StringProtocol where SubSequence == Substring {
 
-    /// `mapOutsideVariables` spares the same text that `VariableResolution` reads as a reference.
     private var variableRanges: [Range<Index>] {
-        ranges(of: /\{\{[^{}]*\}\}/)
+        ranges(of: VariableResolution.reference)
     }
 
     func splitOutsideVariables(on separator: Character, maxSplits: Int = .max) -> [Substring] {
@@ -92,8 +92,11 @@ private nonisolated extension StringProtocol where SubSequence == Substring {
         return result + transform(self[start...])
     }
 
-    var decodedOutsideVariables: String {
-        mapOutsideVariables { $0.removingPercentEncoding ?? String($0) }
+    /// A `+` is a space to a server, and `RequestBuilder` would send a row's `+` as `%2B`.
+    var decodedQueryText: String {
+        mapOutsideVariables { text in
+            text.replacing("+", with: " ").removingPercentEncoding ?? String(text)
+        }
     }
 
     var urlDisplayEncoded: String {
