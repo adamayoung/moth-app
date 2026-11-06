@@ -69,7 +69,7 @@ public final class StoreWriter {
         }
     }
 
-    private static func implicitWorkspace(in context: ModelContext) throws -> WorkspaceModel {
+    static func implicitWorkspace(in context: ModelContext) throws -> WorkspaceModel {
         if let workspace = try context.fetch(FetchDescriptor<WorkspaceModel>()).min(by: { $0.id < $1.id }) {
             return workspace
         }
