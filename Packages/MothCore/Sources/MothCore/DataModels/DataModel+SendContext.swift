@@ -20,10 +20,8 @@ public extension DataModel {
         guard let row = try mainContext.fetch(RequestModel.withID(id)).first else {
             throw RequestSendError.requestNotFound
         }
-        var request = try row.asDomain()
-        request.variables = try mainContext.fetch(VariableModel.ofRequest(id)).asVariables
         return try SendContext(
-            request: request,
+            request: row.asDomain(),
             scopes: VariableScopes(
                 collection: variables(in: tree.collectionID(of: .request(id)).map(VariableScope.collection)),
                 environment: variables(in: environment.map(VariableScope.environment)),

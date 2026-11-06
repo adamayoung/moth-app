@@ -89,23 +89,6 @@ struct SendContextTests {
         #expect(RequestSendError.requestNotFound.errorDescription == "This request no longer exists.")
     }
 
-    @Test("A variable another context added to the request is read fresh")
-    func freshRequestVariables() throws {
-        let (dataModel, tree) = try tree()
-        let row = try #require(dataModel.mainContext.fetch(RequestModel.withID(request.id)).first)
-        #expect(row.variables?.isEmpty == true)
-        let writing = ModelContext(dataModel.container)
-        let stored = try #require(writing.fetch(RequestModel.withID(request.id)).first)
-        let variable = VariableModel(.plain("id", "42"), sortOrder: 0)
-        writing.insert(variable)
-        variable.request = stored
-        try writing.save()
-
-        let context = try dataModel.sendContext(for: request.id, in: tree, environment: nil)
-
-        #expect(context.request.variables.map(\.name) == ["id"])
-    }
-
     @Test("Each scope comes from its own rows, in order")
     func scopes() throws {
         let request = Request(name: "List")
