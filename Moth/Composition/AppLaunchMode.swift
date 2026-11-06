@@ -10,6 +10,7 @@ enum AppLaunchMode: Equatable {
     case uiTesting
     case uiTestingWithICloudSync
     case uiTestingStoreFailure
+    case uiTestingRestoringTabs
     case demo
     case testHost
 
@@ -17,7 +18,7 @@ enum AppLaunchMode: Equatable {
     var showsStoreFailureAlert: Bool {
         switch self {
         case .live, .uiTestingStoreFailure: true
-        case .uiTesting, .uiTestingWithICloudSync, .demo, .testHost: false
+        case .uiTesting, .uiTestingWithICloudSync, .uiTestingRestoringTabs, .demo, .testHost: false
         }
     }
 
@@ -57,6 +58,7 @@ enum AppLaunchMode: Equatable {
     ) throws(LaunchConfigurationError) -> AppLaunchMode? {
         let simulatesStoreFailure = try selects("-UITestStoreFailure", in: arguments)
         let simulatesICloudSync = try selects("-UITestICloudSync", in: arguments)
+        let restoresTabs = try selects("-UITestRestoresTabs", in: arguments)
 
         guard isUITesting else {
             if simulatesStoreFailure {
@@ -65,14 +67,20 @@ enum AppLaunchMode: Equatable {
             if simulatesICloudSync {
                 throw .needsUITesting(flag: "-UITestICloudSync")
             }
+            if restoresTabs {
+                throw .needsUITesting(flag: "-UITestRestoresTabs")
+            }
             return nil
         }
 
-        if simulatesStoreFailure, simulatesICloudSync {
+        if [simulatesStoreFailure, simulatesICloudSync, restoresTabs].count(where: \.self) > 1 {
             throw .conflictingUITestPairs
         }
         if simulatesStoreFailure {
             return .uiTestingStoreFailure
+        }
+        if restoresTabs {
+            return .uiTestingRestoringTabs
         }
         return simulatesICloudSync ? .uiTestingWithICloudSync : .uiTesting
     }

@@ -15,7 +15,7 @@ struct DependencyProviderTests {
     private struct OpenFailure: Error {}
 
     private nonisolated static let seededModes: [AppLaunchMode] = [
-        .uiTesting, .uiTestingWithICloudSync, .demo, .testHost
+        .uiTesting, .uiTestingWithICloudSync, .uiTestingRestoringTabs, .demo, .testHost
     ]
     private nonisolated static let allModes: [AppLaunchMode] = [.live] + seededModes
 
@@ -64,6 +64,14 @@ struct DependencyProviderTests {
     @Test("A seeded graph does not sync", arguments: [AppLaunchMode.uiTesting, .demo, .testHost])
     func seededGraphDoesNotSync(mode: AppLaunchMode) throws {
         #expect(try !dependencies(for: mode).isSyncedToICloud)
+    }
+
+    @Test("A seeded graph never touches the live tab state", arguments: seededModes)
+    func seededGraphKeepsItsOwnTabKey(mode: AppLaunchMode) throws {
+        let live = try dependencies(for: .live).requestTabStore
+        let seeded = try dependencies(for: mode).requestTabStore
+
+        #expect(seeded.key != live.key)
     }
 
     @Test("The UI test launch with iCloud sync reports it as on")

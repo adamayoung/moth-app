@@ -19,11 +19,13 @@ missing from the catalog, so a hardcoded string fails the assertion on its copy.
 Demo mode uses the same seeded graph. `-DemoMode 1` or a stored `DemoMode`
 default selects it.
 
-Two more pairs reach states a seeded launch cannot otherwise show, and each stops
-the launch without `-UITesting 1`. `-UITestICloudSync 1` reports iCloud sync as on.
-`-UITestStoreFailure 1` takes the path of a store that will not open, so the
-alert appears and no window does. A test class passes one by overriding
-`additionalLaunchArguments` on `MothTestCase`.
+Three more pairs reach states a seeded launch cannot otherwise show. Each stops
+the launch without `-UITesting 1`, and a launch takes one of them. `-UITestICloudSync 1`
+reports iCloud sync as on. `-UITestStoreFailure 1` takes the path of a store that
+will not open, so the alert appears and no window does. `-UITestRestoresTabs 1`
+keeps the tabs the last seeded launch saved, and every other seeded launch starts
+with none. A test class passes one by overriding `additionalLaunchArguments` on
+`MothTestCase`, or adds it to `app.launchArguments` before a relaunch.
 
 `SeedData.workspace` holds one collection, "Seeded Collection", and two
 environments: "Seeded Environment", which is the active one and holds `host`, and

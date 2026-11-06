@@ -25,7 +25,8 @@ enum LaunchConfigurationError: Error, Equatable {
         case .needsUITesting(let flag):
             "\(flag) needs -UITesting 1."
         case .conflictingUITestPairs:
-            "A UI test launch simulates one state. Pass -UITestICloudSync 1 or -UITestStoreFailure 1, not both."
+            "A UI test launch simulates one state. "
+                + "Pass only one of -UITestICloudSync 1, -UITestStoreFailure 1 and -UITestRestoresTabs 1."
         case .invalidEnvironment(let key, let value):
             "\(key) doesn’t accept “\(value)”. Set \(key)=1 or unset it."
         case .invalidDefault(let key, let value):

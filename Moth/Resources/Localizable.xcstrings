@@ -67,6 +67,39 @@
         }
       }
     },
+    "MENU_CLOSE" : {
+      "comment" : "File menu command that closes the window, shown in place of Close Tab when no tab is open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "MENU_CLOSE_TAB" : {
+      "comment" : "File menu command that closes the selected request tab.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Tab"
+          }
+        }
+      }
+    },
+    "MENU_CLOSE_WINDOW" : {
+      "comment" : "File menu command that closes the window, whatever tabs are open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Window"
+          }
+        }
+      }
+    },
     "MENU_NEW_COLLECTION" : {
       "comment" : "File menu command that adds a collection.",
       "localizations" : {
@@ -450,6 +483,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moth can’t open your data."
+          }
+        }
+      }
+    },
+    "TAB_CLOSE_LABEL_%@" : {
+      "comment" : "VoiceOver label and tooltip of a tab's close button. The argument is the request's name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close %@"
           }
         }
       }

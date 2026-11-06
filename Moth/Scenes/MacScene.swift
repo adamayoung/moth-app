@@ -15,6 +15,7 @@ struct MacScene: Scene {
                 dataModel: dependencies.dataModel,
                 secretStore: dependencies.secretStore,
                 activeEnvironment: dependencies.activeEnvironment,
+                tabStore: dependencies.requestTabStore,
                 isSyncedToICloud: dependencies.isSyncedToICloud
             )
         }
@@ -22,6 +23,7 @@ struct MacScene: Scene {
         .windowResizability(.contentMinSize)
         .commands {
             SidebarCommands()
+            RequestTabCommands()
         }
     }
 
