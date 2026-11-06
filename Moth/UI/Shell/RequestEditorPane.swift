@@ -55,7 +55,7 @@ struct RequestEditorPane: View {
 }
 
 #Preview("No Request") {
-    let drafts = RequestDrafts(save: { _, _ in })
+    let drafts = RequestDrafts.preview
 
     return RequestEditorPane(tab: nil, drafts: drafts, edit: drafts.update)
         .frame(width: 600, height: 300)
@@ -71,7 +71,7 @@ struct RequestEditorPane: View {
         ],
         pathParameters: [KeyValue(key: "id", value: "42")]
     )
-    let drafts = RequestDrafts(save: { _, _ in })
+    let drafts = RequestDrafts.preview
     drafts.savedRequestDidChange(request)
 
     return RequestEditorPane(
@@ -84,7 +84,7 @@ struct RequestEditorPane: View {
 
 #Preview("Unreadable Request") {
     let tab = RequestTab(id: UUID(), name: "List Users", method: .get)
-    let drafts = RequestDrafts(save: { _, _ in })
+    let drafts = RequestDrafts.preview
     drafts.savedRequestIsUnreadable(tab.id)
 
     return RequestEditorPane(tab: tab, drafts: drafts, edit: drafts.update)

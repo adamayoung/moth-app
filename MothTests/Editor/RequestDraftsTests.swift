@@ -16,8 +16,8 @@ struct RequestDraftsTests {
 
     private let request = Request(name: "List Users", urlTemplate: "https://example.com/users")
 
-    private func loaded(saving save: @escaping RequestDrafts.Save = { _, _ in }) -> RequestDrafts {
-        let drafts = RequestDrafts(save: save)
+    private func loaded(saving save: @escaping RecordedSave = { _, _ in }) -> RequestDrafts {
+        let drafts = RequestDrafts(recording: save)
         drafts.savedRequestDidChange(request)
         return drafts
     }
@@ -38,7 +38,7 @@ struct RequestDraftsTests {
 
     @Test("A request with no draft is not edited")
     func noDraftIsNotEdited() {
-        #expect(!RequestDrafts(save: { _, _ in }).isEdited(request.id))
+        #expect(!RequestDrafts.preview.isEdited(request.id))
     }
 
     @Test("A change marks the request edited, and undoing it clears that")
@@ -217,7 +217,7 @@ struct RequestDraftsTests {
 
     @Test("A request that can't be read shows as unreadable until a delivery can be")
     func unreadable() {
-        let drafts = RequestDrafts(save: { _, _ in })
+        let drafts = RequestDrafts.preview
 
         drafts.savedRequestIsUnreadable(request.id)
         #expect(drafts.isUnreadable(request.id))
@@ -232,7 +232,7 @@ struct RequestDraftsTests {
         let dataModel = try DataModel.inMemory(seed: Workspace(collections: [
             RequestCollection(name: "API", children: [CollectionItem(sortOrder: 0, node: .request(request))])
         ]))
-        let drafts = RequestDrafts(writer: dataModel.writer)
+        let drafts = RequestDrafts(writer: dataModel.writer, secretStore: InMemorySecretStore())
         drafts.savedRequestDidChange(request)
         drafts.update(request.id) { $0.method = .post }
         try await dataModel.writer.rename(.request(request.id), to: "Renamed")

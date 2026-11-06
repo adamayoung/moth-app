@@ -36,7 +36,7 @@ final class LiveAppDependencies: AppDependencies {
         self.isSyncedToICloud = syncedContainer != nil
         self.secretStore = Self.makeSecretStore(signature: signature)
         self.dataModel = dataModel
-        self.requestDrafts = RequestDrafts(writer: dataModel.writer)
+        self.requestDrafts = RequestDrafts(writer: dataModel.writer, secretStore: secretStore)
         self.launchReconcile = Self.reconcileAtLaunch(dataModel.writer)
     }
 
