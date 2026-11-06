@@ -187,8 +187,8 @@ default would hide the value and the next save would overwrite it.
 ### The Implicit Workspace
 
 There is one workspace, with no switcher. No launch creates it: the first
-collection or environment does, so a fresh install on two Macs seeds nothing to
-duplicate.
+collection, environment or global does, so a fresh install on two Macs seeds
+nothing to duplicate.
 
 Two Macs can still each create one. `StoreWriter` reconciles after every write
 batch, in that batch's save, and `LiveAppDependencies` reconciles at launch. The
@@ -201,6 +201,29 @@ other Macs, where a cascade would delete a child that has not synced yet. A
 nullified child is an orphan, and reconcile adopts it. `VariableModel.isGlobal`
 tells an orphaned global from a variable whose owner has not been imported yet,
 which reconcile leaves alone.
+
+### The Active Environment
+
+The active environment belongs to the Mac, not the workspace, so two Macs can
+point at different environments. `ActiveEnvironment` keeps it in `UserDefaults`,
+and a seeded launch keeps it in memory, because a seeded launch shares the real
+app's defaults. `Workspace.activeEnvironmentID` stays in `SchemaV1`, which is
+frozen, and the picker does not read it. A seeded launch takes its first value
+from there.
+
+It clears when its environment leaves the list, which covers a delete from
+another Mac. A launch's first list can't clear it, because that row may not have
+synced yet. Until the row arrives, the picker shows No Environment.
+
+### Editing Variables
+
+An environment, Globals and a collection share one sheet. Requests are saved
+explicitly, but a sheet has no tab to show an edited state, so a variable saves
+as each field commits: on Return, when focus leaves the field, on a toggle, and
+when the sheet closes. `VariableTableModel` holds value drafts, and a delivery
+from `@Query` replaces a draft only if it has not run ahead of the store. So a
+sync can't take text from under someone typing, and the commit that follows
+overwrites what arrived.
 
 ### CloudKit Model Rules
 
@@ -303,6 +326,18 @@ sets these conditions:
 
 A reference can sync before its secret does, or the user may have iCloud
 Keychain turned off. A missing secret is a normal state the UI must handle.
+
+A secret variable has one value. Turning on Secret saves the current value, or
+the initial value if current is empty, to the Keychain, and only then writes the
+reference, because a reference with no value loses it and a stray item is
+harmless. Turning it off writes the value to both columns before removing the
+item. A variable whose secret has not reached this Mac shows "Not available on
+this Mac yet", and its Secret toggle is disabled, because turning it off would
+have no value to keep. A read that fails shows the same message and is logged.
+The sheet reads again after each delivery from the store and each time it opens.
+
+Removing a variable, or deleting its environment, removes the Keychain item
+unless another variable holds that reference.
 
 ### Which Store a Build Uses
 

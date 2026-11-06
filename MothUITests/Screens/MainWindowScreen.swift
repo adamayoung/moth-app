@@ -42,6 +42,10 @@ struct MainWindowScreen {
         app.sheets.firstMatch
     }
 
+    var environmentPicker: XCUIElement {
+        toolbar.popUpButtons["environmentPicker"]
+    }
+
     var iCloudSyncOffFooter: XCUIElement {
         region("iCloudSyncOffFooter")
     }
@@ -134,6 +138,19 @@ struct MainWindowScreen {
             object: sidebarText(name)
         )
         return XCTWaiter.wait(for: [gone], timeout: 10) == .completed
+    }
+
+    func chooseEnvironment(_ name: String) {
+        environmentPicker.click()
+        environmentPicker.menuItems[name].click()
+    }
+
+    func waitForActiveEnvironment(_ name: String) -> Bool {
+        let selected = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", name),
+            object: environmentPicker
+        )
+        return XCTWaiter.wait(for: [selected], timeout: 10) == .completed
     }
 
     func requestEditorText(_ text: String) -> XCUIElement {

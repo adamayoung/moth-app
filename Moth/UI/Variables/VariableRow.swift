@@ -77,6 +77,7 @@ struct VariableRow: View {
     ) -> some View {
         TextField(label, text: text(property))
             .labelsHidden()
+            .frame(maxWidth: .infinity)
             .focused(focus, equals: field)
             .onSubmit(commit)
     }

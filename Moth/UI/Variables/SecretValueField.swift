@@ -38,6 +38,7 @@ struct SecretValueField: View {
                 }
                 .accessibilityIdentifier("variables.secretVisibility")
             }
+            .frame(maxWidth: .infinity)
         }
     }
 

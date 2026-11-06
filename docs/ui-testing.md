@@ -25,11 +25,13 @@ the launch without `-UITesting 1`. `-UITestICloudSync 1` reports iCloud sync as 
 alert appears and no window does. A test class passes one by overriding
 `additionalLaunchArguments` on `MothTestCase`.
 
-`SeedData.workspace` holds one collection, "Seeded Collection", and one
-environment, "Seeded Environment", which is the active one. The collection holds
-a folder, "Users", then a request, "Health". "Users" holds three requests and a
-folder, "Admins", which holds one, so a delete alert can count four or one. Its
-identifiers are fixed. UI-test and demo launches load it, and the test host's
+`SeedData.workspace` holds one collection, "Seeded Collection", and two
+environments: "Seeded Environment", which is the active one and holds `host`, and
+"Staging", which holds six variables, so a delete alert can count one or six. The
+collection holds a variable, `apiVersion`, a folder, "Users", then a request,
+"Health". "Users" holds three requests and a folder, "Admins", which holds one, so
+a delete alert can count four or one. There are no globals. Its identifiers are
+fixed. UI-test and demo launches load it, and the test host's
 store stays empty. A launch starts with every row collapsed.
 
 The UI test bundle cannot import the app target, so a value it shares with the

@@ -34,6 +34,7 @@ struct VariableSheet: View {
                     }
                 }
                 .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             HStack {
@@ -49,6 +50,7 @@ struct VariableSheet: View {
         }
         .padding()
         .frame(minWidth: 780, minHeight: 360)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("variablesSheet")
         .background {
             VariablesObserver(table: table)

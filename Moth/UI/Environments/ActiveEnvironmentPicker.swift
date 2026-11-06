@@ -21,6 +21,7 @@ struct ActiveEnvironmentPicker: View {
             }
         }
         .pickerStyle(.menu)
+        .accessibilityLabel("ENVIRONMENT_PICKER_LABEL")
         .accessibilityIdentifier("environmentPicker")
     }
 
