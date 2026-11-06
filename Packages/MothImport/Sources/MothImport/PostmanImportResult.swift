@@ -10,7 +10,6 @@ public nonisolated struct PostmanImportResult: Sendable, Hashable {
     public let content: PostmanImportContent
     public let imported: PostmanImportedCounts
     public let skipped: PostmanSkippedCounts
-    /// What the import saved, so a caller whose store write fails can remove these.
     public let secrets: [SecretReference]
 
     public var name: String {

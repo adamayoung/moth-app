@@ -156,9 +156,9 @@ header name, so repeated names go out comma-joined, and repeated cookies joined 
 returns domain values with counts of what it imported and skipped. It writes
 nothing to the store itself. Secrets are saved once mapping finishes, and a failed
 save removes those already saved. `importFile(_:…:into:)` then hands the content to
-the store it is given, and removes `PostmanImportResult.secrets` if that throws, so
-a failed import leaves no stray items. A caller of the form with no store does this
-itself.
+the store it is given, and removes the import's secrets if that throws. A removal
+that fails, or a quit between the two steps, leaves a stray Keychain item, which is
+harmless.
 
 File > Import… belongs to `ImportModel`, one per window. It reads the chosen file
 inside its security scope, because the sandbox grants user-selected files read-only
@@ -166,7 +166,8 @@ and only within that scope. `StoreWriter.create(_:)` writes a whole collection o
 environment in one `write` batch, so a failed save leaves nothing of it. Reading,
 mapping and saving secrets all run off the main actor, and the store write runs on
 `StoreActor`. "Importing…" is a sidebar footer, not a sheet, so the window stays
-usable. Closing a window during an import still finishes the write.
+usable. A result that lands behind another sheet waits for it to close. Closing a
+window during an import still finishes the write, and that window's result is lost.
 
 `PostmanImportResult.importedSummary` and `skippedSummary` hold the result sheet's
 text, in `MothImport`'s catalog. The skipped list follows the catalog's language

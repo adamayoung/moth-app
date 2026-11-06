@@ -20,7 +20,7 @@ public nonisolated struct PostmanImporter: Sendable {
     }
 
     @concurrent
-    public func importFile(
+    func importFile(
         _ data: Data,
         existingCollectionNames: Set<String>,
         existingEnvironmentNames: Set<String>
@@ -96,11 +96,20 @@ private nonisolated enum PostmanFile {
         if let collection = try? decoder.decode(PostmanCollection.self, from: data) {
             self = .collection(collection)
         } else if let environment = try? decoder.decode(PostmanEnvironment.self, from: data),
-                  environment.scope ?? "environment" == "environment" {
+                  environment.isEnvironmentFile {
             self = .environment(environment)
         } else {
             throw PostmanImportError.unrecognisedFile
         }
+    }
+
+}
+
+private nonisolated extension PostmanEnvironment {
+
+    /// Only `values` is required on the wire, so a name or a scope is what tells this from any other JSON.
+    var isEnvironmentFile: Bool {
+        (name != nil || scope != nil) && (scope ?? "environment") == "environment"
     }
 
 }

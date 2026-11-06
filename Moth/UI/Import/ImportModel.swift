@@ -37,10 +37,17 @@ final class ImportModel {
     }
 
     var canImport: Bool {
-        !isImporting && !isChoosingFile && report == nil
+        !isImporting && !isChoosingFile && report == nil && !isAnotherPresentationUp
+    }
+
+    private var isAnotherPresentationUp: Bool {
+        sidebar.presentedVariables != nil || sidebar.pendingDeletion != nil || environments.pendingDeletion != nil
     }
 
     func chooseFile() async {
+        guard canImport else {
+            return
+        }
         switch source {
         case .panel: isChoosingFile = true
         case .uiTest(let data): await importData(data)

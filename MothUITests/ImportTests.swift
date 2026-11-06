@@ -94,7 +94,7 @@ final class ImportTests: MothTestCase {
         result.doneButton.click()
 
         XCTAssertTrue(result.waitForDismissal())
-        XCTAssertFalse(window.sidebarText("proper-description-parsing").exists)
+        XCTAssertFalse(window.sidebarText("proper-description-parsing").waitForExistence(timeout: 2))
     }
 
 }

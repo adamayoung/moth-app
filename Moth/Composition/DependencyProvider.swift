@@ -11,7 +11,6 @@ struct DependencyProvider {
 
     private struct SimulatedStoreFailure: Error {}
 
-    /// Holds the file's text, not its path, because the sandboxed app can't read a path on the UI test runner's disk.
     static let uiTestImportFileKey = "MOTH_UI_TEST_IMPORT_FILE"
 
     /// `App.main()` calls a parameterless `init()`, so the launcher and the `App` can only share one graph here.

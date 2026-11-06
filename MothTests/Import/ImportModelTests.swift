@@ -203,6 +203,39 @@ struct ImportModelTests {
         #expect(model.canImport)
     }
 
+    @Test("Import is unavailable while another sheet or alert is up")
+    func otherPresentationsBlockImport() {
+        let model = makeModel()
+
+        sidebar.presentedVariables = VariableSheetTarget(scope: .globals, title: "Globals")
+        #expect(!model.canImport)
+        sidebar.presentedVariables = nil
+
+        sidebar.pendingDeletion = PendingDeletion(id: .collection(UUID()), name: "API", requestsToMention: nil)
+        #expect(!model.canImport)
+        sidebar.pendingDeletion = nil
+
+        environments.pendingDeletion = EnvironmentSummary(id: UUID(), name: "Staging", variableCount: 0)
+        #expect(!model.canImport)
+        environments.pendingDeletion = nil
+
+        #expect(model.canImport)
+    }
+
+    @Test("Choosing a file does nothing during an import, as the menu's state can lag the model", .timeLimit(.minutes(1)))
+    func chooseFileIsRefusedDuringAnImport() async {
+        let secretStore = ThreadHoldingSecretStore()
+        let model = makeModel(secretStore: secretStore)
+
+        let importing = Task { await model.importData(Self.collection) }
+        await secretStore.waitUntilHolding()
+        await model.chooseFile()
+        secretStore.letGo()
+        await importing.value
+
+        #expect(!model.isChoosingFile)
+    }
+
     @Test("A long import runs off the main actor, and shows Importing\u{2026} until it ends", .timeLimit(.minutes(1)))
     func longImportLeavesTheMainActorFree() async {
         let secretStore = ThreadHoldingSecretStore()
