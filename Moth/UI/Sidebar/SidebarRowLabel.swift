@@ -6,12 +6,12 @@
 import MothCore
 import SwiftUI
 
-struct SidebarRowLabel: View {
+struct SidebarRowLabel<Menu: View>: View {
 
     let node: TreeNode
-    let model: SidebarModel
+    @Bindable var model: SidebarModel
+    @ViewBuilder let menu: () -> Menu
 
-    @State private var draft = ""
     @FocusState private var isFieldFocused: Bool
 
     var body: some View {
@@ -19,6 +19,10 @@ struct SidebarRowLabel: View {
             renameField
         } else {
             title
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .contextMenu { menu() }
+                .draggable(SidebarDragItem(id: node.id))
         }
     }
 
@@ -46,14 +50,12 @@ struct SidebarRowLabel: View {
         }
     }
 
+    /// Takes focus from `.task`, because `onAppear` runs before the row is in its window and the request is lost.
     private var renameField: some View {
-        TextField("SIDEBAR_RENAME_FIELD_LABEL", text: $draft)
+        TextField("SIDEBAR_RENAME_FIELD_LABEL", text: $model.renameDraft)
             .labelsHidden()
             .focused($isFieldFocused)
             .accessibilityIdentifier("sidebar.renameField")
-            .onAppear {
-                draft = node.name
-            }
             .task {
                 isFieldFocused = true
             }
@@ -67,7 +69,7 @@ struct SidebarRowLabel: View {
     }
 
     private func commit() {
-        Task { await model.commitRename(of: node.id, to: draft) }
+        Task { await model.commitRename(of: node.id) }
     }
 
 }

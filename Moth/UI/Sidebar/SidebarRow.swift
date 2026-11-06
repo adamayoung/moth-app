@@ -22,19 +22,19 @@ struct SidebarRow: View {
                     drop(items, into: .container(container), atOffset: offset)
                 }
             } label: {
-                SidebarRowLabel(node: node, model: model)
-                    .contextMenu { containerMenu(for: container) }
-                    .draggable(SidebarDragItem(id: node.id))
-                    .dropDestination(for: SidebarDragItem.self, isEnabled: true) { items, _ in
-                        drop(items, into: .container(container), atOffset: node.children.count)
-                    }
+                SidebarRowLabel(node: node, model: model) {
+                    containerMenu(for: container)
+                }
+                .dropDestination(for: SidebarDragItem.self, isEnabled: true) { items, _ in
+                    drop(items, into: .container(container), atOffset: node.children.count)
+                }
             }
             .tag(node.id)
         } else {
-            SidebarRowLabel(node: node, model: model)
-                .contextMenu { itemMenu }
-                .draggable(SidebarDragItem(id: node.id))
-                .tag(node.id)
+            SidebarRowLabel(node: node, model: model) {
+                itemMenu
+            }
+            .tag(node.id)
         }
     }
 
@@ -65,7 +65,7 @@ struct SidebarRow: View {
     @ViewBuilder
     private var itemMenu: some View {
         Button("SIDEBAR_RENAME") {
-            model.beginRename(of: node.id)
+            Task { await model.beginRename(of: node.id) }
         }
         Button("SIDEBAR_DELETE", role: .destructive) {
             model.requestDeletion(of: node)

@@ -15,6 +15,7 @@ final class SidebarModel {
     var selection: TreeNodeID?
     var expanded: Set<TreeNodeID> = []
     var pendingDeletion: PendingDeletion?
+    var renameDraft = ""
     private(set) var renaming: TreeNodeID?
     private(set) var tree = CollectionTree.empty
 
@@ -45,38 +46,43 @@ final class SidebarModel {
     }
 
     func newCollection() async {
+        await commitActiveRename()
         let collection = RequestCollection(name: String(localized: "DEFAULT_COLLECTION_NAME"))
         if await perform({ [writer] in try await writer.createCollection(collection) }) {
-            reveal(.collection(collection.id), in: nil)
+            reveal(.collection(collection.id), named: collection.name, in: nil)
         }
     }
 
     func newFolder(in container: TreeContainerID) async {
+        await commitActiveRename()
         let folder = Folder(name: String(localized: "DEFAULT_FOLDER_NAME"))
         if await perform({ [writer] in try await writer.createFolder(folder, in: container) }) {
-            reveal(.folder(folder.id), in: container)
+            reveal(.folder(folder.id), named: folder.name, in: container)
         }
     }
 
     func newRequest(in container: TreeContainerID) async {
+        await commitActiveRename()
         let request = Request(name: String(localized: "DEFAULT_REQUEST_NAME"))
         if await perform({ [writer] in try await writer.createRequest(request, in: container) }) {
-            reveal(.request(request.id), in: container)
+            reveal(.request(request.id), named: request.name, in: container)
         }
     }
 
-    func beginRename(of id: TreeNodeID) {
+    func beginRename(of id: TreeNodeID) async {
+        await commitActiveRename()
         renaming = id
+        renameDraft = tree.node(id)?.name ?? ""
     }
 
     /// Both Return and the field losing focus arrive here, so only the first of them ends the edit.
-    func commitRename(of id: TreeNodeID, to draft: String) async {
+    func commitRename(of id: TreeNodeID) async {
         guard renaming == id else {
             return
         }
         renaming = nil
 
-        let name = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else {
             return
         }
@@ -122,13 +128,21 @@ final class SidebarModel {
         }
     }
 
-    private func reveal(_ id: TreeNodeID, in container: TreeContainerID?) {
+    /// A menu click leaves the field focused, so nothing else commits an edit that a new one is about to replace.
+    private func commitActiveRename() async {
+        if let renaming {
+            await commitRename(of: renaming)
+        }
+    }
+
+    private func reveal(_ id: TreeNodeID, named name: String, in container: TreeContainerID?) {
         if let container {
             let parent = TreeNodeID(container)
             expanded.formUnion(tree.ancestors(of: parent) + [parent])
         }
         selection = id
         renaming = id
+        renameDraft = name
     }
 
     /// A row that failed to change stays as it was on screen, so the sidebar shows the truth.

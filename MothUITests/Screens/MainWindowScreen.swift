@@ -73,6 +73,17 @@ struct MainWindowScreen {
         start.click(forDuration: 1, thenDragTo: topEdge, withVelocity: .slow, thenHoldForDuration: 1)
     }
 
+    func drag(_ name: String, ontoBlankEndOf target: String) {
+        let blankEnd = sidebarRow(target).coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5))
+        let start = sidebarText(name).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.click(forDuration: 1, thenDragTo: blankEnd, withVelocity: .slow, thenHoldForDuration: 1)
+    }
+
+    func contextMenuFromBlankEnd(of name: String) -> XCUIElement {
+        sidebarRow(name).coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).rightClick()
+        return sidebar.menus.firstMatch
+    }
+
     func contextMenu(on name: String) -> XCUIElement {
         sidebarText(name).rightClick()
         return sidebar.menus.firstMatch

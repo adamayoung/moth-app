@@ -237,4 +237,24 @@ final class SidebarEditingTests: MothTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [reordered], timeout: 10), .completed)
     }
 
+    @MainActor
+    func testTheBlankEndOfARowOpensItsContextMenu() {
+        let screen = seededScreen()
+
+        let menu = screen.contextMenuFromBlankEnd(of: "Seeded Collection")
+
+        XCTAssertTrue(menu.waitForExistence(timeout: 10))
+        XCTAssertTrue(menu.menuItems["Rename"].exists)
+    }
+
+    @MainActor
+    func testDroppingOnTheBlankEndOfAFolderMovesTheRequestInside() {
+        let screen = seededScreen()
+        expandUsers(on: screen)
+
+        screen.drag("Health", ontoBlankEndOf: "Admins")
+
+        XCTAssertTrue(screen.waitForRowToDisappear("Health"))
+    }
+
 }

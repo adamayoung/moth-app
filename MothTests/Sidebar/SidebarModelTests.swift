@@ -151,9 +151,10 @@ struct SidebarModelTests {
 
     @Test("Committing a rename changes the name, trimmed, and ends the edit")
     func commitRename() async throws {
-        model.beginRename(of: .request(top.id))
+        await model.beginRename(of: .request(top.id))
 
-        await model.commitRename(of: .request(top.id), to: "  Renamed  ")
+        model.renameDraft = "  Renamed  "
+        await model.commitRename(of: .request(top.id))
         try deliverTree()
 
         #expect(model.tree.node(.request(top.id))?.name == "Renamed")
@@ -162,9 +163,10 @@ struct SidebarModelTests {
 
     @Test("An empty name restores the old one and ends the edit", arguments: ["", "   ", "\n"])
     func emptyRenameRestores(draft: String) async throws {
-        model.beginRename(of: .request(top.id))
+        await model.beginRename(of: .request(top.id))
 
-        await model.commitRename(of: .request(top.id), to: draft)
+        model.renameDraft = draft
+        await model.commitRename(of: .request(top.id))
         try deliverTree()
 
         #expect(model.tree.node(.request(top.id))?.name == "Top")
@@ -173,10 +175,11 @@ struct SidebarModelTests {
 
     @Test("Cancelling a rename keeps the old name, and a later commit from the field is ignored")
     func cancelRename() async throws {
-        model.beginRename(of: .request(top.id))
+        await model.beginRename(of: .request(top.id))
 
         model.cancelRename()
-        await model.commitRename(of: .request(top.id), to: "Renamed")
+        model.renameDraft = "Renamed"
+        await model.commitRename(of: .request(top.id))
         try deliverTree()
 
         #expect(model.tree.node(.request(top.id))?.name == "Top")
@@ -266,7 +269,7 @@ struct SidebarModelTests {
     @Test("A sync that removes the selected row moves selection, and ends a rename of that row")
     func syncRemovalMovesSelection() async throws {
         model.selection = .request(deep.id)
-        model.beginRename(of: .request(deep.id))
+        await model.beginRename(of: .request(deep.id))
 
         try await dataModel.writer.delete(.folder(folder.id))
         try deliverTree()
@@ -320,6 +323,44 @@ struct SidebarModelTests {
         try deliverTree()
 
         #expect(model.tree.roots.map(\.name) == ["Other", "API"])
+    }
+
+    @Test("Starting a new item saves a rename in progress")
+    func newItemSavesARenameInProgress() async throws {
+        await model.beginRename(of: .request(top.id))
+        model.renameDraft = "Typed"
+
+        await model.newRequest(in: .collection(other.id))
+        try deliverTree()
+
+        #expect(model.tree.node(.request(top.id))?.name == "Typed")
+        #expect(model.renameDraft == "New Request")
+        #expect(model.renaming == model.selection)
+    }
+
+    @Test("Renaming another row saves the rename in progress")
+    func anotherRenameSavesTheFirst() async throws {
+        await model.beginRename(of: .request(top.id))
+        model.renameDraft = "Typed"
+
+        await model.beginRename(of: .folder(empty.id))
+        try deliverTree()
+
+        #expect(model.tree.node(.request(top.id))?.name == "Typed")
+        #expect(model.renaming == .folder(empty.id))
+        #expect(model.renameDraft == "Empty")
+    }
+
+    @Test("A commit from a field that has gone does not end the edit that replaced it")
+    func lateCommitLeavesTheNewEditAlone() async {
+        await model.beginRename(of: .request(top.id))
+        await model.beginRename(of: .folder(empty.id))
+        model.renameDraft = "Typing"
+
+        await model.commitRename(of: .request(top.id))
+
+        #expect(model.renaming == .folder(empty.id))
+        #expect(model.renameDraft == "Typing")
     }
 
 }

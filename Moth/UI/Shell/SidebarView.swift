@@ -11,25 +11,15 @@ struct SidebarView: View {
 
     @Bindable var model: SidebarModel
 
-    @Query private var collections: [CollectionModel]
-    @Query private var folders: [FolderModel]
-    @Query private var requests: [RequestModel]
-
-    private var tree: CollectionTree {
-        CollectionTree(collections: collections, folders: folders, requests: requests)
-    }
-
     var body: some View {
-        let tree = tree
-
         List(selection: $model.selection) {
             Section("SIDEBAR_COLLECTIONS_SECTION") {
-                if tree.roots.isEmpty {
+                if model.tree.roots.isEmpty {
                     ContentUnavailableView {
                         Text("SIDEBAR_COLLECTIONS_EMPTY")
                     }
                 } else {
-                    ForEach(tree.roots) { node in
+                    ForEach(model.tree.roots) { node in
                         SidebarRow(node: node, model: model)
                     }
                     .dropDestination(for: SidebarDragItem.self) { items, offset in
@@ -68,8 +58,8 @@ struct SidebarView: View {
             \.sidebarCommands,
             SidebarCommandContext(model: model, newItemContainer: model.newItemContainer)
         )
-        .onChange(of: tree, initial: true) { _, newTree in
-            model.treeDidChange(newTree)
+        .background {
+            SidebarTreeObserver(model: model)
         }
     }
 
