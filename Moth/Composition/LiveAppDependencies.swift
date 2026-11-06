@@ -15,6 +15,7 @@ final class LiveAppDependencies: AppDependencies {
     let dataModel: DataModel
     let iCloudContainerIdentifier: String?
     let isSyncedToICloud: Bool
+    let activeEnvironment = ActiveEnvironment(defaults: .standard)
     let launchReconcile: Task<Void, Never>
 
     /// `openDataModel` has no default, so that no test can reach the real store or CloudKit by leaving it out.
