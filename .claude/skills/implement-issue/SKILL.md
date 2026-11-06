@@ -126,6 +126,10 @@ The rules of a worktree run, and the first is absolute:
    messages, scripts, the PR body) go in the session scratchpad from step 1,
    outside both trees, never in the worktree, where `git add -A` would commit
    them and step 8's clean-tree gate would fail.
+6. **Write paths out in commands.** The isolation guard refused a path held in a
+   shell variable (`sed -n 1,2p "$file"`), because it could not show the command
+   was not git. Write the path out; for a value known only at run time, use a
+   scratchpad script, as rule 2 says.
 
 ### `--here` runs
 
