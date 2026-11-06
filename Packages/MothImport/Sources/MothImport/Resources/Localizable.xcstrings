@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "en-GB",
+  "strings" : {
+    "IMPORT_UNTITLED_NAME" : {
+      "comment" : "The name of an imported folder, request or environment whose Postman file gives it none.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
