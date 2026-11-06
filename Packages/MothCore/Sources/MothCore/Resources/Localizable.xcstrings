@@ -33,6 +33,17 @@
           }
         }
       }
+    },
+    "REQUEST_SEND_UNREADABLE_INHERITED_AUTH" : {
+      "comment" : "Shown when a request cannot be sent because a folder or collection it inherits auth from can't be read.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The auth this request inherits can’t be read."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

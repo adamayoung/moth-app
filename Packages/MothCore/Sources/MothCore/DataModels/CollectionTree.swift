@@ -99,6 +99,24 @@ public nonisolated struct CollectionTree: Hashable, Sendable {
         return .from(source.name)
     }
 
+    /// Throws for a container that can't be read, because sending without its auth would hide that it has some.
+    public func effectiveAuth(of id: TreeNodeID) throws -> Auth {
+        guard let source = Self.path(to: id, in: roots)?.dropLast().last(where: { $0.auth != .inherit }) else {
+            return .none
+        }
+        guard let auth = source.auth else {
+            throw RequestSendError.unreadableInheritedAuth
+        }
+        return auth
+    }
+
+    func collectionID(of id: TreeNodeID) -> UUID? {
+        guard case .collection(let collectionID) = ancestors(of: id).first else {
+            return nil
+        }
+        return collectionID
+    }
+
     public func node(_ id: TreeNodeID) -> TreeNode? {
         Self.path(to: id, in: roots)?.last
     }
