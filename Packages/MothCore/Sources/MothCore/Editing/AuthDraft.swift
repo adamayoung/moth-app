@@ -176,9 +176,14 @@ public nonisolated struct AuthDraft: Sendable {
     /// Takes the chosen kind and its fields from what is saved, and keeps what was typed for the others.
     public mutating func follow(_ saved: AuthDraft) {
         kind = saved.kind
-        unsupportedAuth = saved.unsupportedAuth
-        if saved.kind == .basic {
+        switch saved.kind {
+        case .basic:
             username = saved.username
+            typedPassword = nil
+        case .bearer:
+            typedToken = nil
+        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4:
+            break
         }
         rebaseCredentials(onto: saved)
     }
@@ -187,6 +192,10 @@ public nonisolated struct AuthDraft: Sendable {
     public mutating func rebaseCredentials(onto saved: AuthDraft) {
         storedPassword = saved.storedPassword
         storedToken = saved.storedToken
+        unsupportedAuth = saved.unsupportedAuth
+        if unsupportedAuth == nil, !AuthKind.editable.contains(kind) {
+            kind = saved.kind
+        }
         if newPassword == storedPassword {
             newPassword = SecretReference()
         }

@@ -231,6 +231,42 @@ struct AuthDraftTests {
         #expect(draft.typedCredential(for: draft.passwordReference) == "typed")
     }
 
+    @Test("Following a kind that had text typed for it takes what is saved, not the text")
+    func followingDropsTextForTheSavedKind() {
+        var draft = AuthDraft(.inherit)
+        draft.kind = .bearer
+        draft.setCredential("typed", for: draft.tokenReference)
+        draft.kind = .inherit
+
+        draft.follow(AuthDraft(bearer))
+
+        #expect(draft.requestAuth == bearer)
+        #expect(draft.typedCredential(for: draft.tokenReference) == nil)
+    }
+
+    @Test("Rebasing an auth the editor can't change takes the row's, so choosing it again can't undo a sync")
+    func rebasingMovesAnUnsupportedAuth() {
+        let older = Auth.apiKey(APIKeyAuth(name: "X-Key", value: Self.token, location: .header))
+        let newer = Auth.apiKey(APIKeyAuth(name: "X-Key", value: Self.password, location: .header))
+        var draft = AuthDraft(older)
+        draft.kind = .bearer
+
+        draft.rebaseCredentials(onto: AuthDraft(newer))
+        draft.kind = .apiKey
+
+        #expect(draft.requestAuth == newer)
+    }
+
+    @Test("Rebasing onto a row with no such auth stops offering it")
+    func rebasingDropsAnUnsupportedAuthTheRowLost() {
+        var draft = AuthDraft(.apiKey(APIKeyAuth(name: "X-Key", value: Self.token, location: .header)))
+
+        draft.rebaseCredentials(onto: AuthDraft(.none))
+
+        #expect(draft.kinds == [.inherit, .none, .basic, .bearer])
+        #expect(draft.requestAuth == .none)
+    }
+
     @Test("Rebasing an edited auth takes the row's references, and keeps its kind and username")
     func rebasingTakesTheRowsReferences() {
         let newer = SecretReference(identifier: "newer")

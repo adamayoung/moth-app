@@ -97,9 +97,17 @@ public nonisolated struct BodyDraft: Sendable {
         }
     }
 
-    /// Ignores row identifiers, because removing a row and typing it back changes nothing there is to save.
     public func hasSameContent(as other: BodyDraft) -> Bool {
-        switch (requestBody, other.requestBody) {
+        requestBody.hasSameContent(as: other.requestBody)
+    }
+
+}
+
+nonisolated extension RequestBody {
+
+    /// Ignores row identifiers, because removing a row and typing it back changes nothing there is to save.
+    func hasSameContent(as other: RequestBody) -> Bool {
+        switch (self, other) {
         case (.urlEncoded(let rows), .urlEncoded(let otherRows)):
             rows.hasSameContent(as: otherRows)
         case (.formData(let fields), .formData(let otherFields)):

@@ -17,10 +17,10 @@ final class VariableTableModel {
 
     @ObservationIgnored private var saved: [UUID: Variable] = [:]
     @ObservationIgnored private var savedSecrets: [UUID: String] = [:]
-    @ObservationIgnored private var lastWrite: Task<Void, Never>?
 
     private let writer: StoreWriter
     private let secretStore: any SecretStore
+    private let writes = WriteQueue()
 
     init(scope: VariableScope, writer: StoreWriter, secretStore: any SecretStore) {
         self.scope = scope
@@ -63,7 +63,7 @@ final class VariableTableModel {
     }
 
     func commit(_ id: UUID) async {
-        await inOrder { await self.writeDraft(id) }
+        await writes.run { await self.writeDraft(id) }
     }
 
     private func writeDraft(_ id: UUID) async {
@@ -102,7 +102,7 @@ final class VariableTableModel {
     }
 
     func remove(_ id: UUID) async {
-        await inOrder { await self.removeRow(id) }
+        await writes.run { await self.removeRow(id) }
     }
 
     private func removeRow(_ id: UUID) async {
@@ -118,7 +118,7 @@ final class VariableTableModel {
     }
 
     func setSecret(_ isSecret: Bool, for id: UUID) async {
-        await inOrder { await self.changeSecret(isSecret, for: id) }
+        await writes.run { await self.changeSecret(isSecret, for: id) }
     }
 
     private func changeSecret(_ isSecret: Bool, for id: UUID) async {
@@ -133,18 +133,6 @@ final class VariableTableModel {
         default:
             break
         }
-    }
-
-    /// Keychain calls finish in no set order, so a later edit could land first, or a save could recreate an item a
-    /// toggle has just removed.
-    private func inOrder(_ write: @escaping () async -> Void) async {
-        let previous = lastWrite
-        let next = Task {
-            await previous?.value
-            await write()
-        }
-        lastWrite = next
-        await next.value
     }
 
     /// Saves the value first: a stray Keychain item is harmless, and a reference with no value would lose it.

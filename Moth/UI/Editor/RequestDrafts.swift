@@ -56,7 +56,7 @@ final class RequestDrafts {
     private var unreadable: Set<Request.ID> = []
     private let secretStore: any SecretStore
     private let saveEdit: Save
-    @ObservationIgnored private var lastWrite: Task<Void, Never>?
+    private let writes = WriteQueue()
 
     init(secretStore: any SecretStore, save: @escaping Save) {
         self.secretStore = secretStore
@@ -103,7 +103,7 @@ final class RequestDrafts {
     }
 
     func loadCredential(_ reference: SecretReference, in id: Request.ID) async {
-        await inOrder { await self.readCredential(reference, in: id) }
+        await writes.run { await self.readCredential(reference, in: id) }
     }
 
     func update(_ id: Request.ID, _ change: (inout RequestDraft) -> Void) {
@@ -138,7 +138,7 @@ final class RequestDrafts {
     /// Returns whether the draft reached the store. Shows the stored form afterwards, so `?flag` reads `?flag=`, unless
     /// the person typed on during the save.
     func save(_ id: Request.ID) async -> Bool {
-        await inOrder { await self.writeDraft(id) }
+        await writes.run { await self.writeDraft(id) }
     }
 
     private func writeDraft(_ id: Request.ID) async -> Bool {
@@ -150,9 +150,9 @@ final class RequestDrafts {
         }
         let edit = entry.draft.edit
         let base = entry.saved.edit
-        let writes = entry.draft.auth.credentialWrites()
+        let credentialWrites = entry.draft.auth.credentialWrites()
         do {
-            let released = try await secretStore.commit(writes) {
+            let released = try await secretStore.commit(credentialWrites) {
                 try await saveEdit(id, edit, base)
             }
             entries[id]?.credentials.forget(released)
@@ -160,7 +160,7 @@ final class RequestDrafts {
             Logger.editor.error("Saving a request failed: \(String(describing: error), privacy: .private)")
             return false
         }
-        for write in writes {
+        for write in credentialWrites {
             entries[id]?.credentials.record(write.value, for: write.reference)
         }
         await finishSave(of: edit, from: entry.draft, heldBefore: base.auth, in: id)
@@ -197,18 +197,6 @@ final class RequestDrafts {
         let value = await secretStore.credential(reference)
         entries[id]?.credentials.record(value, for: reference)
         entries[id]?.discardCredentialsMatchingStore()
-    }
-
-    /// Keychain calls finish in no set order, so a later Save could otherwise be overtaken by an earlier one, or a
-    /// read could put back a value a Save has just replaced.
-    private func inOrder<Value: Sendable>(_ work: @escaping () async -> Value) async -> Value {
-        let previous = lastWrite
-        let next = Task {
-            await previous?.value
-            return await work()
-        }
-        lastWrite = Task { _ = await next.value }
-        return await next.value
     }
 
     func revert(_ id: Request.ID) {

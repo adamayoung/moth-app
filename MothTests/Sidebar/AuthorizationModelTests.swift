@@ -160,6 +160,46 @@ struct AuthorizationModelTests {
         #expect(try savedFolder().asDomain().auth == Auth.none)
     }
 
+    @Test("A second Save after one that worked leaves the credential the row now holds")
+    func secondSaveKeepsTheCredential() async throws {
+        let secretStore = RecordingSecretStore()
+        secretStore.save("old", for: token.identifier)
+        try await dataModel.writer.updateAuth(of: .folder(folder.id), to: bearer(token), replacing: .inherit)
+        let model = model(of: .folder(folder.id), holding: bearer(token), secretStore: secretStore)
+        model.update { $0.setCredential("new", for: token) }
+
+        #expect(await model.save())
+        _ = await model.save()
+
+        guard case .bearer(let saved) = try savedFolder().asDomain().auth else {
+            Issue.record("The folder should hold Bearer auth")
+            return
+        }
+        #expect(secretStore.values == [saved.token.identifier: "new"])
+    }
+
+    @Test("A Save writes the auth it was pressed with, whatever changes while it runs")
+    func saveWritesTheAuthItStartedWith() async throws {
+        let secretStore = HoldingSecretStore()
+        let model = model(of: .folder(folder.id), holding: .inherit, secretStore: secretStore)
+        model.update { draft in
+            draft.kind = .bearer
+            draft.setCredential("typed", for: draft.tokenReference)
+        }
+        let reference = model.draft.tokenReference
+        await secretStore.holdNextSave()
+        let save = Task { await model.save() }
+        for _ in 0 ..< 100_000 where await !secretStore.isHoldingASave {
+            await Task.yield()
+        }
+
+        model.update { $0.kind = .none }
+        await secretStore.finishHeldSave()
+
+        #expect(await save.value)
+        #expect(try savedFolder().asDomain().auth == bearer(reference))
+    }
+
     @Test("The sheet opens on a container's auth, saying what it would inherit")
     func presentsAContainer() throws {
         let sidebar = SidebarModel(writer: dataModel.writer, secretStore: RecordingSecretStore())

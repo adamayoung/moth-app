@@ -28,6 +28,7 @@ struct AuthorizationSheet: View {
                 load: { await model.loadCredential($0) },
                 update: { model.update($0) }
             )
+            .disabled(model.isSaving)
 
             Spacer(minLength: 0)
 

@@ -91,12 +91,12 @@ struct RequestEditorForm: View {
             switch section {
             case .params:
                 Button("REQUEST_EDITOR_ADD_PARAMETER") {
-                    addRow(to: \.queryParameters)
+                    addRow(KeyValue(key: "", value: ""), to: \.queryParameters)
                 }
                 .accessibilityIdentifier("params.add")
             case .headers:
                 Button("REQUEST_EDITOR_ADD_HEADER") {
-                    addRow(to: \.headers)
+                    addRow(KeyValue(key: "", value: ""), to: \.headers)
                 }
                 .accessibilityIdentifier("headers.add")
             case .body:
@@ -112,12 +112,12 @@ struct RequestEditorForm: View {
         switch draft.body.kind {
         case .urlEncoded:
             Button("REQUEST_EDITOR_ADD_FIELD") {
-                addRow(to: \.body.urlEncodedRows)
+                addRow(KeyValue(key: "", value: ""), to: \.body.urlEncodedRows)
             }
             .accessibilityIdentifier("urlEncoded.add")
         case .formData:
             Button("REQUEST_EDITOR_ADD_FIELD") {
-                addFormDataRow()
+                addRow(FormDataField(key: "", value: .text("")), to: \.body.formDataFields)
             }
             .accessibilityIdentifier("formData.add")
         case .none, .raw, .binary, .graphQL:
@@ -177,17 +177,8 @@ struct RequestEditorForm: View {
     }
 
     /// Focus moves on the next turn, because the new row's field does not exist until this change has rendered.
-    private func addRow(to rows: WritableKeyPath<RequestDraft, [KeyValue]>) {
-        let row = KeyValue(key: "", value: "")
+    private func addRow<Row: EditableRow>(_ row: Row, to rows: WritableKeyPath<RequestDraft, [Row]>) {
         update { $0[keyPath: rows].append(row) }
-        Task {
-            focusedRow = row.id
-        }
-    }
-
-    private func addFormDataRow() {
-        let row = FormDataField(key: "", value: .text(""))
-        update { $0.body.formDataFields.append(row) }
         Task {
             focusedRow = row.id
         }

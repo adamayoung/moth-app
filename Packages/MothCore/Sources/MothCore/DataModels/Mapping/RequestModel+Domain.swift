@@ -37,7 +37,7 @@ nonisolated extension RequestModel: StoredAuthRow {
         try assign(StoredJSON.encode(edit.queryParameters), to: \.queryParametersData)
         try assign(StoredJSON.encode(edit.pathParameters), to: \.pathParametersData)
         try assign(StoredJSON.encode(edit.headers), to: \.headersData)
-        if edit.body != base.body {
+        if !edit.body.hasSameContent(as: base.body) {
             try assign(StoredJSON.encode(edit.body), to: \.bodyData)
         }
         if edit.auth != base.auth {
