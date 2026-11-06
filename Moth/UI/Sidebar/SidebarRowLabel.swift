@@ -10,7 +10,8 @@ struct SidebarRowLabel<Menu: View>: View {
 
     let node: TreeNode
     @Bindable var model: SidebarModel
-    @ViewBuilder let menu: () -> Menu
+    @ViewBuilder
+    let menu: () -> Menu
 
     @FocusState private var isFieldFocused: Bool
 

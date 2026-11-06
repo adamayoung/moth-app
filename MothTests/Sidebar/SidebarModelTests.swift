@@ -12,17 +12,17 @@ import Testing
 @MainActor
 struct SidebarModelTests {
 
-    private let dataModel: DataModel
-    private let model: SidebarModel
+    let dataModel: DataModel
+    let model: SidebarModel
 
-    private let deep = Request(name: "Deep")
-    private let shallow = Request(name: "Shallow", method: .post)
-    private let top = Request(name: "Top")
-    private let inner: Folder
-    private let folder: Folder
-    private let empty = Folder(name: "Empty")
-    private let collection: RequestCollection
-    private let other = RequestCollection(name: "Other")
+    let deep = Request(name: "Deep")
+    let shallow = Request(name: "Shallow", method: .post)
+    let top = Request(name: "Top")
+    let inner: Folder
+    let folder: Folder
+    let empty = Folder(name: "Empty")
+    let collection: RequestCollection
+    let other = RequestCollection(name: "Other")
 
     /// API > (Folder > (Inner > Deep, Shallow), Empty, Top), and Other.
     init() throws {
@@ -56,7 +56,7 @@ struct SidebarModelTests {
     }
 
     /// Stands in for `@Query`, which delivers a writer's save to the view some time after the write returns.
-    private func deliverTree() throws {
+    func deliverTree() throws {
         try model.treeDidChange(savedTree())
     }
 
@@ -147,43 +147,6 @@ struct SidebarModelTests {
         model.selection = .request(UUID())
 
         #expect(model.newItemContainer == nil)
-    }
-
-    @Test("Committing a rename changes the name, trimmed, and ends the edit")
-    func commitRename() async throws {
-        await model.beginRename(of: .request(top.id))
-
-        model.renameDraft = "  Renamed  "
-        await model.commitRename(of: .request(top.id))
-        try deliverTree()
-
-        #expect(model.tree.node(.request(top.id))?.name == "Renamed")
-        #expect(model.renaming == nil)
-    }
-
-    @Test("An empty name restores the old one and ends the edit", arguments: ["", "   ", "\n"])
-    func emptyRenameRestores(draft: String) async throws {
-        await model.beginRename(of: .request(top.id))
-
-        model.renameDraft = draft
-        await model.commitRename(of: .request(top.id))
-        try deliverTree()
-
-        #expect(model.tree.node(.request(top.id))?.name == "Top")
-        #expect(model.renaming == nil)
-    }
-
-    @Test("Cancelling a rename keeps the old name, and a later commit from the field is ignored")
-    func cancelRename() async throws {
-        await model.beginRename(of: .request(top.id))
-
-        model.cancelRename()
-        model.renameDraft = "Renamed"
-        await model.commitRename(of: .request(top.id))
-        try deliverTree()
-
-        #expect(model.tree.node(.request(top.id))?.name == "Top")
-        #expect(model.renaming == nil)
     }
 
     @Test("Asking to delete a collection counts every request beneath it")
@@ -323,44 +286,6 @@ struct SidebarModelTests {
         try deliverTree()
 
         #expect(model.tree.roots.map(\.name) == ["Other", "API"])
-    }
-
-    @Test("Starting a new item saves a rename in progress")
-    func newItemSavesARenameInProgress() async throws {
-        await model.beginRename(of: .request(top.id))
-        model.renameDraft = "Typed"
-
-        await model.newRequest(in: .collection(other.id))
-        try deliverTree()
-
-        #expect(model.tree.node(.request(top.id))?.name == "Typed")
-        #expect(model.renameDraft == "New Request")
-        #expect(model.renaming == model.selection)
-    }
-
-    @Test("Renaming another row saves the rename in progress")
-    func anotherRenameSavesTheFirst() async throws {
-        await model.beginRename(of: .request(top.id))
-        model.renameDraft = "Typed"
-
-        await model.beginRename(of: .folder(empty.id))
-        try deliverTree()
-
-        #expect(model.tree.node(.request(top.id))?.name == "Typed")
-        #expect(model.renaming == .folder(empty.id))
-        #expect(model.renameDraft == "Empty")
-    }
-
-    @Test("A commit from a field that has gone does not end the edit that replaced it")
-    func lateCommitLeavesTheNewEditAlone() async {
-        await model.beginRename(of: .request(top.id))
-        await model.beginRename(of: .folder(empty.id))
-        model.renameDraft = "Typing"
-
-        await model.commitRename(of: .request(top.id))
-
-        #expect(model.renaming == .folder(empty.id))
-        #expect(model.renameDraft == "Typing")
     }
 
 }
