@@ -223,6 +223,35 @@ once promoted to production, a schema is additive only, so a model type cannot
 be deleted and an existing attribute cannot be changed. Promote the development
 schema before release.
 
+### Stores From Another Schema
+
+Before either store opens, `StoreSchemaCheck` compares each store file's entity
+version hashes with the schemas in `MothMigrationPlan.schemas`. A store with an
+entity or a hash that no planned version has stops the launch, neither store
+opens, and the store failure alert says the data came from a newer version of
+Moth. SwiftData does this itself only once the plan has a stage, and until then
+it opens such a store with no error and drops the columns it does not know.
+
+The check reads a copy of the store's files, so a refused store keeps every byte.
+It compares hashes, not `NSStoreModelVersionIdentifiers`, and it allows a store to
+hold fewer entities than the schema, because `CloudKitSchemaInitialiser` makes a
+store of the synced models only. So a newer schema that only removes models
+passes. An empty file is left to SwiftData, which starts a new store over it, and
+any other file the check cannot read stops the launch, with no claim about why.
+
+Hashes cover the schema's shape. They do not see the JSON in a `Data` attribute, so
+a newer build that adds a key to that JSON passes the check, and an older build
+drops the key the next time it writes that value.
+
+A hash that drifts refuses a good store: if an OS update changed how SwiftData
+derives hashes, a shipped build would refuse the stores it wrote. That fails safe,
+because the data stays intact and an update of Moth can accept the old hashes, where
+a false pass loses data for good. Pinned hashes catch this on a new SDK.
+
+The check guards the files on this Mac. A newer Mac's changes reach an older one
+through CloudKit, which leaves the older Mac's file on its own schema, so no check
+of the file can see them. See [Open Questions](#open-questions).
+
 ### Writing to the Store
 
 A SwiftData save writes back the whole row as its context last read it, and
@@ -380,13 +409,20 @@ the settled answers, and fail if an OS or SDK update changes them.
 - **A second context as a second writer: settled.** A stale save reverts the other
   context's change, as [Writing to the Store](#writing-to-the-store) describes.
   This holds for a second `ModelContext` on one container, in memory and on disk.
-- **Opening a store from a newer schema: characterised, not handled.** While
-  `MothMigrationPlan.stages` is empty, such a store opens with no error, keeps its
-  rows and drops the columns this build does not know, so an older build loses a
-  newer build's data and shows no alert. With a stage in the plan, SwiftData
-  refuses the store and leaves it intact, and the launch shows the store failure
-  alert. A build with no stages needs a check of its own, which has to ship in that
-  older build, before any `SchemaV2`.
+- **Opening a store from a newer schema: settled for the store files.** While
+  `MothMigrationPlan.stages` is empty, SwiftData opens such a store with no error,
+  keeps its rows and drops the columns this build does not know. With a stage in
+  the plan, SwiftData refuses the store and leaves it intact. `StoreSchemaCheck`
+  refuses it in either case, as
+  [Stores From Another Schema](#stores-from-another-schema) describes, and its
+  tests pin `SchemaV1`'s entity hashes, because an OS or SDK update that changed
+  them would refuse every existing store. Setting up CloudKit mirroring adds no
+  entity to those hashes, but no test covers a store that has synced with a real
+  iCloud account, so that needs a manual check before release.
+- **A newer Mac's records reaching an older Mac: unverified.** They arrive through
+  CloudKit, not the store file. The additive-only rule suggests the older Mac
+  ignores what it does not know and its own saves leave those fields alone, but
+  no test covers this. It needs a check on two Macs with two schema versions.
 - **CloudKit as a second writer: unverified.** Sync imports write outside
   `StoreActor`, and the tests above use no iCloud account, so they show the
   mechanism and not what an import does. Whether a stale context's save can revert

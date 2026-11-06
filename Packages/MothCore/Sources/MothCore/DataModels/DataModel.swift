@@ -21,6 +21,7 @@ public final class DataModel {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         }
         let configurations = StoreConfigurations(location: location, containerIdentifier: containerIdentifier)
+        try configurations.verifyStoresAreKnown()
         self.container = try ModelContainer(
             for: Schema(versionedSchema: SchemaV1.self),
             migrationPlan: MothMigrationPlan.self,

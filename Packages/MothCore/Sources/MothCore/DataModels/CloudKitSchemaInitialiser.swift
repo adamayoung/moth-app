@@ -23,6 +23,7 @@
                 location: .directory(directory),
                 containerIdentifier: containerIdentifier
             )
+            try configurations.verifyStoresAreKnown()
             try autoreleasepool {
                 guard let model = NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.syncedModels) else {
                     throw Failure.noManagedObjectModel

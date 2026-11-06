@@ -46,6 +46,11 @@ struct AppStringCatalogTests {
                 "STORE_FAILURE_ALERT_MESSAGE",
                 "Quit, then open Moth again. If this keeps happening, the data may come from a newer version of Moth."
             ),
+            (
+                "STORE_FAILURE_ALERT_NEWER_SCHEMA_MESSAGE",
+                "This data was saved by a newer version of Moth. Update Moth to open it. "
+                    + "Your data has not been changed."
+            ),
             ("STORE_FAILURE_ALERT_QUIT", "Quit")
         ]
     )

@@ -23,6 +23,11 @@ nonisolated struct StoreConfigurations {
         [synced, local]
     }
 
+    func verifyStoresAreKnown() throws {
+        try StoreSchemaCheck(knownSchemas: MothMigrationPlan.schemas)
+            .verify(storesAt: all.filter { !$0.isStoredInMemoryOnly }.map(\.url))
+    }
+
     init(location: DataModelLocation, containerIdentifier: String?) {
         self.synced = Self.configuration(
             named: "Synced",
