@@ -52,12 +52,12 @@ final class RequestTabsModel {
         }
     }
 
-    /// Closes on absence, not on leaving the tree: a window's first tree is the whole store, so this also drops a
-    /// saved tab whose request has gone.
-    func treeDidChange(_ newTree: CollectionTree) {
-        tree = newTree
+    /// Closes on the stored rows, not the tree, which leaves out a row whose parent has not synced yet: that tab hides
+    /// until its request returns. A window's first snapshot is the whole store, so this also drops a saved tab.
+    func collectionDidChange(_ snapshot: CollectionSnapshot) {
+        tree = snapshot.tree
         var remaining = tabs
-        for id in tabs.ids where !newTree.contains(.request(id)) {
+        for id in tabs.ids where !snapshot.requestIDs.contains(id) {
             remaining.close(id)
         }
         tabs = remaining

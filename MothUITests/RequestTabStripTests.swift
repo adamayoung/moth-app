@@ -39,6 +39,54 @@ final class RequestTabStripTests: MothTestCase {
     }
 
     @MainActor
+    func testClickingTheTopEdgeOfARowOpensTheRequest() {
+        let screen = screenWithUsersExpanded()
+
+        screen.sidebarRow("List Users").coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.04)).click()
+
+        XCTAssertTrue(screen.requestTab("GET List Users").waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testReturnOpensTheSelectedRequest() {
+        let screen = screenWithUsersExpanded()
+        open("List Users", showing: "GET List Users", on: screen)
+        screen.closeTabKey()
+        XCTAssertTrue(screen.waitForTabToClose("GET List Users"))
+
+        app.typeKey(.return, modifierFlags: [])
+
+        XCTAssertTrue(screen.requestTab("GET List Users").waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testClickTargetsFillTheTab() {
+        let screen = screenWithUsersExpanded()
+        open("List Users", showing: "GET List Users", on: screen)
+
+        let select = screen.requestTab("GET List Users").frame
+        let close = screen.requestTabCloseButton("Close List Users").frame
+
+        XCTAssertGreaterThanOrEqual(select.height, 28)
+        XCTAssertGreaterThanOrEqual(close.height, 28)
+        XCTAssertGreaterThanOrEqual(close.width, 20)
+    }
+
+    @MainActor
+    func testCommandWWithTheDeleteAlertUpLeavesTheTabOpen() {
+        let screen = screenWithUsersExpanded()
+        open("List Users", showing: "GET List Users", on: screen)
+        screen.chooseFromContextMenu(on: "List Users", "Delete\u{2026}")
+        XCTAssertTrue(screen.alertButton("Cancel").waitForExistence(timeout: 10))
+
+        screen.closeTabKey()
+        screen.alertButton("Cancel").click()
+
+        XCTAssertTrue(screen.sidebarText("List Users").waitForExistence(timeout: 10))
+        XCTAssertTrue(screen.requestTab("GET List Users").exists)
+    }
+
+    @MainActor
     func testClickingAnOpenRequestSelectsItsTab() {
         let screen = screenWithUsersExpanded()
         open("List Users", showing: "GET List Users", on: screen)

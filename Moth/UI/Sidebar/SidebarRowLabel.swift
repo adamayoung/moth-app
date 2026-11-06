@@ -14,6 +14,10 @@ struct SidebarRowLabel<Menu: View>: View {
     @ViewBuilder
     let menu: () -> Menu
 
+    /// A row selects from its padding too, so the tap area reaches past the label with no change to the layout. Its
+    /// indent stays out of reach, because `NSOutlineView` lays the cell out after it.
+    private let rowPadding: CGFloat = 8
+
     @FocusState private var isFieldFocused: Bool
 
     var body: some View {
@@ -22,8 +26,10 @@ struct SidebarRowLabel<Menu: View>: View {
         } else {
             title
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, rowPadding)
                 .contentShape(Rectangle())
                 .simultaneousGesture(TapGesture().onEnded(openRequest))
+                .padding(.vertical, -rowPadding)
                 .contextMenu { menu() }
                 .draggable(SidebarDragItem(id: node.id))
         }

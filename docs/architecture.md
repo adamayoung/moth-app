@@ -294,9 +294,11 @@ keeps them in `UserDefaults`, which never syncs. It is not `@SceneStorage`, beca
 UI tests launch with saved state ignored and could not prove a relaunch.
 
 Tabs hold request identifiers only. A tab reads its name and method from
-`CollectionTree`, and `RequestTabsModel` closes any tab whose request is not in the
-tree. A window's first tree is the whole store, so the same rule drops a saved tab
-whose request has gone.
+`CollectionTree`, and `RequestTabsModel` closes any tab whose request has left the
+store. It goes by the stored rows, because the tree leaves out a request whose
+parent has not synced yet, and that tab returns with its request. A window's first
+delivery is the whole store, so the same rule drops a saved tab whose request has
+gone.
 
 A seeded launch uses its own key, so a UI test never touches the user's tabs. Each
 window loads the saved tabs and saves its own, so with two windows the last write

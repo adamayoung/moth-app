@@ -26,28 +26,15 @@ struct MainWindowView: View {
             SidebarView(model: sidebar, tabs: tabs, isSyncedToICloud: isSyncedToICloud)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
-            VStack(spacing: 0) {
-                TabStripView(tabs: tabs)
-                Divider()
-                VSplitView {
-                    RequestEditorPane(requestName: tabs.selectedTab?.name)
-                        .frame(minHeight: 160)
-                    ResponsePane()
-                        .frame(minHeight: 160)
-                }
-            }
+            RequestDetailView(tabs: tabs)
         }
         .frame(minWidth: 800, minHeight: 500)
         .background {
-            CollectionTreeObserver { tree in
-                sidebar.treeDidChange(tree)
-                tabs.treeDidChange(tree)
+            CollectionTreeObserver { snapshot in
+                sidebar.treeDidChange(snapshot.tree)
+                tabs.collectionDidChange(snapshot)
             }
         }
-        .focusedSceneValue(
-            \.requestTabCommands,
-            RequestTabCommandContext(tabs: tabs, hasOpenTabs: !tabs.openTabs.isEmpty)
-        )
         .modelContainer(dataModel.container)
     }
 

@@ -14,11 +14,10 @@ struct RequestTabView: View {
     let close: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 0) {
             selectButton
             closeButton
         }
-        .padding(.horizontal, 8)
         .frame(maxWidth: 220, minHeight: 28)
         .background(isSelected ? Color.primary.opacity(0.1) : .clear, in: .rect(cornerRadius: 6))
     }
@@ -32,6 +31,8 @@ struct RequestTabView: View {
                 Text(verbatim: tab.name)
                     .lineLimit(1)
             }
+            .padding(.leading, 8)
+            .frame(minHeight: 28)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -45,6 +46,7 @@ struct RequestTabView: View {
             Image(systemName: "xmark")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .frame(width: 24, height: 28)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

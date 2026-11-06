@@ -79,9 +79,9 @@ private func openSeededRequests(from tree: CollectionTree, in tabs: RequestTabsM
         TabStripView(tabs: tabs)
             .frame(width: 600)
             .background {
-                CollectionTreeObserver { tree in
-                    tabs.treeDidChange(tree)
-                    openSeededRequests(from: tree, in: tabs)
+                CollectionTreeObserver { snapshot in
+                    tabs.collectionDidChange(snapshot)
+                    openSeededRequests(from: snapshot.tree, in: tabs)
                 }
             }
             .modelContainer(dataModel.container)

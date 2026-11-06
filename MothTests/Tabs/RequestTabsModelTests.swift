@@ -43,19 +43,23 @@ final class RequestTabsModelTests {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
-    private func savedTree() throws -> CollectionTree {
+    private func savedSnapshot() throws -> CollectionSnapshot {
         let context = ModelContext(dataModel.container)
-        return try CollectionTree(
-            collections: context.fetch(FetchDescriptor<CollectionModel>()),
-            folders: context.fetch(FetchDescriptor<FolderModel>()),
-            requests: context.fetch(FetchDescriptor<RequestModel>())
+        let requests = try context.fetch(FetchDescriptor<RequestModel>())
+        return try CollectionSnapshot(
+            tree: CollectionTree(
+                collections: context.fetch(FetchDescriptor<CollectionModel>()),
+                folders: context.fetch(FetchDescriptor<FolderModel>()),
+                requests: requests
+            ),
+            requestIDs: Set(requests.map(\.id))
         )
     }
 
-    /// A model with its first tree, as a window has once the query has delivered.
+    /// A model with its first snapshot, as a window has once the queries have delivered.
     private func openedModel() throws -> RequestTabsModel {
         let model = RequestTabsModel(store: store)
-        try model.treeDidChange(savedTree())
+        try model.collectionDidChange(savedSnapshot())
         return model
     }
 
@@ -84,7 +88,7 @@ final class RequestTabsModelTests {
         model.open(top.id)
 
         try await dataModel.writer.rename(.request(top.id), to: "Renamed")
-        try model.treeDidChange(savedTree())
+        try model.collectionDidChange(savedSnapshot())
 
         #expect(model.openTabs.map(\.name) == ["Renamed"])
         #expect(model.selectedTab?.name == "Renamed")
@@ -133,7 +137,7 @@ final class RequestTabsModelTests {
         model.open(last.id)
 
         try await dataModel.writer.delete(.request(last.id))
-        try model.treeDidChange(savedTree())
+        try model.collectionDidChange(savedSnapshot())
 
         #expect(model.openTabs.map(\.name) == ["Top"])
         #expect(store.load().ids == [top.id])
@@ -147,7 +151,7 @@ final class RequestTabsModelTests {
         model.select(top.id)
 
         try await dataModel.writer.delete(.request(top.id))
-        try model.treeDidChange(savedTree())
+        try model.collectionDidChange(savedSnapshot())
 
         #expect(model.selectedTab?.name == "Last")
     }
@@ -159,7 +163,7 @@ final class RequestTabsModelTests {
         model.open(top.id)
 
         try await dataModel.writer.delete(.folder(folder.id))
-        try model.treeDidChange(savedTree())
+        try model.collectionDidChange(savedSnapshot())
 
         #expect(model.openTabs.map(\.name) == ["Top"])
     }
@@ -173,6 +177,20 @@ final class RequestTabsModelTests {
 
         #expect(model.openTabs.map(\.name) == ["Top", "Last"])
         #expect(store.load().ids == [top.id, last.id])
+    }
+
+    @Test("A request out of the tree but still stored keeps its tab, which returns with it")
+    func requestOutOfTheTreeKeepsItsTab() throws {
+        let model = try openedModel()
+        model.open(top.id)
+
+        model.collectionDidChange(CollectionSnapshot(tree: .empty, requestIDs: [top.id]))
+        #expect(model.openTabs.isEmpty)
+        #expect(store.load().ids == [top.id])
+
+        try model.collectionDidChange(savedSnapshot())
+        #expect(model.openTabs.map(\.name) == ["Top"])
+        #expect(model.selectedTab?.name == "Top")
     }
 
     @Test("A saved selection whose request has gone moves to a neighbour at launch")

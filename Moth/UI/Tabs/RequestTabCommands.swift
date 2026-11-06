@@ -29,8 +29,10 @@ struct RequestTabCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .saveItem) {
             if let context, context.hasOpenTabs {
-                Button("MENU_CLOSE_TAB", action: context.tabs.closeSelected)
-                    .keyboardShortcut("w")
+                Button("MENU_CLOSE_TAB") {
+                    closeSelectedTab(in: context.tabs)
+                }
+                .keyboardShortcut("w")
             } else {
                 Button("MENU_CLOSE", action: closeKeyWindow)
                     .keyboardShortcut("w")
@@ -38,6 +40,15 @@ struct RequestTabCommands: Commands {
 
             Button("MENU_CLOSE_WINDOW", action: closeKeyWindow)
                 .keyboardShortcut("w", modifiers: [.command, .shift])
+        }
+    }
+
+    /// The focused value outlives a sheet or panel taking the keyboard, and a tab must not close behind one.
+    private func closeSelectedTab(in tabs: RequestTabsModel) {
+        if NSApp.keyWindow == NSApp.mainWindow {
+            tabs.closeSelected()
+        } else {
+            closeKeyWindow()
         }
     }
 

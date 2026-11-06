@@ -44,6 +44,7 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .accessibilityIdentifier("sidebar")
+        .onKeyPress(.return, action: openSelectedRequest)
         .safeAreaBar(edge: .bottom, spacing: 0) {
             if !isSyncedToICloud {
                 ICloudSyncOffFooter()
@@ -67,6 +68,14 @@ struct SidebarView: View {
         )
     }
 
+    private func openSelectedRequest() -> KeyPress.Result {
+        guard model.renaming == nil, case .request(let id) = model.selection else {
+            return .ignored
+        }
+        tabs.open(id)
+        return .handled
+    }
+
     private var deletionTitle: String {
         String(localized: "SIDEBAR_DELETE_TITLE_\(model.pendingDeletion?.name ?? "")")
     }
@@ -79,7 +88,7 @@ private func seededSidebar(isSyncedToICloud: Bool) -> some View {
         let model = SidebarModel(writer: dataModel.writer)
         SidebarView(model: model, tabs: RequestTabsModel(store: .preview), isSyncedToICloud: isSyncedToICloud)
             .background {
-                CollectionTreeObserver(onChange: model.treeDidChange)
+                CollectionTreeObserver { model.treeDidChange($0.tree) }
             }
             .modelContainer(dataModel.container)
             .frame(width: 240, height: 500)
