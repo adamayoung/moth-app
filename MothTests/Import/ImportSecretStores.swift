@@ -7,20 +7,24 @@ import Foundation
 import MothCore
 import Synchronization
 
-actor RecordingSecretStore: SecretStore {
+final nonisolated class RecordingSecretStore: SecretStore {
 
-    private(set) var values: [String: String] = [:]
+    private let stored = Mutex<[String: String]>([:])
+
+    var values: [String: String] {
+        stored.withLock { $0 }
+    }
 
     func save(_ value: String, for identifier: String) {
-        values[identifier] = value
+        stored.withLock { $0[identifier] = value }
     }
 
     func value(for identifier: String) -> String? {
-        values[identifier]
+        stored.withLock { $0[identifier] }
     }
 
     func removeValue(for identifier: String) {
-        values[identifier] = nil
+        stored.withLock { $0[identifier] = nil }
     }
 
 }

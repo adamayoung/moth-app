@@ -111,7 +111,7 @@ struct ImportModelTests {
         await model.importData(Self.collection)
 
         #expect(try savedCollectionNames().isEmpty)
-        #expect(await secretStore.values.isEmpty)
+        #expect(secretStore.values.isEmpty)
         #expect(model.report?.message == "Moth couldn\u{2019}t import this file. Nothing was added.")
         #expect(!model.isImporting)
     }
