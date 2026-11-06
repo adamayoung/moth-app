@@ -19,6 +19,12 @@ missing from the catalog, so a hardcoded string fails the assertion on its copy.
 Demo mode uses the same seeded graph. `-DemoMode 1` or a stored `DemoMode`
 default selects it.
 
+Two more pairs reach states a seeded launch cannot otherwise show, and each stops
+the launch without `-UITesting 1`. `-UITestICloudSync 1` reports iCloud sync as on.
+`-UITestStoreFailure 1` takes the path of a store that will not open, so the
+alert appears and no window does. A test class passes one by overriding
+`additionalLaunchArguments` on `MothTestCase`.
+
 `SeedData.workspace` holds one collection, "Seeded Collection", and one
 environment, "Seeded Environment", which is the active one. The collection holds
 a folder, "Users", then a request, "Health". "Users" holds three requests and a
@@ -40,7 +46,12 @@ itself. A `List` is queried through `app.outlines`. A view with no children of
 its own, such as the empty tab strip, reaches the tree only through
 `.accessibilityElement()` and needs a label for VoiceOver. A
 `ContentUnavailableView` title is a static text's value rather than its label,
-and `staticTexts[…]` matches both.
+and `staticTexts[…]` matches both. A `.help` tooltip reaches the tree only after
+`hover()`, as
+`descendants(matching: .helpTag)`, and carries no text at all, so a test can prove
+that one appears and not what it says. A view whose tooltip text must be checked
+also sets it as `.accessibilityValue` and adds the `.isStaticText` trait, because
+macOS exposes a value only on static text. `ICloudSyncOffFooter` does this.
 
 An element found by identifier proves it exists, not where it is. To assert
 layout, read frames, and remember that an `.accessibilityElement(children:

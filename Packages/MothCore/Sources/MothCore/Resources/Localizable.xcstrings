@@ -1,0 +1,39 @@
+{
+  "sourceLanguage" : "en-GB",
+  "strings" : {
+    "REQUEST_BUILD_INVALID_BEARER_TOKEN" : {
+      "comment" : "Shown when a request cannot be sent because its Bearer token has characters a header cannot hold, such as a line break.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This token can’t be sent in a header."
+          }
+        }
+      }
+    },
+    "REQUEST_BUILD_INVALID_METHOD" : {
+      "comment" : "Shown when a request cannot be sent because its HTTP method is empty or has characters a method cannot hold.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This method isn’t valid."
+          }
+        }
+      }
+    },
+    "REQUEST_BUILD_INVALID_URL" : {
+      "comment" : "Shown when a request cannot be sent because its URL is empty or invalid.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This URL isn’t valid."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

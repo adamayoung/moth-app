@@ -10,16 +10,18 @@ import SwiftUI
 struct MainWindowView: View {
 
     private let dataModel: DataModel
+    private let isSyncedToICloud: Bool
     @State private var sidebar: SidebarModel
 
-    init(dataModel: DataModel) {
+    init(dataModel: DataModel, isSyncedToICloud: Bool) {
         self.dataModel = dataModel
+        self.isSyncedToICloud = isSyncedToICloud
         self.sidebar = SidebarModel(writer: dataModel.writer)
     }
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(model: sidebar)
+            SidebarView(model: sidebar, isSyncedToICloud: isSyncedToICloud)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
             VStack(spacing: 0) {
@@ -41,7 +43,7 @@ struct MainWindowView: View {
 
 #Preview {
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
-        MainWindowView(dataModel: dataModel)
+        MainWindowView(dataModel: dataModel, isSyncedToICloud: false)
             .frame(width: 1100, height: 720)
     }
 }

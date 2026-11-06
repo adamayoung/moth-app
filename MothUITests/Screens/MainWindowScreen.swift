@@ -42,6 +42,10 @@ struct MainWindowScreen {
         app.sheets.firstMatch
     }
 
+    var iCloudSyncOffFooter: XCUIElement {
+        region("iCloudSyncOffFooter")
+    }
+
     func sidebarText(_ text: String) -> XCUIElement {
         sidebar.staticTexts[text]
     }

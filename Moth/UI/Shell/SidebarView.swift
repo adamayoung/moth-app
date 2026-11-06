@@ -10,6 +10,7 @@ import SwiftUI
 struct SidebarView: View {
 
     @Bindable var model: SidebarModel
+    let isSyncedToICloud: Bool
 
     var body: some View {
         List(selection: $model.selection) {
@@ -42,6 +43,11 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .accessibilityIdentifier("sidebar")
+        .safeAreaBar(edge: .bottom, spacing: 0) {
+            if !isSyncedToICloud {
+                ICloudSyncOffFooter()
+            }
+        }
         .alert(deletionTitle, item: $model.pendingDeletion) { deletion in
             Button("SIDEBAR_DELETE_CONFIRM", role: .destructive) {
                 Task { await model.confirmDeletion(deletion) }
@@ -69,10 +75,19 @@ struct SidebarView: View {
 
 }
 
-#Preview {
+@ViewBuilder
+private func seededSidebar(isSyncedToICloud: Bool) -> some View {
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
-        SidebarView(model: SidebarModel(writer: dataModel.writer))
+        SidebarView(model: SidebarModel(writer: dataModel.writer), isSyncedToICloud: isSyncedToICloud)
             .modelContainer(dataModel.container)
             .frame(width: 240, height: 500)
     }
+}
+
+#Preview("Synced") {
+    seededSidebar(isSyncedToICloud: true)
+}
+
+#Preview("iCloud Sync Off") {
+    seededSidebar(isSyncedToICloud: false)
 }

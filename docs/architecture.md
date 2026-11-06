@@ -84,9 +84,15 @@ long as the app, never to a `.task` on a view.
 
 `LiveAppDependencies` takes the function that opens its store, and that function
 has no default, so a test cannot reach the real store or CloudKit by leaving it
-out. A store that will not open stops the launch through `stopLaunch`, which
-logs and prints the reason and exits, because `fatalError` would leave a crash
-dialog on screen.
+out. A bad launch argument stops the launch through `stopLaunch`, which logs and
+prints the reason and exits, because `fatalError` would leave a crash dialog on
+screen.
+
+A live store that will not open gives `LaunchOutcome.storeFailure`, and
+`MothAppLauncher` starts `StoreFailureApp` in place of `MothApp`. It opens no
+window and shows an alert whose only button is Quit. Moth never offers to delete
+the store, because synced data is at stake. A seeded store that will not open
+still stops the launch, so that a test host cannot wait on an alert.
 
 ## Domain Model
 
@@ -127,6 +133,23 @@ An auth provider is a protocol that mutates a `URLRequest`. Its requirement must
 be `async throws`: OAuth2 refreshes tokens, and SigV4 has to sign the final
 body. Digest answers a 401 challenge, so it also needs the transport to retry.
 
+`.inherit` is replaced before resolution, by `RequestCollection.effectiveAuth(of:)`,
+because `VariableResolver` fetches secrets only for the auth it is given. The walk
+goes up through folders to the collection and stops at the first that sets auth,
+where setting `.none` counts. A request outside the tree inherits nothing, so a
+credential cannot reach it by accident.
+
+`RequestBuilder` turns a `ResolvedRequest` into the `URLRequest` that `HTTPKit`
+sends. An invalid URL or method, or a Bearer token a header cannot hold, throws.
+What it cannot send stays out of the request and is reported in
+`BuiltRequest.notices`: an auth kind with no provider, a binary or GraphQL body, a
+form-data file field, a header URLSession would drop or alter, and a body on GET
+or HEAD. A credential with no stored value sends no auth, and
+`ResolvedRequest.unresolvedCredentials` already reports it. An auth provider's
+`Authorization` header replaces a manual one. `URLRequest` holds one value per
+header name, so repeated names go out comma-joined, and repeated cookies joined by
+`; `.
+
 ## Persistence
 
 ### Two Stores
@@ -145,7 +168,8 @@ identifier, not by `@Relationship`.
 identifier selects `.private`, and no identifier selects `.none`. Each store has
 its own file in the directory `DataModel` is given. `LiveAppDependencies` passes
 the container only if the running app is entitled to it, so an unsigned build
-stays off CloudKit whatever its Info.plist says.
+stays off CloudKit whatever its Info.plist says. `isSyncedToICloud` reports that
+same result, and the sidebar's "iCloud Sync Off" footer follows it.
 
 ### Rows and Stored JSON
 
@@ -291,6 +315,35 @@ The app is sandboxed with outgoing network connections allowed. It carries an
 App Transport Security exception because an API client has to reach plain-HTTP
 hosts, and localhost above all.
 
+## Transport
+
+`HTTPTransport.send` returns the final response, and `HTTPResponse.metrics`
+describes it. Phases and bytes come from the last of a task's transactions,
+because that one carries the final response. `totalTime` and `redirectCount`
+cover the whole task.
+
+The phases run end to end: `dns`, `connect`, `tls`, `firstByte` and `download`.
+`connect` stops where the TLS handshake starts, because URLSession's connect end
+date includes it. Over QUIC, which handshakes as it connects, `connect` is close
+to zero and `tls` holds the handshake. `firstByte` starts with the request, so it
+includes any upload. A phase that did not happen, such as on a reused connection,
+is `nil`.
+`bytesReceived` counts the final response's header and body bytes on the wire.
+
+`metrics` is optional because URLSession does not say when it delivers them
+relative to `data(for:delegate:)` returning. They arrived first in every send
+measured, but `send` reads what has arrived and never waits. A stub transport has
+none.
+
+`HTTPTransportError.translating` is the only code that decodes a `URLError`, so
+the app never does. A timeout, a connection failure, a TLS failure and anything
+else are separate cases, and each keeps the system's description. A cancelled
+send throws `CancellationError`, which is not a failure.
+
+URLSession merges a repeated response header into one comma-separated value,
+`Set-Cookie` included. `URLSessionLoopbackTests` records this. Keeping them apart
+needs the transport swap that [Stack](#stack) reserves for a real wall.
+
 ## Concurrency
 
 `MothCore`, `MothImport` and the app default to `MainActor`. `HTTPKit` and
@@ -311,8 +364,9 @@ outside its own container, and never touches another tool's configuration.
 ## Open Questions
 
 Settle each with a test before the code that depends on it.
-`SwiftDataCrossStoreCharacterisationTests` and
-`SwiftDataStaleSaveCharacterisationTests` in `MothCoreTests` hold the tests behind
+`SwiftDataCrossStoreCharacterisationTests`,
+`SwiftDataStaleSaveCharacterisationTests` and
+`SwiftDataNewerStoreCharacterisationTests` in `MothCoreTests` hold the tests behind
 the settled answers, and fail if an OS or SDK update changes them.
 
 - **Cross-store relationships: settled.** A relationship cannot cross the two
@@ -326,6 +380,13 @@ the settled answers, and fail if an OS or SDK update changes them.
 - **A second context as a second writer: settled.** A stale save reverts the other
   context's change, as [Writing to the Store](#writing-to-the-store) describes.
   This holds for a second `ModelContext` on one container, in memory and on disk.
+- **Opening a store from a newer schema: characterised, not handled.** While
+  `MothMigrationPlan.stages` is empty, such a store opens with no error, keeps its
+  rows and drops the columns this build does not know, so an older build loses a
+  newer build's data and shows no alert. With a stage in the plan, SwiftData
+  refuses the store and leaves it intact, and the launch shows the store failure
+  alert. A build with no stages needs a check of its own, which has to ship in that
+  older build, before any `SchemaV2`.
 - **CloudKit as a second writer: unverified.** Sync imports write outside
   `StoreActor`, and the tests above use no iCloud account, so they show the
   mechanism and not what an import does. Whether a stale context's save can revert

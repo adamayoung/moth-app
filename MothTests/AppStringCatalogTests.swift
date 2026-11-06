@@ -38,7 +38,15 @@ struct AppStringCatalogTests {
             ("SIDEBAR_DELETE_TITLE_%@", "Delete \u{201C}%@\u{201D}?"),
             ("SIDEBAR_DELETE_MESSAGE", "You can\u{2019}t undo this."),
             ("SIDEBAR_DELETE_CONFIRM", "Delete"),
-            ("SIDEBAR_DELETE_CANCEL", "Cancel")
+            ("SIDEBAR_DELETE_CANCEL", "Cancel"),
+            ("SIDEBAR_ICLOUD_SYNC_OFF", "iCloud Sync Off"),
+            ("SIDEBAR_ICLOUD_SYNC_OFF_HELP", "This build has no iCloud container, so your data stays on this Mac."),
+            ("STORE_FAILURE_ALERT_TITLE", "Moth can’t open your data."),
+            (
+                "STORE_FAILURE_ALERT_MESSAGE",
+                "Quit, then open Moth again. If this keeps happening, the data may come from a newer version of Moth."
+            ),
+            ("STORE_FAILURE_ALERT_QUIT", "Quit")
         ]
     )
     func catalogHoldsEnglishValue(key: String, expected: String) throws {
