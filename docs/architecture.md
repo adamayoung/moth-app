@@ -310,6 +310,35 @@ The app is sandboxed with outgoing network connections allowed. It carries an
 App Transport Security exception because an API client has to reach plain-HTTP
 hosts, and localhost above all.
 
+## Transport
+
+`HTTPTransport.send` returns the final response, and `HTTPResponse.metrics`
+describes it. Phases and bytes come from the last of a task's transactions,
+because that one carries the final response. `totalTime` and `redirectCount`
+cover the whole task.
+
+The phases run end to end: `dns`, `connect`, `tls`, `firstByte` and `download`.
+`connect` stops where the TLS handshake starts, because URLSession's connect end
+date includes it. Over QUIC, which handshakes as it connects, `connect` is close
+to zero and `tls` holds the handshake. `firstByte` starts with the request, so it
+includes any upload. A phase that did not happen, such as on a reused connection,
+is `nil`.
+`bytesReceived` counts the final response's header and body bytes on the wire.
+
+`metrics` is optional because URLSession does not say when it delivers them
+relative to `data(for:delegate:)` returning. They arrived first in every send
+measured, but `send` reads what has arrived and never waits. A stub transport has
+none.
+
+`HTTPTransportError.translating` is the only code that decodes a `URLError`, so
+the app never does. A timeout, a connection failure, a TLS failure and anything
+else are separate cases, and each keeps the system's description. A cancelled
+send throws `CancellationError`, which is not a failure.
+
+URLSession merges a repeated response header into one comma-separated value,
+`Set-Cookie` included. `URLSessionLoopbackTests` records this. Keeping them apart
+needs the transport swap that [Stack](#stack) reserves for a real wall.
+
 ## Concurrency
 
 `MothCore`, `MothImport` and the app default to `MainActor`. `HTTPKit` and

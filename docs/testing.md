@@ -88,6 +88,9 @@ on a `packages` array. To link a product, add it to the target's
   real network, Keychain or iCloud access. The exception is
   `KeychainSecretStoreHostedTests`, which uses the login keychain under a new
   service name for each test, so that no later build reads its items and prompts.
+  `URLSessionLoopbackTests` also uses a real socket, on 127.0.0.1 only, because
+  `StubURLProtocol` produces no protocol, byte count or redirect count, and a
+  header dictionary cannot hold a repeated name.
 - For SwiftData tests, create an isolated in-memory container, hold it for the
   life of any context you read from, and validate persisted results through a
   fresh context when cache behaviour matters.
