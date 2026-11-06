@@ -130,8 +130,11 @@ struct VariableTableModelTests {
         model.update(edited.id) { $0.name = "typing" }
 
         let synced = Variable(id: host.id, name: "synced", value: host.value)
-        try await dataModel.writer.updateVariable(synced)
-        try await dataModel.writer.updateVariable(Variable(id: edited.id, name: "theirs", value: edited.variable.value))
+        try await dataModel.writer.updateVariable(synced, replacing: nil)
+        try await dataModel.writer.updateVariable(
+            Variable(id: edited.id, name: "theirs", value: edited.variable.value),
+            replacing: nil
+        )
         try deliverVariables()
 
         #expect(try draft(host.id).name == "synced")
@@ -289,7 +292,10 @@ struct VariableTableModelTests {
     func deliveryKeepsTheLoadedSecret() async throws {
         try await loadedSecret()
 
-        try await dataModel.writer.updateVariable(Variable(id: token.id, name: "renamed", value: token.value))
+        try await dataModel.writer.updateVariable(
+            Variable(id: token.id, name: "renamed", value: token.value),
+            replacing: token.secretReference
+        )
         try deliverVariables()
 
         #expect(try draft(token.id).name == "renamed")

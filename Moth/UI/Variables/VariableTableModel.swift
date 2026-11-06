@@ -17,7 +17,7 @@ final class VariableTableModel {
 
     @ObservationIgnored private var saved: [UUID: Variable] = [:]
     @ObservationIgnored private var savedSecrets: [UUID: String] = [:]
-    @ObservationIgnored private var changingSecret: Set<UUID> = []
+    @ObservationIgnored private var lastWrite: Task<Void, Never>?
 
     private let writer: StoreWriter
     private let secretStore: any SecretStore
@@ -63,6 +63,10 @@ final class VariableTableModel {
     }
 
     func commit(_ id: UUID) async {
+        await inOrder { await self.writeDraft(id) }
+    }
+
+    private func writeDraft(_ id: UUID) async {
         guard let draft = drafts.first(where: { $0.id == id }) else {
             return
         }
@@ -98,6 +102,10 @@ final class VariableTableModel {
     }
 
     func remove(_ id: UUID) async {
+        await inOrder { await self.removeRow(id) }
+    }
+
+    private func removeRow(_ id: UUID) async {
         do {
             let released = try await writer.deleteVariable(id)
             drafts.removeAll { $0.id == id }
@@ -110,13 +118,13 @@ final class VariableTableModel {
     }
 
     func setSecret(_ isSecret: Bool, for id: UUID) async {
-        guard let draft = drafts.first(where: { $0.id == id }),
-              draft.canChangeSecret,
-              changingSecret.insert(id).inserted
-        else {
+        await inOrder { await self.changeSecret(isSecret, for: id) }
+    }
+
+    private func changeSecret(_ isSecret: Bool, for id: UUID) async {
+        guard let draft = drafts.first(where: { $0.id == id }), draft.canChangeSecret else {
             return
         }
-        defer { changingSecret.remove(id) }
         switch (isSecret, draft.secret?.value) {
         case (true, nil):
             await moveToSecret(draft)
@@ -125,6 +133,18 @@ final class VariableTableModel {
         default:
             break
         }
+    }
+
+    /// Keychain calls finish in no set order, so a later edit could land first, or a save could recreate an item a
+    /// toggle has just removed.
+    private func inOrder(_ write: @escaping () async -> Void) async {
+        let previous = lastWrite
+        let next = Task {
+            await previous?.value
+            await write()
+        }
+        lastWrite = next
+        await next.value
     }
 
     /// Saves the value first: a stray Keychain item is harmless, and a reference with no value would lose it.
@@ -140,7 +160,7 @@ final class VariableTableModel {
             return
         }
         do {
-            let released = try await writer.updateVariable(secret)
+            let released = try await writer.updateVariable(secret, replacing: nil)
             update(draft.id) { row in
                 row.initial = ""
                 row.current = ""
@@ -159,7 +179,7 @@ final class VariableTableModel {
         var plain = draft.variable
         plain.value = .plain(initial: value, current: value)
         do {
-            let released = try await writer.updateVariable(plain)
+            let released = try await writer.updateVariable(plain, replacing: draft.secret?.reference)
             update(draft.id) { row in
                 row.initial = value
                 row.current = value
@@ -204,7 +224,7 @@ final class VariableTableModel {
 
     private func save(_ variable: Variable) async {
         do {
-            let released = try await writer.updateVariable(variable)
+            let released = try await writer.updateVariable(variable, replacing: saved[variable.id]?.secretReference)
             saved[variable.id] = variable
             await secretStore.remove(released)
         } catch {
@@ -221,9 +241,9 @@ final class VariableTableModel {
         }
     }
 
-    /// The error only, never a value: a variable's text can be a credential.
+    /// Keeps the error private, because a failed save can describe its row, and a variable's text can be a credential.
     private static func log(_ action: StaticString, _ error: any Error) {
-        Logger.variables.error("\(action, privacy: .public) failed: \(String(describing: error), privacy: .public)")
+        Logger.variables.error("\(action, privacy: .public) failed: \(String(describing: error), privacy: .private)")
     }
 
 }

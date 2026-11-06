@@ -10,6 +10,7 @@ public nonisolated enum VariableWriteError: Error, Equatable {
 
     case scopeNotFound(VariableScope)
     case variableNotFound(UUID)
+    case secretChanged(UUID)
 
 }
 
@@ -25,13 +26,20 @@ public extension StoreWriter {
     }
 
     /// Returns the references this leaves unheld, for the caller to remove once the save has landed, because a
-    /// `SecItem` call has no place in the synchronous write.
+    /// `SecItem` call has no place in the synchronous write. `held` is the secret the caller read: a sync can land
+    /// first, and writing over a newer one would release a value that has already moved.
     @discardableResult
-    func updateVariable(_ variable: Variable) throws -> Set<SecretReference> {
+    func updateVariable(
+        _ variable: Variable,
+        replacing held: SecretReference?
+    ) throws -> Set<SecretReference> {
         try write { context in
             let rows = try context.fetch(VariableModel.withID(variable.id))
             guard !rows.isEmpty else {
                 throw VariableWriteError.variableNotFound(variable.id)
+            }
+            guard rows.contains(where: { $0.secretIdentifier == held?.identifier }) else {
+                throw VariableWriteError.secretChanged(variable.id)
             }
             let letGo = rows.filter { $0.secretIdentifier != variable.secretReference?.identifier }
             let released = try Self.secrets(releasedBy: letGo, in: context)

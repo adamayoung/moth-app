@@ -252,7 +252,10 @@ from `@Query` replaces a draft only if it has not run ahead of the store. So a
 sync can't take text from under someone typing, and the commit that follows
 overwrites what arrived. The exception is a change between plain and secret: the
 draft takes the store's value and keeps only its name and Enabled, because
-committing the old kind would lose a value another Mac has already moved.
+committing the old kind would lose a value another Mac has already moved. A
+sync can also land before its delivery, so `updateVariable` takes the secret
+its caller read and refuses the write if the store has moved on. The model runs
+its writes one at a time, because Keychain calls finish in no set order.
 
 ### CloudKit Model Rules
 

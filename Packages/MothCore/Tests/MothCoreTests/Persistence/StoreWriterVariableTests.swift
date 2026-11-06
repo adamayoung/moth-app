@@ -82,7 +82,7 @@ struct StoreWriterVariableTests {
             isEnabled: false
         )
 
-        let released = try await dataModel.writer.updateVariable(updated)
+        let released = try await dataModel.writer.updateVariable(updated, replacing: nil)
 
         #expect(released.isEmpty)
         #expect(try Self.variables(in: .environment(environment.id), of: dataModel) == [updated, sibling])
@@ -96,7 +96,8 @@ struct StoreWriterVariableTests {
         let reference = SecretReference()
 
         let released = try await dataModel.writer.updateVariable(
-            Variable(id: plain.id, name: plain.name, value: .secret(reference))
+            Variable(id: plain.id, name: plain.name, value: .secret(reference)),
+            replacing: nil
         )
 
         let row = try #require(ModelContext(dataModel.container).fetch(VariableModel.withID(plain.id)).first)
@@ -113,7 +114,8 @@ struct StoreWriterVariableTests {
         let dataModel = try DataModel.inMemory(seed: Workspace(globals: [secret]))
 
         let released = try await dataModel.writer.updateVariable(
-            Variable(id: secret.id, name: secret.name, value: .plain(initial: "a", current: "a"))
+            Variable(id: secret.id, name: secret.name, value: .plain(initial: "a", current: "a")),
+            replacing: reference
         )
 
         #expect(released == [reference])
@@ -122,11 +124,13 @@ struct StoreWriterVariableTests {
 
     @Test("Renaming a secret keeps its reference, so nothing is released")
     func renamingASecretReleasesNothing() async throws {
-        let secret = Variable(name: "token", value: .secret(SecretReference()))
+        let reference = SecretReference()
+        let secret = Variable(name: "token", value: .secret(reference))
         let dataModel = try DataModel.inMemory(seed: Workspace(globals: [secret]))
 
         let released = try await dataModel.writer.updateVariable(
-            Variable(id: secret.id, name: "renamed", value: secret.value)
+            Variable(id: secret.id, name: "renamed", value: secret.value),
+            replacing: reference
         )
 
         #expect(released.isEmpty)
@@ -207,8 +211,21 @@ struct StoreWriterVariableTests {
         let gone = Variable.plain("host", "1")
 
         await #expect(throws: VariableWriteError.variableNotFound(gone.id)) {
-            try await dataModel.writer.updateVariable(gone)
+            try await dataModel.writer.updateVariable(gone, replacing: nil)
         }
+    }
+
+    @Test("An update that read an older secret is refused, and the newer secret stays")
+    func updateFromAnOlderSecretIsRefused() async throws {
+        let secret = Variable(name: "token", value: .secret(SecretReference()))
+        let dataModel = try DataModel.inMemory(seed: Workspace(globals: [secret]))
+        let stale = Variable(id: secret.id, name: "stale", value: .plain(initial: "a", current: "a"))
+
+        await #expect(throws: VariableWriteError.secretChanged(secret.id)) {
+            try await dataModel.writer.updateVariable(stale, replacing: nil)
+        }
+
+        #expect(try Self.variables(in: .globals, of: dataModel) == [secret])
     }
 
     @Test("Deleting a collection removes it and its variables, and releases secrets nothing else holds")
