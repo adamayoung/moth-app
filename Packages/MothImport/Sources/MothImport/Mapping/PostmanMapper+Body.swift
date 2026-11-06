@@ -21,7 +21,7 @@ nonisolated extension PostmanMapper {
         case .urlencoded(let rows):
             return .urlEncoded(keyValues(rows))
         case .formdata(let rows):
-            return .formData(rows.map(Self.formField))
+            return .formData(formFields(rows))
         case .file(let source, let inlineContent):
             if inlineContent != nil {
                 skipped.bodies += 1
@@ -47,13 +47,18 @@ nonisolated extension PostmanMapper {
         }
     }
 
-    private static func formField(_ row: PostmanFormDataRow) -> FormDataField {
-        FormDataField(
-            key: row.key ?? "",
-            value: row.type == "file" ? .file(paths: row.sources) : .text(row.value ?? ""),
-            contentType: row.contentType,
-            isEnabled: row.isEnabled
-        )
+    private mutating func formFields(_ rows: [PostmanFormDataRow]) -> [FormDataField] {
+        var fields: [FormDataField] = []
+        for row in rows {
+            countDescription(row.description)
+            fields.append(FormDataField(
+                key: row.key ?? "",
+                value: row.type == "file" ? .file(paths: row.sources) : .text(row.value ?? ""),
+                contentType: row.contentType,
+                isEnabled: row.isEnabled
+            ))
+        }
+        return fields
     }
 
 }

@@ -150,6 +150,26 @@ or HEAD. A credential with no stored value sends no auth, and
 header name, so repeated names go out comma-joined, and repeated cookies joined by
 `; `.
 
+### Postman Import
+
+`PostmanImporter` takes a file's bytes, so the app needs no `PostmanKit` type, and
+returns domain values with counts of what it imported and skipped. It writes
+nothing to the store. Secrets are saved once mapping finishes, and a failed save
+removes those already saved. A caller whose store write then fails removes
+`PostmanImportResult.secrets`.
+
+Moth keeps what it can store and counts the rest:
+
+- A query that has rows leaves the URL template, because `RequestBuilder` appends
+  rows to a template's own query and would send it twice.
+- API key, AWS, Digest and OAuth2 are stored by kind and counted as unsupported
+  until they have a provider. Their credentials go to the secret store as written.
+- OAuth 1.0, Hawk, NTLM, EdgeGrid and unknown types become `.none` and lose their
+  credentials. `.none` stops the walk up the tree, so a parent's credential cannot
+  reach something that asked for another scheme.
+- Scripts with code, folder variables, descriptions and unknown body modes are
+  dropped and counted.
+
 ## Persistence
 
 ### Two Stores
