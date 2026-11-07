@@ -41,7 +41,7 @@ public nonisolated struct RequestSender: Sendable {
             urlRequest = built.urlRequest
             notes = ResponseNote.notes(
                 unresolved: resolved.unresolved,
-                notices: built.notices,
+                notices: built.notices.map { $0.namingRow(of: outgoing.request, resolvedAs: resolved) },
                 unresolvedCredentials: resolved.unresolvedCredentials
             )
         } catch is CancellationError {
@@ -72,6 +72,27 @@ public nonisolated struct RequestSender: Sendable {
             return .cancelled
         } catch {
             return .failed(SendFailure(transportError: error), notes: notes)
+        }
+    }
+
+}
+
+private nonisolated extension RequestBuildNotice {
+
+    /// A resolved name can hold a secret, so a note names a row as the tab shows it.
+    func namingRow(of request: Request, resolvedAs resolved: ResolvedRequest) -> RequestBuildNotice {
+        switch self {
+        case .unsendableHeader(let name):
+            let row = zip(request.headers, resolved.headers).first { $0.1.key == name }
+            return .unsendableHeader(name: row?.0.key ?? name)
+        case .unsupportedFormDataFile(let key):
+            guard case .formData(let written) = request.body, case .formData(let fields) = resolved.body else {
+                return self
+            }
+            let row = zip(written, fields).first { $0.1.key == key }
+            return .unsupportedFormDataFile(key: row?.0.key ?? key)
+        default:
+            return self
         }
     }
 

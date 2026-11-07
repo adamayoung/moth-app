@@ -166,7 +166,23 @@ struct AppStringCatalogTests {
             ("RESPONSE_NOTE_UNDEFINED_VARIABLE_%@", "{{%@}} isn\u{2019}t defined, so it was sent as written."),
             ("RESPONSE_NOTE_MISSING_CREDENTIAL", "Sent without auth, because its credential has no value."),
             ("RESPONSE_NOTE_UNSUPPORTED_AUTH", "Sent without its unsupported auth."),
-            ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body.")
+            ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body."),
+            ("RESPONSE_NOTE_SECRET_WITHOUT_VALUE_%@", "{{%@}} is a secret with no value, so it was sent as written."),
+            ("RESPONSE_NOTE_VARIABLE_CYCLE_%@", "{{%@}} refers to itself, so it was sent as written."),
+            (
+                "RESPONSE_NOTE_VARIABLE_NOT_EXPANDED_%@",
+                "{{%@}} couldn\u{2019}t be expanded, so it was sent as written."
+            ),
+            (
+                "RESPONSE_NOTE_UNSENDABLE_HEADER_%@",
+                "Sent without header %@, because its name or value isn\u{2019}t valid."
+            ),
+            ("RESPONSE_NOTE_UNSUPPORTED_FILE_%@", "Sent without file %@, because Moth can\u{2019}t send files yet."),
+            ("RESPONSE_NOTE_BODY_NOT_SENT_%@", "Sent without its body, because Moth can\u{2019}t send a body with %@."),
+            (
+                "RESPONSE_NOTE_FORM_DATA_BOUNDARY_REPLACED",
+                "Your Content-Type header replaced the form-data boundary, so the server may not read the body."
+            )
         ]
     )
     func catalogHoldsEnglishValue(key: String, expected: String) throws {
@@ -200,6 +216,22 @@ struct AppStringCatalogTests {
         try expectPlural(key: "QUIT_ALERT_MESSAGE_%lld", count: count, expected: expected)
     }
 
+    private func expectPlural(key: String, count: Int, expected: String) throws {
+        let englishURL = try #require(Bundle.main.url(forResource: "en-GB", withExtension: "lproj"))
+        let english = try #require(Bundle(url: englishURL))
+        let format = english.localizedString(
+            forKey: key,
+            value: Self.missingValue,
+            table: nil
+        )
+
+        #expect(String.localizedStringWithFormat(format, count) == expected)
+    }
+
+}
+
+extension AppStringCatalogTests {
+
     @Test(
         "The note for undefined variables reads correctly in the singular and the plural",
         arguments: [
@@ -211,16 +243,43 @@ struct AppStringCatalogTests {
         try expectPlural(key: "RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld", count: count, expected: expected)
     }
 
-    private func expectPlural(key: String, count: Int, expected: String) throws {
-        let englishURL = try #require(Bundle.main.url(forResource: "en-GB", withExtension: "lproj"))
-        let english = try #require(Bundle(url: englishURL))
-        let format = english.localizedString(
-            forKey: key,
-            value: Self.missingValue,
-            table: nil
-        )
-
-        #expect(String.localizedStringWithFormat(format, count) == expected)
+    @Test(
+        "The notes that count read correctly in the singular and the plural",
+        arguments: [
+            (
+                "RESPONSE_NOTE_UNRESOLVED_VARIABLES_%lld",
+                1,
+                "1 variable couldn\u{2019}t be resolved and was sent as written."
+            ),
+            (
+                "RESPONSE_NOTE_UNRESOLVED_VARIABLES_%lld",
+                3,
+                "3 variables couldn\u{2019}t be resolved and were sent as written."
+            ),
+            (
+                "RESPONSE_NOTE_UNSENDABLE_HEADERS_%lld",
+                1,
+                "Sent without 1 header, because its name or value isn\u{2019}t valid."
+            ),
+            (
+                "RESPONSE_NOTE_UNSENDABLE_HEADERS_%lld",
+                2,
+                "Sent without 2 headers, because their names or values aren\u{2019}t valid."
+            ),
+            (
+                "RESPONSE_NOTE_UNSUPPORTED_FILES_%lld",
+                1,
+                "Sent without 1 file, because Moth can\u{2019}t send files yet."
+            ),
+            (
+                "RESPONSE_NOTE_UNSUPPORTED_FILES_%lld",
+                2,
+                "Sent without 2 files, because Moth can\u{2019}t send files yet."
+            )
+        ]
+    )
+    func countingNotesVaryByCount(key: String, count: Int, expected: String) throws {
+        try expectPlural(key: key, count: count, expected: expected)
     }
 
 }

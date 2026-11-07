@@ -71,7 +71,7 @@ public nonisolated struct RequestBuilder: Sendable {
         let body = request.body.encoded(multipartBoundary: multipartBoundary)
 
         if body.data?.isEmpty == false, Self.methodsWithoutBodies.contains(request.method.rawValue.uppercased()) {
-            return body.notices + [.bodyNotSent(method: request.method)]
+            return body.isFormWithNoRows ? body.notices : body.notices + [.bodyNotSent(method: request.method)]
         }
 
         urlRequest.httpBody = body.data

@@ -14,7 +14,9 @@ nonisolated struct MultipartFormData {
         var body = ""
         var notices: [RequestBuildNotice] = []
 
-        for field in fields where field.isEnabled && !field.key.isEmpty {
+        let sentFields = fields.filter { $0.isEnabled && !$0.key.isEmpty }
+
+        for field in sentFields {
             switch field.value {
             case .text(let text):
                 body += part(for: field, text: text)
@@ -29,7 +31,8 @@ nonisolated struct MultipartFormData {
             data: Data(body.utf8),
             contentType: "multipart/form-data; boundary=\(boundary)",
             notices: notices,
-            needsItsContentType: true
+            needsItsContentType: true,
+            isFormWithNoRows: sentFields.isEmpty
         )
     }
 

@@ -57,6 +57,8 @@ struct ResponseView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .padding()
+        .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
+        .clipped()
     }
 
     @ViewBuilder
@@ -80,6 +82,8 @@ struct ResponseNotesView: View {
                 ForEach(notes, id: \.self) { note in
                     Label {
                         Text(verbatim: note.message)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("response.note")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle")

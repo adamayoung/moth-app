@@ -23,10 +23,20 @@ extension ResponseNote {
     var message: String {
         switch self {
         case .undefinedVariable(let name): String(localized: "RESPONSE_NOTE_UNDEFINED_VARIABLE_\(name)")
+        case .secretWithNoValue(let name): String(localized: "RESPONSE_NOTE_SECRET_WITHOUT_VALUE_\(name)")
+        case .variableCycle(let name): String(localized: "RESPONSE_NOTE_VARIABLE_CYCLE_\(name)")
+        case .variableNotExpanded(let name): String(localized: "RESPONSE_NOTE_VARIABLE_NOT_EXPANDED_\(name)")
         case .undefinedVariables(let count): String(localized: "RESPONSE_NOTE_UNDEFINED_VARIABLES_\(count)")
+        case .unresolvedVariables(let count): String(localized: "RESPONSE_NOTE_UNRESOLVED_VARIABLES_\(count)")
+        case .unsendableHeader(let name): String(localized: "RESPONSE_NOTE_UNSENDABLE_HEADER_\(name)")
+        case .unsendableHeaders(let count): String(localized: "RESPONSE_NOTE_UNSENDABLE_HEADERS_\(count)")
         case .missingCredential: String(localized: "RESPONSE_NOTE_MISSING_CREDENTIAL")
         case .unsupportedAuth: String(localized: "RESPONSE_NOTE_UNSUPPORTED_AUTH")
+        case .bodyNotSent(let method): String(localized: "RESPONSE_NOTE_BODY_NOT_SENT_\(method.rawValue.uppercased())")
         case .unsupportedBody: String(localized: "RESPONSE_NOTE_UNSUPPORTED_BODY")
+        case .unsupportedFile(let key): String(localized: "RESPONSE_NOTE_UNSUPPORTED_FILE_\(key)")
+        case .unsupportedFiles(let count): String(localized: "RESPONSE_NOTE_UNSUPPORTED_FILES_\(count)")
+        case .formDataBoundaryReplaced: String(localized: "RESPONSE_NOTE_FORM_DATA_BOUNDARY_REPLACED")
         }
     }
 

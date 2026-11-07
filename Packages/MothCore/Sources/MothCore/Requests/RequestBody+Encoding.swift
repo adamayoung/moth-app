@@ -11,6 +11,7 @@ nonisolated struct EncodedBody {
     var contentType: String?
     var notices: [RequestBuildNotice] = []
     var needsItsContentType = false
+    var isFormWithNoRows = false
 
 }
 
