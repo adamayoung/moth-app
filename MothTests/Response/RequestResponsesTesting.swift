@@ -18,7 +18,8 @@ extension RequestResponsesTesting {
         holding request: Request,
         collectionAuth: Auth = .none,
         through transport: any HTTPTransport,
-        secretStore: any SecretStore = InMemorySecretStore()
+        secretStore: any SecretStore = InMemorySecretStore(),
+        cookieJars: CookieJars? = nil
     ) throws -> (DataModel, RequestResponses, CollectionTree) {
         let production = WorkspaceEnvironment(name: "Production", variables: [
             Variable(
@@ -41,6 +42,7 @@ extension RequestResponsesTesting {
             dataModel: dataModel,
             transport: transport,
             secretStore: secretStore,
+            cookieJars: cookieJars ?? CookieJars(writer: dataModel.writer, secretStore: InMemorySecretStore()),
             activeEnvironment: ActiveEnvironment(inMemory: staging.id)
         )
         return try (dataModel, responses, tree(of: dataModel))

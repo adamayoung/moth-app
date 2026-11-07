@@ -41,15 +41,29 @@ public nonisolated struct RequestSender: Sendable {
     }
 
     @concurrent
-    public func send(_ outgoing: OutgoingRequest, scopes: VariableScopes) async -> SendResult {
-        await sendRecording(outgoing, scopes: scopes).result
+    public func send(
+        _ outgoing: OutgoingRequest,
+        scopes: VariableScopes,
+        cookies: any CookieJar? = nil
+    ) async -> SendResult {
+        await sendRecording(outgoing, scopes: scopes, cookies: cookies).result
     }
 
     @concurrent
-    public func sendRecording(_ outgoing: OutgoingRequest, scopes: VariableScopes) async -> RecordedSend {
+    public func sendRecording(
+        _ outgoing: OutgoingRequest,
+        scopes: VariableScopes,
+        cookies: any CookieJar? = nil
+    ) async -> RecordedSend {
         let sentAt = now()
         let dynamicValues = DynamicValueLog()
-        let sent = await send(outgoing, scopes: scopes, dynamicVariables: dynamicValues.recording, at: sentAt)
+        let sent = await send(
+            outgoing,
+            scopes: scopes,
+            cookies: cookies,
+            dynamicVariables: dynamicValues.recording,
+            at: sentAt
+        )
         if sent.result == .cancelled {
             return RecordedSend(result: .cancelled, entry: nil)
         }
@@ -67,7 +81,7 @@ public nonisolated struct RequestSender: Sendable {
 
     /// Sends nothing while a secret the snapshot names, or a row it masked, has no value to send.
     @concurrent
-    public func sendAgain(_ entry: HistoryEntry) async -> SendAgainOutcome {
+    public func sendAgain(_ entry: HistoryEntry, cookies: any CookieJar? = nil) async -> SendAgainOutcome {
         do {
             let resolved = try await VariableResolver(secretStore: secretStore)
                 .resolve(entry.request, collection: [], environment: [], globals: [])
@@ -80,12 +94,17 @@ public nonisolated struct RequestSender: Sendable {
         } catch {
             return .secretUnavailable
         }
-        return await .sent(sendRecording(OutgoingRequest(request: entry.request), scopes: VariableScopes()))
+        return await .sent(sendRecording(
+            OutgoingRequest(request: entry.request),
+            scopes: VariableScopes(),
+            cookies: cookies
+        ))
     }
 
     private func send(
         _ outgoing: OutgoingRequest,
         scopes: VariableScopes,
+        cookies: any CookieJar?,
         dynamicVariables: DynamicVariables,
         at sentAt: Date
     ) async -> Transmission {
@@ -107,7 +126,7 @@ public nonisolated struct RequestSender: Sendable {
         } catch {
             return Transmission(result: .failed(SendFailure(notSent: error), notes: []))
         }
-        return await transmit(urlRequest, notes: notes, digest: digest)
+        return await transmit(urlRequest, cookies: cookies, notes: notes, digest: digest)
     }
 
     private func resolve(
@@ -126,22 +145,23 @@ public nonisolated struct RequestSender: Sendable {
 
     private func transmit(
         _ request: URLRequest,
+        cookies: any CookieJar?,
         notes: [ResponseNote],
         digest: DigestAuthProvider?
     ) async -> Transmission {
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            let (response, measured) = try await timedSend(request)
-            guard response.status == 401, let digest else {
-                return Transmission(response, measured: measured, notes: notes)
+            let sent = try await timedSend(request, cookies: cookies)
+            guard sent.response.status == 401, let digest else {
+                return Transmission(sent.response, measured: sent.measured, notes: notes)
             }
             return try await answerDigestChallenge(
-                in: response,
-                measured: measured,
+                in: sent,
                 notes: notes,
                 to: request,
-                with: digest
+                with: digest,
+                cookies: cookies
             )
         } catch is CancellationError {
             return Transmission(result: .cancelled)
@@ -155,10 +175,13 @@ public nonisolated struct RequestSender: Sendable {
 
 private nonisolated extension RequestSender {
 
-    func timedSend(_ request: URLRequest) async throws -> (HTTPResponse, Duration) {
+    func timedSend(
+        _ request: URLRequest,
+        cookies: any CookieJar?
+    ) async throws -> (response: HTTPResponse, measured: Duration) {
         let clock = ContinuousClock()
         let start = clock.now
-        let response = try await transport.send(request)
+        let response = try await transport.send(request, cookies: cookies)
         return (response, start.duration(to: clock.now))
     }
 
@@ -166,12 +189,13 @@ private nonisolated extension RequestSender {
     /// every send starts again with none. After a redirect, only a request with no body to another URL on its origin is
     /// answered: one with a body may have become a GET, and another origin is a host the request didn't name.
     func answerDigestChallenge(
-        in refusal: HTTPResponse,
-        measured: Duration,
+        in sent: (response: HTTPResponse, measured: Duration),
         notes: [ResponseNote],
         to request: URLRequest,
-        with digest: DigestAuthProvider
+        with digest: DigestAuthProvider,
+        cookies: any CookieJar?
     ) async throws -> Transmission {
+        let (refusal, measured) = sent
         let challenges = AuthChallenge.all(in: refusal.value(forHeader: "WWW-Authenticate") ?? "")
         guard let challenge = DigestChallenge.first(in: challenges) else {
             let isOffered = challenges.contains { $0.isScheme("Digest") }
@@ -193,14 +217,19 @@ private nonisolated extension RequestSender {
             digest.authorization(answering: challenge, to: answer, cnonce: cnonce()),
             forHTTPHeaderField: "Authorization"
         )
-        return try await transmitAnswer(answer, notes: notes + [.sentAgainForDigestChallenge])
+        return try await transmitAnswer(answer, cookies: cookies, notes: notes + [.sentAgainForDigestChallenge])
     }
 
-    private func transmitAnswer(_ answer: URLRequest, notes: [ResponseNote]) async throws -> Transmission {
+    /// The same jar as the first send, so a cookie the refusal set goes with the answer.
+    private func transmitAnswer(
+        _ answer: URLRequest,
+        cookies: any CookieJar?,
+        notes: [ResponseNote]
+    ) async throws -> Transmission {
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            let (response, measured) = try await timedSend(answer)
+            let (response, measured) = try await timedSend(answer, cookies: cookies)
             return Transmission(response, measured: measured, notes: notes)
         } catch is CancellationError {
             throw CancellationError()

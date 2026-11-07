@@ -15,6 +15,10 @@ public nonisolated struct SendContext: Sendable {
 
 public extension DataModel {
 
+    var workspaceID: UUID? {
+        try? mainContext.fetch(FetchDescriptor<WorkspaceModel>()).survivor?.id
+    }
+
     /// Fetches each scope's rows, because a row's to-many arrays go stale on the main context.
     func sendContext(for id: Request.ID, in tree: CollectionTree, environment: UUID?) throws -> SendContext {
         guard let row = try mainContext.fetch(RequestModel.withID(id)).first else {

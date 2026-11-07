@@ -43,11 +43,12 @@ final class HistoryModel {
         writer: StoreWriter,
         transport: any HTTPTransport,
         secretStore: any SecretStore,
+        cookieJar: @escaping () -> (any CookieJar)?,
         openTab: @escaping (Request.ID) -> Void
     ) {
         let sender = RequestSender(transport: transport, secretStore: secretStore)
         self.init(
-            sendAgain: { await sender.sendAgain($0) },
+            sendAgain: { await sender.sendAgain($0, cookies: cookieJar()) },
             record: { try await writer.addHistoryEntry($0) },
             clear: { try await writer.clearHistory() },
             openTab: openTab

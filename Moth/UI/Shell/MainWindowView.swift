@@ -19,10 +19,12 @@ struct MainWindowView: View {
     @State private var tabs: RequestTabsModel
     @State private var imports: ImportModel
     @State private var history: HistoryModel
+    @State private var cookies: CookiesModel
 
     init(
         dataModel: DataModel,
         secretStore: any SecretStore,
+        cookieJars: CookieJars,
         transport: any HTTPTransport,
         activeEnvironment: ActiveEnvironment,
         tabStore: RequestTabStore,
@@ -47,6 +49,7 @@ struct MainWindowView: View {
                 dataModel: dataModel,
                 transport: transport,
                 secretStore: secretStore,
+                cookieJars: cookieJars,
                 activeEnvironment: activeEnvironment
             ),
             code: RequestCodeModel(
@@ -62,8 +65,10 @@ struct MainWindowView: View {
             writer: writer,
             transport: transport,
             secretStore: secretStore,
+            cookieJar: { cookieJars.jar(in: dataModel) },
             openTab: { tabs.open($0) }
         )
+        self.cookies = CookiesModel(dataModel: dataModel, cookieJars: cookieJars)
         self.imports = ImportModel(
             source: importFileSource,
             secretStore: secretStore,
@@ -117,6 +122,10 @@ struct MainWindowView: View {
         .sheet(item: $imports.report) { report in
             ImportResultSheet(report: report)
         }
+        .sheet(isPresented: $cookies.isPresented) {
+            CookiesSheet(model: cookies)
+        }
+        .focusedSceneValue(\.cookiesModel, cookies)
         .focusedSceneValue(
             \.importCommands,
             ImportCommandContext(model: imports, canImport: imports.canImport)
@@ -132,6 +141,7 @@ struct MainWindowView: View {
         MainWindowView(
             dataModel: dataModel,
             secretStore: secretStore,
+            cookieJars: CookieJars(writer: dataModel.writer, secretStore: secretStore),
             transport: StubHTTPTransport(),
             activeEnvironment: ActiveEnvironment(inMemory: SeedData.workspace.activeEnvironmentID),
             tabStore: .preview,

@@ -11,6 +11,7 @@ final class SeededAppDependencies: AppDependencies {
 
     let transport: any HTTPTransport = StubHTTPTransport()
     let secretStore: any SecretStore = InMemorySecretStore()
+    let cookieJars: CookieJars
     let dataModel: DataModel
     let iCloudContainerIdentifier: String? = nil
     let isSyncedToICloud: Bool
@@ -30,6 +31,11 @@ final class SeededAppDependencies: AppDependencies {
     ) throws {
         let dataModel = try DataModel.inMemory(seed: seed)
         self.dataModel = dataModel
+        self.cookieJars = CookieJars(
+            writer: dataModel.writer,
+            secretStore: InMemorySecretStore(),
+            seed: seed.map { [$0.id: SeedData.cookies] } ?? [:]
+        )
         self.requestDrafts = RequestDrafts(writer: dataModel.writer, secretStore: secretStore)
         self.importFileSource = importFile.map(ImportFileSource.uiTest) ?? .panel
         self.clipboard = clipboard

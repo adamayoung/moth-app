@@ -10,6 +10,7 @@ import Synchronization
 final nonisolated class RecordingTransport: HTTPTransport {
 
     private let sent = Mutex<[URLRequest]>([])
+    private let jars = Mutex<[any CookieJar?]>([])
     private let result: @Sendable () throws -> HTTPResponse
 
     init(result: @escaping @Sendable () throws -> HTTPResponse = {
@@ -22,9 +23,14 @@ final nonisolated class RecordingTransport: HTTPTransport {
         sent.withLock(\.self)
     }
 
+    var cookieJars: [any CookieJar?] {
+        jars.withLock(\.self)
+    }
+
     @concurrent
-    func send(_ request: URLRequest) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies: any CookieJar?) async throws -> HTTPResponse {
         sent.withLock { $0.append(request) }
+        jars.withLock { $0.append(cookies) }
         return try result()
     }
 

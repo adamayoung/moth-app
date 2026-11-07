@@ -10,14 +10,20 @@ import Synchronization
 final nonisolated class RecordingHTTPTransport: HTTPTransport {
 
     private let sent = Mutex<[URLRequest]>([])
+    private let jars = Mutex<[any CookieJar?]>([])
 
     var requests: [URLRequest] {
         sent.withLock(\.self)
     }
 
+    var cookieJars: [any CookieJar?] {
+        jars.withLock(\.self)
+    }
+
     @concurrent
-    func send(_ request: URLRequest) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies: any CookieJar?) async throws -> HTTPResponse {
         sent.withLock { $0.append(request) }
+        jars.withLock { $0.append(cookies) }
         return HTTPResponse(status: 200, headers: [:], body: Data("{}".utf8))
     }
 
@@ -54,7 +60,7 @@ final nonisolated class HoldingHTTPTransport: HTTPTransport {
     }
 
     @concurrent
-    func send(_ request: URLRequest) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies _: any CookieJar?) async throws -> HTTPResponse {
         await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
                 gate.withLock { $0 = continuation }

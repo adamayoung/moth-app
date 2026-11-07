@@ -14,6 +14,8 @@ public nonisolated struct KeychainSecretStore: SecretStore {
         /// fails with `errSecInvalidOwnerEdit` removing an item an earlier build saved.
         case localOnly
         case synchronised(accessGroup: String)
+        /// For what belongs to one Mac, such as a session cookie. A synchronisable item can't be `ThisDeviceOnly`.
+        case deviceOnly(accessGroup: String)
     }
 
     public let service: String
@@ -36,8 +38,13 @@ public nonisolated struct KeychainSecretStore: SecretStore {
         let data = Data(value.utf8)
         var attributes = query
         attributes[kSecValueData] = data
-        if case .synchronised = mode {
+        switch mode {
+        case .localOnly:
+            break
+        case .synchronised:
             attributes[kSecAttrAccessible] = kSecAttrAccessibleWhenUnlocked
+        case .deviceOnly:
+            attributes[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         }
 
         var status = keychain.add(attributes)
@@ -88,6 +95,10 @@ public nonisolated struct KeychainSecretStore: SecretStore {
             query[kSecAttrSynchronizable] = false
         case .synchronised(let accessGroup):
             query[kSecAttrSynchronizable] = true
+            query[kSecAttrAccessGroup] = accessGroup
+            query[kSecUseDataProtectionKeychain] = true
+        case .deviceOnly(let accessGroup):
+            query[kSecAttrSynchronizable] = false
             query[kSecAttrAccessGroup] = accessGroup
             query[kSecUseDataProtectionKeychain] = true
         }

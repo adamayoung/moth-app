@@ -38,6 +38,35 @@ struct KeychainSecretStoreTests {
         #expect(attributes[kSecAttrAccessible] as? String == kSecAttrAccessibleWhenUnlocked as String)
     }
 
+    @Test("A device-only item is in the access group's data protection keychain, never syncs, and stays on this Mac")
+    func deviceOnlyAttributes() async throws {
+        let keychain = RecordingKeychainItems()
+        let store = KeychainSecretStore(service: "tests", mode: .deviceOnly(accessGroup: "group"), keychain: keychain)
+
+        try await store.save("s3cret", for: "cookie")
+
+        let attributes = try #require(keychain.addedAttributes)
+        #expect(attributes[kSecAttrSynchronizable] as? Bool == false)
+        #expect(attributes[kSecAttrAccessGroup] as? String == "group")
+        #expect(attributes[kSecUseDataProtectionKeychain] as? Bool == true)
+        #expect(attributes[kSecAttrAccessible] as? String == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String)
+    }
+
+    @Test("A device-only read and removal use the same scope as the add")
+    func deviceOnlyScope() async throws {
+        let keychain = RecordingKeychainItems(readStatus: errSecItemNotFound)
+        let store = KeychainSecretStore(service: "tests", mode: .deviceOnly(accessGroup: "group"), keychain: keychain)
+
+        _ = try await store.value(for: "cookie")
+        try await store.removeValue(for: "cookie")
+
+        for query in try [#require(keychain.readQuery), #require(keychain.deleteQuery)] {
+            #expect(query[kSecAttrSynchronizable] as? Bool == false)
+            #expect(query[kSecAttrAccessGroup] as? String == "group")
+            #expect(query[kSecUseDataProtectionKeychain] as? Bool == true)
+        }
+    }
+
     @Test("Saving over an existing item updates it, in the same scope as the add")
     func updatesADuplicateItem() async throws {
         let keychain = RecordingKeychainItems(addStatus: errSecDuplicateItem)

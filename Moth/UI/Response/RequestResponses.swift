@@ -44,6 +44,7 @@ final class RequestResponses {
         dataModel: DataModel,
         transport: any HTTPTransport,
         secretStore: any SecretStore,
+        cookieJars: CookieJars,
         activeEnvironment: ActiveEnvironment
     ) {
         let sender = RequestSender(transport: transport, secretStore: secretStore)
@@ -52,7 +53,8 @@ final class RequestResponses {
             do {
                 let context = try dataModel.sendContext(for: id, in: tree, environment: activeEnvironment.id)
                 let outgoing = try draft.outgoing(from: context.request, in: tree)
-                return await sender.sendRecording(outgoing, scopes: context.scopes)
+                let jar = cookieJars.jar(in: dataModel)
+                return await sender.sendRecording(outgoing, scopes: context.scopes, cookies: jar)
             } catch {
                 return RecordedSend(result: .failed(SendFailure(notSent: error), notes: []), entry: nil)
             }

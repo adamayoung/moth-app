@@ -10,8 +10,12 @@ import OSLog
 
 final class LiveAppDependencies: AppDependencies {
 
-    let transport: any HTTPTransport = URLSessionHTTPTransport(session: makeSession())
+    let transport: any HTTPTransport = URLSessionHTTPTransport(
+        session: URLSession(configuration: URLSessionHTTPTransport.sessionConfiguration)
+    )
     let secretStore: any SecretStore
+    let cookieSecretStore: any SecretStore
+    let cookieJars: CookieJars
     let dataModel: DataModel
     let iCloudContainerIdentifier: String?
     let isSyncedToICloud: Bool
@@ -36,9 +40,12 @@ final class LiveAppDependencies: AppDependencies {
         self.iCloudContainerIdentifier = containerIdentifier
         self.isSyncedToICloud = syncedContainer != nil
         self.secretStore = Self.makeSecretStore(signature: signature)
+        self.cookieSecretStore = Self.makeCookieSecretStore(signature: signature)
+        let cookieJars = CookieJars(writer: dataModel.writer, secretStore: cookieSecretStore)
+        self.cookieJars = cookieJars
         self.dataModel = dataModel
         self.requestDrafts = RequestDrafts(writer: dataModel.writer, secretStore: secretStore)
-        self.launchReconcile = Self.reconcileAtLaunch(dataModel.writer)
+        self.launchReconcile = Self.reconcileAtLaunch(dataModel.writer, cookieJars: cookieJars)
     }
 
     /// The entitlement decides, as for the secret store: an unsigned build still has the setting in its Info.plist.
@@ -52,10 +59,11 @@ final class LiveAppDependencies: AppDependencies {
 
     /// Lives on the graph, not a view's `.task`, because it must run with no window open. A failure is logged and
     /// not fatal: the next write reconciles again.
-    private static func reconcileAtLaunch(_ writer: StoreWriter) -> Task<Void, Never> {
+    private static func reconcileAtLaunch(_ writer: StoreWriter, cookieJars: CookieJars) -> Task<Void, Never> {
         Task {
             do {
                 try await writer.reconcileWorkspaces()
+                try await cookieJars.removeCookiesOfDeletedWorkspaces()
             } catch {
                 Logger.composition.error(
                     "Reconciling workspaces at launch failed: \(String(describing: error), privacy: .public)"
@@ -77,14 +85,17 @@ final class LiveAppDependencies: AppDependencies {
         return KeychainSecretStore(service: service, mode: .localOnly)
     }
 
-    /// An API client shows what the server sent, so no cached response, cookie or credential carries between requests.
-    private static func makeSession() -> URLSession {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.urlCache = nil
-        configuration.httpCookieStorage = nil
-        configuration.httpShouldSetCookies = false
-        configuration.urlCredentialStorage = nil
-        return URLSession(configuration: configuration)
+    /// A session cookie belongs to one Mac, so its value never syncs: login keychain items never do. A service of its
+    /// own keeps a cookie removal from reaching a credential.
+    private static func makeCookieSecretStore(signature: AppSignature) -> any SecretStore {
+        guard let teamIdentifier = signature.teamIdentifier else {
+            return InMemorySecretStore()
+        }
+        let service = "uk.co.adam-young.Moth.cookies.\(teamIdentifier)"
+        if let accessGroup = signature.keychainAccessGroup {
+            return KeychainSecretStore(service: service, mode: .deviceOnly(accessGroup: accessGroup))
+        }
+        return KeychainSecretStore(service: service, mode: .localOnly)
     }
 
 }

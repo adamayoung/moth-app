@@ -283,6 +283,24 @@ extension AppStringCatalogTests {
     }
 
     @Test(
+        "The Cookies sheet's copy comes from the catalog with its en-GB value",
+        arguments: [
+            ("MENU_MANAGE_COOKIES", "Manage Cookies\u{2026}"),
+            ("COOKIES_TITLE", "Cookies"),
+            ("COOKIES_EMPTY", "No Cookies"),
+            ("COOKIES_EXPIRES_SESSION", "Session"),
+            ("COOKIES_DELETE_DOMAIN_%@", "Delete Cookies for %@"),
+            ("COOKIES_DELETE_ALL", "Delete All\u{2026}"),
+            ("COOKIES_DELETE_ALL_TITLE", "Delete all cookies?"),
+            ("COOKIES_DELETE_ALL_MESSAGE", "You can\u{2019}t undo this action."),
+            ("COOKIES_DELETE_ALL_CONFIRM", "Delete All")
+        ]
+    )
+    func cookiesCopy(key: String, expected: String) throws {
+        try catalogHoldsEnglishValue(key: key, expected: expected)
+    }
+
+    @Test(
         "The Request menu's keyboard commands come from the catalog with their en-GB value",
         arguments: [
             ("MENU_SEND", "Send"),

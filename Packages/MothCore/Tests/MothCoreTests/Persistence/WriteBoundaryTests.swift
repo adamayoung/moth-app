@@ -96,7 +96,18 @@ struct WriteBoundaryTests {
         "HistoryEntryModel.reasonPhrase": isWritable(\HistoryEntryModel.reasonPhrase),
         "HistoryEntryModel.responseSize": isWritable(\HistoryEntryModel.responseSize),
         "HistoryEntryModel.timingData": isWritable(\HistoryEntryModel.timingData),
-        "HistoryEntryModel.failureKind": isWritable(\HistoryEntryModel.failureKind)
+        "HistoryEntryModel.failureKind": isWritable(\HistoryEntryModel.failureKind),
+        "CookieModel.id": isWritable(\CookieModel.id),
+        "CookieModel.workspaceID": isWritable(\CookieModel.workspaceID),
+        "CookieModel.name": isWritable(\CookieModel.name),
+        "CookieModel.domain": isWritable(\CookieModel.domain),
+        "CookieModel.isHostOnly": isWritable(\CookieModel.isHostOnly),
+        "CookieModel.path": isWritable(\CookieModel.path),
+        "CookieModel.expiresAt": isWritable(\CookieModel.expiresAt),
+        "CookieModel.isSecure": isWritable(\CookieModel.isSecure),
+        "CookieModel.isHTTPOnly": isWritable(\CookieModel.isHTTPOnly),
+        "CookieModel.createdAt": isWritable(\CookieModel.createdAt),
+        "CookieModel.valueIdentifier": isWritable(\CookieModel.valueIdentifier)
     ]
 
     private static var dataModelSources: URL {

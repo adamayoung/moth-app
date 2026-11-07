@@ -13,9 +13,22 @@ public struct URLSessionHTTPTransport: HTTPTransport {
         self.session = session
     }
 
+    /// An API client shows what the server sent, so URLSession keeps no cache, credential or cookie of its own:
+    /// cookies go through the ``CookieJar`` a send is given.
+    public static var sessionConfiguration: URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = nil
+        configuration.httpCookieStorage = nil
+        configuration.httpShouldSetCookies = false
+        configuration.urlCredentialStorage = nil
+        return configuration
+    }
+
     @concurrent
-    public func send(_ request: URLRequest) async throws -> HTTPResponse {
-        let recorder = TaskMetricsRecorder()
+    public func send(_ request: URLRequest, cookies jar: any CookieJar?) async throws -> HTTPResponse {
+        let cookies = jar.map { CookieExchange(jar: $0, request: request) }
+        let request = await cookies?.preparing(request) ?? request
+        let recorder = TaskMetricsRecorder(cookies: cookies)
         let body: Data
         let response: URLResponse
         do {
@@ -27,24 +40,15 @@ public struct URLSessionHTTPTransport: HTTPTransport {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw HTTPTransportError.notHTTP
         }
+        await cookies?.receive(httpResponse)
 
         return HTTPResponse(
             status: httpResponse.statusCode,
-            headers: Self.headers(of: httpResponse),
+            headers: httpResponse.stringHeaders,
             body: body,
             metrics: recorder.metrics,
             url: httpResponse.url
         )
-    }
-
-    private static func headers(of response: HTTPURLResponse) -> [String: String] {
-        var headers: [String: String] = [:]
-        for (name, value) in response.allHeaderFields {
-            if let name = name as? String, let value = value as? String {
-                headers[name] = value
-            }
-        }
-        return headers
     }
 
 }

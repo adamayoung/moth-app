@@ -75,6 +75,19 @@ struct SendContextTests {
         #expect(context.request.urlTemplate == "https://example.com")
     }
 
+    @Test("The data model names the workspace it shows, whose cookie jar a send uses")
+    func namesTheWorkspace() throws {
+        let (dataModel, _) = try tree()
+        let workspace = try #require(dataModel.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).first)
+
+        #expect(dataModel.workspaceID == workspace.id)
+    }
+
+    @Test("A store with no workspace has none to name")
+    func noWorkspace() throws {
+        #expect(try DataModel.inMemory().workspaceID == nil)
+    }
+
     @Test("A request with no row refuses, because nothing can be sent")
     func missingRow() throws {
         let (dataModel, tree) = try tree()

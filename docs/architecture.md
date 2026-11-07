@@ -25,7 +25,7 @@ These are decided. Do not reopen them without being asked.
 - macOS first, minimum 27.2, with iOS and iPadOS kept feasible for later: no
   AppKit in any package.
 - URLSession behind an `HTTPTransport` protocol, not SwiftNIO. URLSession gives
-  us HTTP/1.1, 2 and 3, TLS, proxies, cookies, streaming and
+  us HTTP/1.1, 2 and 3, TLS, proxies, streaming and
   `URLSessionTaskMetrics`. Swap to async-http-client only for a real wall, such
   as raw or malformed requests or raw wire bytes.
 - Secrets in the Keychain with `kSecAttrSynchronizable`, never in SwiftData.
@@ -37,8 +37,8 @@ These are decided. Do not reopen them without being asked.
 | --- | --- | --- | --- |
 | `Moth` | Scene roots, SwiftUI, commands, `AppModel`, dependency composition, and platform-only APIs | `MothCore`, `MothImport`, `HTTPKit` | `MainActor` |
 | `MothImport` | Mapping Postman collections and environments to and from the domain, cURL import, and code generation (cURL, Swift URLSession) | `MothCore`, `PostmanKit` | `MainActor` |
-| `MothCore` | Domain types, variable resolution, auth providers, SwiftData models and schemas, CloudKit configuration, the Keychain secret store, mappers, and services | `HTTPKit` | `MainActor` |
-| `HTTPKit` | `HTTPTransport`, its URLSession implementation, metrics capture, the redirect chain, and the cookie jar; no SwiftData or UI | nothing | `nonisolated` |
+| `MothCore` | Domain types, variable resolution, auth providers, SwiftData models and schemas, CloudKit configuration, the Keychain secret store, each workspace's cookie jar, mappers, and services | `HTTPKit` | `MainActor` |
+| `HTTPKit` | `HTTPTransport`, its URLSession implementation, metrics capture, the redirect chain, and the cookie rules and jar protocol; no SwiftData or UI | nothing | `nonisolated` |
 | `PostmanKit` | Codable wire models for Postman Collection v2.1 and Environment JSON; no SwiftData or UI | nothing | `nonisolated` |
 
 Non-UI modules have no SwiftUI or AppKit dependency and are fully unit-testable.
@@ -270,10 +270,11 @@ The container holds two `ModelConfiguration`s:
 - a **synced store**, using `cloudKitDatabase: .private(<container>)`, for
   workspaces, collections, requests and environments;
 - a **local store**, using `cloudKitDatabase: .none`, for response bodies and
-  history snapshots, which get big and are not synced.
+  history snapshots, which get big and are not synced, and cookies, which belong
+  to one Mac.
 
-A model belongs to exactly one store. `HistoryEntry` refers to its request by
-identifier, not by `@Relationship`.
+A model belongs to exactly one store. `HistoryEntry` refers to its request, and
+`CookieModel` to its workspace, by identifier, not by `@Relationship`.
 
 `DataModel` owns both stores, and `StoreConfigurations` builds them. A container
 identifier selects `.private`, and no identifier selects `.none`. Each store has
@@ -446,10 +447,11 @@ schema before release.
 
 `CurrentSchema` names the version this build opens. `SchemaV2` changes only the
 local store: it adds `HistoryEntryModel`'s summary, response and timing
-attributes. The plan lists both versions with no stage, because a staged
-migration can't identify a store that holds only some of a version's models, and
-each store holds only its configuration's. SwiftData's automatic lightweight
-migration adds the attributes.
+attributes. `SchemaV3` adds `CookieModel` to the local store and changes nothing
+else. The plan lists every version with no stage, because a staged migration can't
+identify a store that holds only some of a version's models, and each store holds
+only its configuration's. SwiftData's automatic lightweight migration adds each
+version's changes.
 
 ### Stores From Another Schema
 
@@ -571,6 +573,16 @@ Replacing a credential on a request, folder or collection removes its Keychain i
 once the row has changed, unless another row's auth holds that reference. Deleting
 one leaves the item behind as a stray.
 
+### Cookie Values
+
+A cookie's value is the one exception to `kSecAttrSynchronizable`: a session
+belongs to one device, so the value is a device-only item, in
+`KeychainSecretStore`'s `.deviceOnly` mode, under a service of its own so removing
+cookies can never reach a credential. A build with no iCloud container keeps it on
+the login keychain, whose items never sync, and an ad hoc build keeps it in memory,
+so its jar works until quit. The local store holds the cookie's metadata and the
+identifier of its item, and a row whose item is gone is dropped when the jar loads.
+
 ### Which Store a Build Uses
 
 `AppSignature` reads the running app's own signature, and `LiveAppDependencies`
@@ -640,6 +652,32 @@ send throws `CancellationError`, which is not a failure.
 URLSession merges a repeated response header into one comma-separated value,
 `Set-Cookie` included. `URLSessionLoopbackTests` records this. Keeping them apart
 needs the transport swap that [Stack](#stack) reserves for a real wall.
+
+### Cookies
+
+URLSession's own cookie storage stays off, so Moth never touches the system's
+cookies. A send takes a `CookieJar`, and `URLSessionHTTPTransport` joins the jar's
+cookies to any manual `Cookie` header with `; `, a manual value winning by name,
+and stores what each response sets. `HTTPCookie` splits the merged `Set-Cookie`,
+and `Cookie` refuses a `Domain` the host isn't in, or with no dot, as there is no
+public suffix list. `CookieList` applies RFC 6265's rules for storing and sending,
+and RFC 6265bis's, so a plain HTTP response can neither set nor replace a Secure
+cookie.
+
+A redirect response's cookies can only be read in `willPerformHTTPRedirection`,
+which also works `Cookie` out again for the new URL, so jar cookies never follow a
+redirect to another host. A manual `Cookie` header follows as other manual headers
+do. A session cookie lasts until it is deleted or replaced, as in Postman, so a
+login survives a relaunch.
+
+`WorkspaceCookieJar` keeps one workspace's cookies, and `CookieJars` holds one for
+each workspace. A send uses the jar of the workspace the app shows, the lowest
+`id`. Cookies belong to this Mac, so a merge moves the merged-away workspace's
+cookies to the survivor. A workspace that has gone by another route, as when
+another Mac's merge deleted it, takes its cookies and their items with it at the
+next launch, unless the store holds no workspace at all, as before a sync. `AWSSigV4AuthProvider` leaves `Cookie` unsigned, because the jar's
+cookies are added after signing. File > Manage Cookies… shows the jar, grouped by
+domain, with a value shown only for the selected cookie.
 
 ## Sending a Request
 
@@ -776,6 +814,7 @@ methods.
 The app includes no analytics, crash-reporting or feature-flag service. Its only
 network traffic is the requests the user sends and iCloud sync. It never writes
 outside its own container, and never touches another tool's configuration.
+Cookies stay in Moth's own jar on this Mac, never the system's cookie storage.
 
 ## Open Questions
 
