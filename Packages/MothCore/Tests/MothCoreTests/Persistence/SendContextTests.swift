@@ -75,14 +75,11 @@ struct SendContextTests {
         #expect(context.request.urlTemplate == "https://example.com")
     }
 
-    @Test("The context names the workspace, whose cookie jar the send uses")
+    @Test("The data model names the workspace it shows, whose cookie jar a send uses")
     func namesTheWorkspace() throws {
-        let (dataModel, tree) = try tree()
+        let (dataModel, _) = try tree()
         let workspace = try #require(dataModel.mainContext.fetch(FetchDescriptor<WorkspaceModel>()).first)
 
-        let context = try dataModel.sendContext(for: request.id, in: tree, environment: nil)
-
-        #expect(context.workspaceID == workspace.id)
         #expect(dataModel.workspaceID == workspace.id)
     }
 

@@ -98,23 +98,69 @@ struct WorkspaceCookieJarTests {
         #expect(try await relaunched.jar(for: other).cookies(for: CookieFixtures.url).map(\.name) == ["b"])
     }
 
-    @Test("Deleting a workspace removes its cookies and their Keychain items, and leaves the others")
-    func deletingAWorkspaceRemovesItsCookies() async throws {
+    @Test("A merge of two workspaces moves the merged-away one's cookies to the survivor, values and all")
+    func mergeMovesCookies() async throws {
         let dataModel = try DataModel.inMemory()
         let keychain = InMemoryKeychainItems()
         let secrets = KeychainSecretStore(service: "cookies", mode: .deviceOnly(accessGroup: "g"), keychain: keychain)
         let (survivor, merged) = try Self.insertTwoWorkspaces(into: dataModel)
-        let jars = jars(dataModel, secrets: secrets)
-        await jars.jar(for: survivor).receive([CookieFixtures.cookie("kept")])
-        await jars.jar(for: merged).receive([CookieFixtures.cookie("gone")])
+        let before = jars(dataModel, secrets: secrets)
+        await before.jar(for: survivor).receive([CookieFixtures.cookie("kept")])
+        await before.jar(for: merged).receive([CookieFixtures.cookie("moved")])
 
         try await dataModel.writer.reconcileWorkspaces()
+        let relaunched = jars(dataModel, secrets: secrets)
+        try await relaunched.removeCookiesOfDeletedWorkspaces()
+
+        #expect(try rows(in: dataModel).map(\.workspaceID) == [survivor, survivor])
+        #expect(keychain.accounts.count == 2)
+        let names = try await relaunched.jar(for: survivor).cookies(for: CookieFixtures.url).map(\.name)
+        #expect(names.sorted() == ["kept", "moved"])
+    }
+
+    @Test("A workspace that has gone, as when a merge on another Mac deletes it, takes its cookies and items with it")
+    func deletedWorkspaceTakesItsCookies() async throws {
+        let dataModel = try DataModel.inMemory()
+        let keychain = InMemoryKeychainItems()
+        let secrets = KeychainSecretStore(service: "cookies", mode: .deviceOnly(accessGroup: "g"), keychain: keychain)
+        let (survivor, _) = try Self.insertTwoWorkspaces(into: dataModel)
+        let jars = jars(dataModel, secrets: secrets)
+        await jars.jar(for: survivor).receive([CookieFixtures.cookie("kept")])
+        await jars.jar(for: workspaceID).receive([CookieFixtures.cookie("gone")])
+
         try await jars.removeCookiesOfDeletedWorkspaces()
 
         let remaining = try rows(in: dataModel)
         #expect(remaining.map(\.name) == ["kept"])
         #expect(keychain.accounts == Set(remaining.map(\.valueIdentifier)))
-        #expect(try await jars.jar(for: survivor).cookies(for: CookieFixtures.url).map(\.name) == ["kept"])
+    }
+
+    @Test("With no workspace in the store, nothing counts as deleted and every cookie stays")
+    func noWorkspaceRemovesNothing() async throws {
+        let dataModel = try DataModel.inMemory()
+        let keychain = InMemoryKeychainItems()
+        let secrets = KeychainSecretStore(service: "cookies", mode: .deviceOnly(accessGroup: "g"), keychain: keychain)
+        let jars = jars(dataModel, secrets: secrets)
+        await jars.jar(for: workspaceID).receive([CookieFixtures.cookie()])
+
+        try await jars.removeCookiesOfDeletedWorkspaces()
+
+        #expect(try rows(in: dataModel).count == 1)
+        #expect(keychain.accounts.count == 1)
+    }
+
+    @Test("After a relaunch the jar lists cookies in the order they were set")
+    func orderSurvivesARelaunch() async throws {
+        let dataModel = try DataModel.inMemory()
+        let secrets = InMemorySecretStore()
+        let clock = AdvancingClock()
+        let first = CookieJars(writer: dataModel.writer, secretStore: secrets, now: clock.next)
+        await first.jar(for: workspaceID).receive([CookieFixtures.cookie("a")])
+        await first.jar(for: workspaceID).receive([CookieFixtures.cookie("b")])
+
+        let relaunched = CookieJars(writer: dataModel.writer, secretStore: secrets, now: clock.next)
+
+        #expect(await relaunched.jar(for: workspaceID).all.map(\.name) == ["a", "b"])
     }
 
     @Test("A row whose value is missing, as after an ad hoc build quits, is dropped")

@@ -15,9 +15,14 @@ extension StoreWriter {
         }
     }
 
+    /// None while the store holds no workspace, as before a sync has brought one in, because then nothing has a
+    /// survivor to be compared with.
     func cookieRecordsOfDeletedWorkspaces() throws -> [CookieRecord] {
         try read { context in
             let workspaces = try Set(context.fetch(FetchDescriptor<WorkspaceModel>()).map(\.id))
+            guard !workspaces.isEmpty else {
+                return []
+            }
             return try context.fetch(FetchDescriptor<CookieModel>())
                 .filter { !workspaces.contains($0.workspaceID) }
                 .map(\.record)

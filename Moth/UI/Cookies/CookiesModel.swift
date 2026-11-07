@@ -35,7 +35,7 @@ final class CookiesModel {
     }
 
     convenience init(dataModel: DataModel, cookieJars: CookieJars) {
-        self.init { dataModel.workspaceID.map(cookieJars.jar(for:)) }
+        self.init { cookieJars.jar(in: dataModel) }
     }
 
     var selectedCookie: Cookie? {

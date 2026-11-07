@@ -25,17 +25,18 @@ public struct CookieList: Sendable, Hashable {
         self.cookies = cookies
     }
 
-    /// A cookie is dated `now`. A plain HTTP response can't replace a Secure cookie, as RFC 6265bis section 5.7 says,
-    /// and a cookie set again unchanged is left out of the change.
+    /// A cookie is dated `now`. A plain HTTP response can't set a cookie that shares a Secure one's name, as RFC
+    /// 6265bis
+    /// section 5.7 says, and a cookie set again unchanged is left out of the change.
     @discardableResult
     public mutating func receive(_ incoming: [Cookie], at now: Date, overSecureScheme: Bool = true) -> CookieChange {
         var change = CookieChange()
         for var cookie in incoming {
-            let index = cookies.firstIndex { $0.identity == cookie.identity }
-            let replaced = index.map { cookies[$0] }
-            if replaced?.isSecure == true, !overSecureScheme {
+            if !overSecureScheme, cookies.contains(where: { $0.isSecure && $0.sharesName(with: cookie) }) {
                 continue
             }
+            let index = cookies.firstIndex { $0.identity == cookie.identity }
+            let replaced = index.map { cookies[$0] }
             cookie.createdAt = replaced?.createdAt ?? now
             switch (index, cookie.isExpired(at: now)) {
             case (let index?, true):

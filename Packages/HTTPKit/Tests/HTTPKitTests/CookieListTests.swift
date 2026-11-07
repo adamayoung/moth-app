@@ -133,6 +133,18 @@ struct CookieListTests {
         #expect(list.cookies.map(\.value) == ["fresh"])
     }
 
+    @Test("A plain HTTP response can't set a cookie of a Secure one's name on its domain, whatever the path")
+    func secureNameIsGuardedOnEveryPath() {
+        var secure = cookie("sid", "real")
+        secure.isSecure = true
+        var list = CookieList([secure])
+
+        let change = list.receive([cookie("sid", "planted", path: "/api")], at: start, overSecureScheme: false)
+
+        #expect(change.isEmpty)
+        #expect(list.cookies == [secure])
+    }
+
     @Test("Removing expired cookies returns them")
     func removesExpired() {
         var list = CookieList([cookie("a", expiresAt: start), cookie("b")])

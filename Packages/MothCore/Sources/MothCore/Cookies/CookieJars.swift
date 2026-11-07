@@ -27,6 +27,11 @@ public final class CookieJars {
         self.now = now
     }
 
+    /// The jar of the workspace the app shows, which every send and the Cookies sheet use.
+    public func jar(in dataModel: DataModel) -> WorkspaceCookieJar? {
+        dataModel.workspaceID.map(jar(for:))
+    }
+
     public func jar(for workspaceID: UUID) -> WorkspaceCookieJar {
         if let jar = jars[workspaceID] {
             return jar

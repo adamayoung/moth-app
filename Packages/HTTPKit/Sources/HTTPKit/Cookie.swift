@@ -77,6 +77,12 @@ public struct Cookie: Sendable, Hashable {
         return Self.host(host, isIn: domain)
     }
 
+    /// RFC 6265bis section 5.7's test for a cookie a plain HTTP response may not set: either domain within the other,
+    /// on any path.
+    func sharesName(with other: Cookie) -> Bool {
+        name == other.name && (Self.host(domain, isIn: other.domain) || Self.host(other.domain, isIn: domain))
+    }
+
     static func host(_ host: String, isIn domain: String) -> Bool {
         host == domain || (host.hasSuffix(".\(domain)") && !host.isIPAddress)
     }

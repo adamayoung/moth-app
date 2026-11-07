@@ -21,6 +21,7 @@ public actor WorkspaceCookieJar: CookieJar {
     private var rowIDs: [Cookie.Identity: UUID] = [:]
     private var loading: Task<Void, Never>?
     private var pending: Task<Void, Never>?
+    private var isLoaded = false
 
     init(
         workspaceID: UUID,
@@ -37,6 +38,7 @@ public actor WorkspaceCookieJar: CookieJar {
             self.list = CookieList(seed)
             self.rowIDs = Dictionary(seed.map { ($0.identity, UUID()) }) { first, _ in first }
             self.loading = Task {}
+            self.isLoaded = true
         }
     }
 
@@ -63,13 +65,13 @@ public actor WorkspaceCookieJar: CookieJar {
     }
 
     public func delete(_ identities: Set<Cookie.Identity>) async throws {
-        await load()
+        try await loadForDeleting()
         try await persist(removing: rowIDs(releasing: list.remove { identities.contains($0.identity) }))
     }
 
     /// Reaches a row whose value couldn't be read too, which the list doesn't hold.
     public func deleteAll() async throws {
-        await load()
+        try await loadForDeleting()
         list.remove { _ in true }
         let ids = Array(rowIDs.values)
         rowIDs = [:]
@@ -89,6 +91,14 @@ public actor WorkspaceCookieJar: CookieJar {
         cookies.compactMap { rowIDs.removeValue(forKey: $0.identity) }
     }
 
+    /// A delete with no rows read would remove nothing and report success.
+    private func loadForDeleting() async throws {
+        await load()
+        guard isLoaded else {
+            throw CocoaError(.fileReadUnknown)
+        }
+    }
+
     private func load() async {
         if loading == nil {
             let previous = pending
@@ -101,22 +111,26 @@ public actor WorkspaceCookieJar: CookieJar {
     }
 
     /// A row whose value is gone, as after an ad hoc build quits, is dropped, and so is an older row for one cookie.
-    /// A row whose value can't be read keeps its identifier, so setting that cookie again replaces it.
+    /// A row whose value can't be read keeps its identifier, so setting that cookie again replaces it. A store that
+    /// can't be read leaves memory as it was, and the next use tries again.
     private func read() async {
-        rowIDs = [:]
-        list = CookieList()
         guard let rows = try? await writer.cookieRecords(in: workspaceID) else {
             loading = nil
             return
         }
-        var found: [Cookie] = []
+        rowIDs = [:]
+        list = CookieList()
+        let oldestFirst = rows.sorted { $0.cookie.createdAt < $1.cookie.createdAt }
+        var newest: [Cookie.Identity: UUID] = [:]
         var dropped: [UUID] = []
-        for record in rows.sorted(by: { $0.cookie.createdAt > $1.cookie.createdAt }) {
-            let identity = record.cookie.identity
-            guard rowIDs[identity] == nil else {
-                dropped.append(record.id)
-                continue
+        for record in oldestFirst {
+            if let older = newest.updateValue(record.id, forKey: record.cookie.identity) {
+                dropped.append(older)
             }
+        }
+        var found: [Cookie] = []
+        for record in oldestFirst where newest[record.cookie.identity] == record.id {
+            let identity = record.cookie.identity
             let stored: String?
             do {
                 stored = try await secretStore.value(for: record.valueIdentifier)
@@ -134,6 +148,7 @@ public actor WorkspaceCookieJar: CookieJar {
             rowIDs[identity] = record.id
         }
         list = CookieList(found)
+        isLoaded = true
         try? await persist(
             removing: dropped + rowIDs(releasing: list.removeExpired(at: now())),
             reloadsOnFailure: false
@@ -172,7 +187,8 @@ public actor WorkspaceCookieJar: CookieJar {
 }
 
 /// Rows are written before values and removed after them, because a row whose value is missing is dropped at the next
-/// load, while a value with no row would stay in the Keychain for good.
+/// load, while a value with no row would stay in the Keychain for good. A row whose new value can't be saved goes, so
+/// its old value can't come back.
 private nonisolated struct CookieStoreChange: Sendable {
     let workspaceID: UUID
     let writer: StoreWriter
@@ -182,19 +198,21 @@ private nonisolated struct CookieStoreChange: Sendable {
 
     func apply() async -> Result<Void, any Error> {
         var failure: any Error?
+        var unsaved: [UUID] = []
         do {
             try await writer.saveCookies(saving, in: workspaceID)
             for record in saving {
                 do {
                     try await secretStore.save(record.cookie.value, for: record.valueIdentifier)
                 } catch {
+                    unsaved.append(record.id)
                     failure = failure ?? error
                 }
             }
         } catch {
             failure = error
         }
-        let removed = await CookieValues.remove(removing, from: secretStore)
+        let removed = await CookieValues.remove(removing + unsaved, from: secretStore)
         do {
             try await writer.removeCookies(removed.ids)
         } catch {

@@ -65,7 +65,7 @@ struct MainWindowView: View {
             writer: writer,
             transport: transport,
             secretStore: secretStore,
-            cookieJar: { dataModel.workspaceID.map(cookieJars.jar(for:)) },
+            cookieJar: { cookieJars.jar(in: dataModel) },
             openTab: { tabs.open($0) }
         )
         self.cookies = CookiesModel(dataModel: dataModel, cookieJars: cookieJars)

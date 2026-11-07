@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import Foundation
 import SwiftData
 
 /// Every write goes through here, in one synchronous step, because a save writes back the whole row as this context
@@ -63,7 +64,6 @@ public final class StoreWriter {
         }
     }
 
-    /// For the local store's own rows, which have no part in a workspace merge.
     func writeLocal<Result>(_ batch: (ModelContext) throws -> Result) throws -> Result {
         do {
             let result = try batch(context)
@@ -105,7 +105,18 @@ public final class StoreWriter {
         if survivor.activeEnvironmentID == nil, let active = duplicates.lazy.compactMap(\.activeEnvironmentID).first {
             survivor.activeEnvironmentID = active
         }
+        try moveCookies(of: duplicates.map(\.id), to: survivor.id)
         duplicates.forEach(context.delete)
+    }
+
+    /// Cookies belong to this Mac, so the merged-away workspace's stay, under the survivor.
+    private func moveCookies(of merged: [UUID], to survivor: UUID) throws {
+        guard !merged.isEmpty else {
+            return
+        }
+        for row in try context.fetch(FetchDescriptor<CookieModel>()) where merged.contains(row.workspaceID) {
+            row.workspaceID = survivor
+        }
     }
 
     /// Fetches the children rather than reading a workspace's array, which can miss a row a sync has just imported.

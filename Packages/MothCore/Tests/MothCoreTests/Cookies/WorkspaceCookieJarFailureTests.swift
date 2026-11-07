@@ -162,7 +162,7 @@ struct WorkspaceCookieJarFailureTests {
 
     @Test("A deleted workspace's values that won't go keep their rows, so the next launch tries again")
     func failedPurgeKeepsItsRows() async throws {
-        let dataModel = try DataModel.inMemory()
+        let dataModel = try DataModel.inMemory(seed: Workspace())
         let secrets = ControlledSecretStore()
         let jars = jars(dataModel, secrets: secrets)
         await jars.jar(for: workspaceID).receive([CookieFixtures.cookie("a"), CookieFixtures.cookie("b")])
@@ -175,6 +175,23 @@ struct WorkspaceCookieJarFailureTests {
         #expect(await secrets.identifiers.count == 1)
 
         try await jars.removeCookiesOfDeletedWorkspaces()
+        #expect(try rows(in: dataModel).isEmpty)
+        #expect(await secrets.identifiers.isEmpty)
+    }
+
+    @Test("A replaced cookie whose new value can't be saved is sent until quit, and its old value doesn't come back")
+    func failedReplacementDropsTheOldValue() async throws {
+        let dataModel = try DataModel.inMemory()
+        let secrets = ControlledSecretStore()
+        let jar = jars(dataModel, secrets: secrets).jar(for: workspaceID)
+        await jar.receive([CookieFixtures.cookie("sid", "old")])
+        await secrets.failSaves(true)
+
+        await jar.receive([CookieFixtures.cookie("sid", "new")])
+
+        #expect(try await jar.cookies(for: CookieFixtures.url).map(\.value) == ["new"])
+        await secrets.failSaves(false)
+        #expect(await jars(dataModel, secrets: secrets).jar(for: workspaceID).all.isEmpty)
         #expect(try rows(in: dataModel).isEmpty)
         #expect(await secrets.identifiers.isEmpty)
     }

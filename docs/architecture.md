@@ -672,8 +672,10 @@ login survives a relaunch.
 
 `WorkspaceCookieJar` keeps one workspace's cookies, and `CookieJars` holds one for
 each workspace. A send uses the jar of the workspace the app shows, the lowest
-`id`. The launch reconcile's merge deletes a workspace, and its cookies and their
-items go with it. `AWSSigV4AuthProvider` leaves `Cookie` unsigned, because the jar's
+`id`. Cookies belong to this Mac, so a merge moves the merged-away workspace's
+cookies to the survivor. A workspace that has gone by another route, as when
+another Mac's merge deleted it, takes its cookies and their items with it at the
+next launch, unless the store holds no workspace at all, as before a sync. `AWSSigV4AuthProvider` leaves `Cookie` unsigned, because the jar's
 cookies are added after signing. File > Manage Cookies… shows the jar, grouped by
 domain, with a value shown only for the selected cookie.
 

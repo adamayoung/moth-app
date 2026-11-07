@@ -224,8 +224,8 @@ struct LiveAppDependenciesTests {
         #expect(store.service == "uk.co.adam-young.Moth.cookies.ABCDE12345")
     }
 
-    @Test("A live launch removes the cookies of a workspace the merge deleted")
-    func liveLaunchRemovesAMergedWorkspacesCookies() async throws {
+    @Test("A live launch's merge moves the merged-away workspace's cookies to the survivor")
+    func liveLaunchMovesAMergedWorkspacesCookies() async throws {
         let dataModel = try DataModel.inMemory()
         let context = ModelContext(dataModel.container)
         let workspaces = [WorkspaceModel(), WorkspaceModel()]
@@ -244,7 +244,7 @@ struct LiveAppDependenciesTests {
 
         let survivor = try #require(workspaces.map(\.id).min())
         let rows = try ModelContext(dataModel.container).fetch(FetchDescriptor<CookieModel>())
-        #expect(rows.map(\.workspaceID) == [survivor])
+        #expect(rows.map(\.workspaceID) == [survivor, survivor])
     }
 
     private static let cookie = Cookie(

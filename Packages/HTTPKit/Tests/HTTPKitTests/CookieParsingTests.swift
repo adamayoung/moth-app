@@ -56,6 +56,13 @@ struct CookieParsingTests {
         #expect(expires.expiresAt == Date(timeIntervalSince1970: 1_445_412_480))
     }
 
+    @Test("A server's logout, Max-Age=0, comes back as a cookie that has already expired, so the jar removes it")
+    func maxAgeZeroHasExpired() throws {
+        let cookie = try #require(received("sid=; Max-Age=0", from: "http://example.com/").first)
+
+        #expect(cookie.isExpired(at: Date()))
+    }
+
     @Test("URLSession's comma-joined Set-Cookie holds several cookies, an Expires date's comma included")
     func commaJoinedHeader() throws {
         let cookies = try received(

@@ -10,7 +10,6 @@ public nonisolated struct SendContext: Sendable {
 
     public let request: Request
     public let scopes: VariableScopes
-    public let workspaceID: UUID?
 
 }
 
@@ -31,8 +30,7 @@ public extension DataModel {
                 collection: variables(in: tree.collectionID(of: .request(id)).map(VariableScope.collection)),
                 environment: variables(in: environment.map(VariableScope.environment)),
                 globals: variables(in: .globals)
-            ),
-            workspaceID: workspaceID
+            )
         )
     }
 

@@ -5,6 +5,7 @@
 
 import Foundation
 import HTTPKit
+import Synchronization
 import Testing
 
 nonisolated enum CookieFixtures {
@@ -34,6 +35,24 @@ nonisolated enum CookieFixtures {
     static var url: URL {
         get throws {
             try #require(URL(string: "https://example.com/"))
+        }
+    }
+
+}
+
+/// A second later on every reading, so cookies set one after another have different creation times.
+final nonisolated class AdvancingClock: Sendable {
+
+    private let seconds = Mutex(0.0)
+
+    var next: @Sendable () -> Date {
+        { self.tick() }
+    }
+
+    private func tick() -> Date {
+        seconds.withLock { seconds in
+            seconds += 1
+            return CookieFixtures.now.addingTimeInterval(seconds)
         }
     }
 

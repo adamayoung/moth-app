@@ -53,7 +53,7 @@ final class RequestResponses {
             do {
                 let context = try dataModel.sendContext(for: id, in: tree, environment: activeEnvironment.id)
                 let outgoing = try draft.outgoing(from: context.request, in: tree)
-                let jar = context.workspaceID.map(cookieJars.jar(for:))
+                let jar = cookieJars.jar(in: dataModel)
                 return await sender.sendRecording(outgoing, scopes: context.scopes, cookies: jar)
             } catch {
                 return RecordedSend(result: .failed(SendFailure(notSent: error), notes: []), entry: nil)
