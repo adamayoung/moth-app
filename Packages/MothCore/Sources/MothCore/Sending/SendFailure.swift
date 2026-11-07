@@ -8,7 +8,7 @@ import HTTPKit
 
 public nonisolated struct SendFailure: Sendable, Hashable {
 
-    public enum Kind: Sendable, Hashable {
+    public enum Kind: String, Sendable, Hashable {
 
         case timedOut
         case couldNotConnect

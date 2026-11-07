@@ -18,7 +18,7 @@ public nonisolated struct ResponseHeader: Sendable, Hashable {
 
 }
 
-public nonisolated enum TimingPhase: Sendable, Hashable {
+public nonisolated enum TimingPhase: Sendable, Hashable, Codable {
 
     case dns
     case connect
@@ -28,7 +28,7 @@ public nonisolated enum TimingPhase: Sendable, Hashable {
 
 }
 
-public nonisolated struct PhaseTiming: Sendable, Hashable {
+public nonisolated struct PhaseTiming: Sendable, Hashable, Codable {
 
     public let phase: TimingPhase
     public let duration: Duration
@@ -58,17 +58,32 @@ public nonisolated struct SentResponse: Sendable, Hashable {
         self.reasonPhrase = response.reasonPhrase
         self.duration = response.metrics?.totalTime ?? measured
         self.size = response.body.count
-        self.headers = response.headers
-            .map { ResponseHeader(name: $0.key, value: $0.value) }
-            .sorted { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending }
+        self.headers = Self.sorted(response.headers.map { ResponseHeader(name: $0.key, value: $0.value) })
         self.timing = response.metrics.map(Self.timing) ?? []
         self.content = ResponseContent(body: response.body, contentType: response.value(forHeader: "Content-Type"))
         self.notes = notes
     }
 
+    /// A body that wasn't kept shows as empty, and the History view says so.
+    public init(_ recorded: HistoryResponse, duration: Duration) {
+        self.status = recorded.status
+        self.reasonPhrase = recorded.reasonPhrase
+        self.duration = duration
+        self.size = recorded.size
+        self.headers = Self.sorted(recorded.headers.map { ResponseHeader(name: $0.key, value: $0.value) })
+        self.timing = recorded.timing
+        let contentType = recorded.headers.first { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame }
+        self.content = ResponseContent(body: recorded.body ?? Data(), contentType: contentType?.value)
+        self.notes = []
+    }
+
     public func statusLine(locale: Locale = .autoupdatingCurrent) -> String {
         let status = [String(status), reasonPhrase].compactMap(\.self).joined(separator: " ")
         return [status, duration.responseText(locale: locale), size.byteCountText].joined(separator: " · ")
+    }
+
+    private static func sorted(_ headers: [ResponseHeader]) -> [ResponseHeader] {
+        headers.sorted { $0.name.caseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     private static func timing(_ metrics: HTTPMetrics) -> [PhaseTiming] {

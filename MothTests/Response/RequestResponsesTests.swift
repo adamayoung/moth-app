@@ -119,7 +119,10 @@ struct RequestResponsesTests: RequestResponsesTesting {
     @Test("Responses belong to their own request")
     func perRequest() async {
         let responses = RequestResponses { id, _, _ in
-            .failed(SendFailure(kind: .notSent, description: id.uuidString), notes: [])
+            RecordedSend(
+                result: .failed(SendFailure(kind: .notSent, description: id.uuidString), notes: []),
+                entry: nil
+            )
         }
         let first = Request(name: "First")
         let second = Request(name: "Second")

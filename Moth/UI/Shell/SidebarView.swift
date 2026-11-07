@@ -12,6 +12,7 @@ struct SidebarView: View {
     @Bindable var model: SidebarModel
     @Bindable var environments: EnvironmentsModel
     let tabs: RequestTabsModel
+    @Bindable var history: HistoryModel
     let isSyncedToICloud: Bool
 
     var body: some View {
@@ -37,10 +38,15 @@ struct SidebarView: View {
                 }
             }
 
-            Section("SIDEBAR_HISTORY_SECTION") {
-                ContentUnavailableView {
-                    Text("SIDEBAR_HISTORY_EMPTY")
+            Section {
+                HistoryRows(history: history) {
+                    model.selection = nil
                 }
+            } header: {
+                Text("SIDEBAR_HISTORY_SECTION")
+                    .contextMenu {
+                        ClearHistoryButton(history: history)
+                    }
             }
         }
         .listStyle(.sidebar)
@@ -74,6 +80,14 @@ struct SidebarView: View {
             } else {
                 Text("SIDEBAR_DELETE_MESSAGE")
             }
+        }
+        .alert("HISTORY_CLEAR_ALERT_TITLE", isPresented: $history.isConfirmingClear) {
+            Button("HISTORY_CLEAR_CONFIRM", role: .destructive) {
+                Task { await history.clear() }
+            }
+            Button("HISTORY_CLEAR_CANCEL", role: .cancel) {}
+        } message: {
+            Text("HISTORY_CLEAR_ALERT_MESSAGE")
         }
         .sheet(item: $model.presentedVariables) { target in
             VariableSheet(title: target.title, table: model.variableTable(for: target))
@@ -124,6 +138,7 @@ private func seededSidebar(isSyncedToICloud: Bool) -> some View {
             model: model,
             environments: environments,
             tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview, code: .preview),
+            history: .preview,
             isSyncedToICloud: isSyncedToICloud
         )
         .background { EnvironmentsObserver(model: environments) }
