@@ -668,8 +668,8 @@ from the built request.
 
 With verification off, the task's delegate accepts the server's trust, and the send
 runs in a `URLSession` of its own, so no verified send can reuse a connection whose
-certificate nobody checked. URLSession on macOS 27.2 also declines to reuse such a
-connection within one session, but that is not documented. Every response to such
+certificate nobody checked. In a probe on macOS 27.2, a second unverified send in
+one session also opened a new connection, but that is not documented. Every response to such
 a send notes that it was sent without verifying the certificate, plain HTTP included,
 because a redirect can pass through HTTPS. `URLSessionTLSTests` serves a self-signed certificate on loopback, imported
 into memory only, so no keychain is touched.
