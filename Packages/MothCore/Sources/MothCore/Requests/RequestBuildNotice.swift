@@ -14,6 +14,8 @@ public nonisolated enum RequestBuildNotice: Sendable, Hashable {
     case emptyFieldName(name: String)
     case bodyNotSent(method: HTTPMethod)
     case formDataBoundaryNotDeclared
+    case pathVariableWithoutValue(name: String)
+    case unnamedPathVariableWithoutValue
     case inheritNotReplaced
 
 }

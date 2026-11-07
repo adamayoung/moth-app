@@ -28,6 +28,10 @@ extension ResponseNote {
         case .variableNotExpanded(let name): String(localized: "RESPONSE_NOTE_VARIABLE_NOT_EXPANDED_\(name)")
         case .undefinedVariables(let count): String(localized: "RESPONSE_NOTE_UNDEFINED_VARIABLES_\(count)")
         case .unresolvedVariables(let count): String(localized: "RESPONSE_NOTE_UNRESOLVED_VARIABLES_\(count)")
+        case .pathVariableWithoutValue(let name):
+            String(localized: "RESPONSE_NOTE_PATH_VARIABLE_WITHOUT_VALUE_\(name)")
+        case .pathVariablesWithoutValues(let count):
+            String(localized: "RESPONSE_NOTE_PATH_VARIABLES_WITHOUT_VALUES_\(count)")
         case .unsendableHeader(let name): String(localized: "RESPONSE_NOTE_UNSENDABLE_HEADER_\(name)")
         case .unsendableHeaders(let count): String(localized: "RESPONSE_NOTE_UNSENDABLE_HEADERS_\(count)")
         case .emptyHeaderName(let name): String(localized: "RESPONSE_NOTE_EMPTY_HEADER_NAME_\(name)")

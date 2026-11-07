@@ -48,14 +48,21 @@ nonisolated extension ResolvedRequest {
 
     private func fillPathVariables(of components: inout URLComponents) -> BuildOmissions {
         var unusedRows = pathParameters
+        var namesWithoutValues: [String] = []
 
         components.percentEncodedPath = components.percentEncodedPath
             .split(separator: "/", omittingEmptySubsequences: false)
             .map { segment in
+                guard let name = segment.pathVariableName else {
+                    return String(segment)
+                }
+
                 guard
-                    let name = segment.pathVariableName,
                     let row = pathParameters.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
                 else {
+                    if !namesWithoutValues.contains(name) {
+                        namesWithoutValues.append(name)
+                    }
                     return String(segment)
                 }
 
@@ -64,7 +71,10 @@ nonisolated extension ResolvedRequest {
             }
             .joined(separator: "/")
 
-        return BuildOmissions(leftOut: Set(unusedRows.map { .row($0.id) }))
+        return BuildOmissions(
+            notices: namesWithoutValues.map { .pathVariableWithoutValue(name: $0) },
+            leftOut: Set(unusedRows.map { .row($0.id) })
+        )
     }
 
     private func appendingQueryParameters(to query: String?) -> String? {

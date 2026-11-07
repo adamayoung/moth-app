@@ -11,6 +11,8 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     case variableNotExpanded(String)
     case undefinedVariables(Int)
     case unresolvedVariables(Int)
+    case pathVariableWithoutValue(String)
+    case pathVariablesWithoutValues(Int)
     case unsendableHeader(String)
     case unsendableHeaders(Int)
     case emptyHeaderName(String)
@@ -34,6 +36,7 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     ) -> [ResponseNote] {
         let notes: [ResponseNote?] = [
             variableNote(for: unresolved),
+            pathVariableNote(for: notices),
             headerNote(for: notices),
             emptyHeaderNameNote(for: notices),
             emptyQueryParameterNameNote(for: notices),
@@ -58,6 +61,21 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
         return unresolved.allSatisfy { $0.reason == .undefined }
             ? .undefinedVariables(unresolved.count)
             : .unresolvedVariables(unresolved.count)
+    }
+
+    private static func pathVariableNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        let names = Set(notices.compactMap(\.namedPathVariableWithoutValue))
+        let unnamedCount = notices.count { $0 == .unnamedPathVariableWithoutValue }
+
+        guard unnamedCount == 0 else {
+            return .pathVariablesWithoutValues(names.count + unnamedCount)
+        }
+
+        return namedOrCounted(
+            names,
+            named: ResponseNote.pathVariableWithoutValue,
+            counted: ResponseNote.pathVariablesWithoutValues
+        )
     }
 
     private static func authNote(
@@ -154,6 +172,13 @@ private nonisolated extension RequestBuildNotice {
 
     var unsendableHeaderName: String? {
         if case .unsendableHeader(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var namedPathVariableWithoutValue: String? {
+        if case .pathVariableWithoutValue(let name) = self {
             return name
         }
         return nil
