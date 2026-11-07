@@ -100,6 +100,31 @@ struct ModelMappingTests {
         #expect(saved == entry)
     }
 
+    @Test("A history entry whose body was not kept keeps its size and no body")
+    func historyEntryWithoutBodyRoundTrip() throws {
+        let entry = HistoryEntry(
+            request: DomainFixtures.request(),
+            sentAt: Date(timeIntervalSinceReferenceDate: 1),
+            duration: .milliseconds(5),
+            response: HistoryResponse(status: 200, size: 6_000_000, body: nil)
+        )
+
+        let saved = try Self.savedInStore(HistoryEntryModel(entry)) { try $0.asDomain() }
+
+        #expect(saved == entry)
+        #expect(saved.response?.body == nil)
+    }
+
+    @Test("A history entry keeps its method and URL in attributes of their own, so a row decodes no JSON")
+    func historyEntryKeepsItsSummary() throws {
+        let entry = DomainFixtures.historyEntry()
+
+        let summary = try Self.savedInStore(HistoryEntryModel(entry)) { ($0.method, $0.url) }
+
+        #expect(summary.0 == entry.request.method.rawValue)
+        #expect(summary.1 == entry.request.urlTemplate)
+    }
+
     @Test("A history entry keeps its request's identifier in an attribute of its own")
     func historyEntryRefersToItsRequest() throws {
         let entry = DomainFixtures.historyEntry()
