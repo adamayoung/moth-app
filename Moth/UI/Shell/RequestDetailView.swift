@@ -47,11 +47,18 @@ struct RequestDetailView: View {
             }
             Button("CLOSE_TAB_ALERT_CANCEL", role: .cancel) {}
         }
+        .sheet(item: Bindable(tabs.code).presented) { target in
+            GenerateCodeSheet(code: target.code, copy: tabs.code.copy)
+        }
+        .alert("GENERATE_CODE_FAILED", isPresented: Bindable(tabs.code).hasFailed) {
+            Button("GENERATE_CODE_FAILED_OK", role: .cancel) {}
+        }
         .focusedSceneValue(
             \.requestTabCommands,
             RequestTabCommandContext(
                 tabs: tabs,
                 hasOpenTabs: !tabs.openTabs.isEmpty,
+                selectedRequest: selected?.id,
                 savableRequest: selected.flatMap { tabs.drafts.canSave($0.id) ? $0.id : nil }
             )
         )
@@ -64,6 +71,6 @@ struct RequestDetailView: View {
 }
 
 #Preview {
-    RequestDetailView(tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview))
+    RequestDetailView(tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview, code: .preview))
         .frame(width: 800, height: 600)
 }

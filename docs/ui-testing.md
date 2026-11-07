@@ -35,6 +35,12 @@ value. Any other launch ignores it. `ImportTests` sets it and relaunches, becaus
 test needs its own file, and reads the licensed fixtures in place through
 `#filePath`.
 
+A UI-test launch copies to a pasteboard of its own, `MothUITestClipboard`, and
+never to the General one. A run must not replace what the person copied, and the
+runner reading the General pasteboard would raise a system alert, while any other
+pasteboard reads freely. `GenerateCodeScreen` reads it, and mirrors the name by
+hand. A demo launch uses the General pasteboard.
+
 `StubHTTPTransport` answers every send on a seeded launch and routes by the URL's
 path, so a test reaches each case by typing a URL, and `{{host}}/wait` proves the
 active environment too. `/wait` stays in flight until it is cancelled, `/refused`

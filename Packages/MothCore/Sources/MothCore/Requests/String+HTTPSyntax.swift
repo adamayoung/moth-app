@@ -5,7 +5,7 @@
 
 import Foundation
 
-nonisolated extension String {
+public nonisolated extension String {
 
     private static let tokenCharacters = CharacterSet(
         charactersIn: "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"

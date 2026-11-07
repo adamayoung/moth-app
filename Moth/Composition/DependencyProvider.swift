@@ -46,7 +46,7 @@ struct DependencyProvider {
                 seed: SeedData.workspace,
                 importFile: environment[Self.uiTestImportFileKey].map { Data($0.utf8) }
             )
-        case .demo: try SeededAppDependencies(seed: SeedData.workspace)
+        case .demo: try SeededAppDependencies(seed: SeedData.workspace, clipboard: .general)
         case .uiTestingRestoringTabs: try SeededAppDependencies(seed: SeedData.workspace, restoresTabs: true)
         case .uiTestingWithICloudSync: try SeededAppDependencies(seed: SeedData.workspace, isSyncedToICloud: true)
         case .uiTestingStoreFailure: throw SimulatedStoreFailure()

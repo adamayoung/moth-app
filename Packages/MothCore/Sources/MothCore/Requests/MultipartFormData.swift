@@ -38,7 +38,7 @@ nonisolated struct MultipartFormData {
     }
 
     private func part(for field: FormDataField, text: String) -> String {
-        var headers = [#"Content-Disposition: form-data; name="\#(Self.escapedName(field.key))""#]
+        var headers = [#"Content-Disposition: form-data; name="\#(field.key.multipartNameEscaped)""#]
 
         if let contentType = field.contentType, !contentType.isEmpty {
             headers.append("Content-Type: \(contentType.components(separatedBy: .newlines).joined())")
@@ -47,9 +47,13 @@ nonisolated struct MultipartFormData {
         return "--\(boundary)\r\n\(headers.joined(separator: "\r\n"))\r\n\r\n\(text)\r\n"
     }
 
+}
+
+public nonisolated extension String {
+
     /// The WHATWG form encoding's escapes. Works on scalars, because `\r\n` is one `Character`.
-    private static func escapedName(_ name: String) -> String {
-        name.unicodeScalars.reduce(into: "") { escaped, scalar in
+    var multipartNameEscaped: String {
+        unicodeScalars.reduce(into: "") { escaped, scalar in
             switch scalar {
             case "\"": escaped += "%22"
             case "\r": escaped += "%0D"

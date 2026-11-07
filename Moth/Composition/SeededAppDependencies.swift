@@ -18,18 +18,21 @@ final class SeededAppDependencies: AppDependencies {
     let requestTabStore: RequestTabStore
     let requestDrafts: RequestDrafts
     let importFileSource: ImportFileSource
+    let clipboard: Clipboard
 
     init(
         seed: Workspace?,
         isSyncedToICloud: Bool = false,
         restoresTabs: Bool = false,
         tabDefaults: UserDefaults = .standard,
-        importFile: Data? = nil
+        importFile: Data? = nil,
+        clipboard: Clipboard = .uiTest
     ) throws {
         let dataModel = try DataModel.inMemory(seed: seed)
         self.dataModel = dataModel
         self.requestDrafts = RequestDrafts(writer: dataModel.writer, secretStore: secretStore)
         self.importFileSource = importFile.map(ImportFileSource.uiTest) ?? .panel
+        self.clipboard = clipboard
         self.isSyncedToICloud = isSyncedToICloud
         self.activeEnvironment = ActiveEnvironment(inMemory: seed?.activeEnvironmentID)
         self.requestTabStore = RequestTabStore(defaults: tabDefaults, key: "SeededRequestTabs")

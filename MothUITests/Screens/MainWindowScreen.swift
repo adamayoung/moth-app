@@ -109,6 +109,19 @@ struct MainWindowScreen {
         app.menuBars.menuBarItems["File"].click()
     }
 
+    func requestMenuItem(_ title: String) -> XCUIElement {
+        app.menuBars.menuBarItems["Request"].menuItems[title]
+    }
+
+    func openRequestMenu() {
+        app.menuBars.menuBarItems["Request"].click()
+    }
+
+    func chooseFromRequestMenu(_ title: String) {
+        openRequestMenu()
+        requestMenuItem(title).click()
+    }
+
     func closeMenu() {
         app.typeKey(.escape, modifierFlags: [])
     }

@@ -53,7 +53,8 @@ final class CurlImportModelTests {
         self.tabs = RequestTabsModel(
             store: RequestTabStore(defaults: defaults, key: "Tabs"),
             drafts: RequestDrafts(writer: dataModel.writer, secretStore: secretStore),
-            responses: .preview
+            responses: .preview,
+            code: .preview
         )
     }
 

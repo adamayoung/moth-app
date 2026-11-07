@@ -34,11 +34,18 @@ public nonisolated struct URLTemplateText {
         }
     }
 
+    private var scheme: Substring {
+        address.prefixMatch(of: /[A-Za-z][A-Za-z0-9+.\-]*:\/\//)?.output ?? ""
+    }
+
     /// The segment after the scheme is the authority, however it is written: a port, or a `{{host}}`.
+    private var authorityAndPath: [Substring] {
+        address.dropFirst(scheme.count).split(separator: "/", omittingEmptySubsequences: false)
+    }
+
     var pathVariableNames: [String] {
-        let withoutScheme = address.trimmingPrefix(/[A-Za-z][A-Za-z0-9+.\-]*:\/\//)
         var names: [String] = []
-        for segment in withoutScheme.split(separator: "/", omittingEmptySubsequences: false).dropFirst() {
+        for segment in authorityAndPath.dropFirst() {
             if let name = segment.pathVariableName, !names.contains(name) {
                 names.append(name)
             }
@@ -46,14 +53,50 @@ public nonisolated struct URLTemplateText {
         return names
     }
 
+    func addressFillingPathVariables(from rows: [KeyValue]) -> String {
+        let segments = authorityAndPath.enumerated().map { index, segment in
+            guard index > 0 else {
+                return Self.withUserinfoEscaped(segment)
+            }
+            guard let name = segment.pathVariableName, let row = rows.row(filling: name) else {
+                return segment.urlEscaped
+            }
+            return row.value.urlDisplayEncoded
+        }
+        return scheme + segments.joined(separator: "/")
+    }
+
+    /// A host stays as written, because `URLComponents` gives it an IDNA form that percent-encoding wouldn't.
+    private static func withUserinfoEscaped(_ authority: Substring) -> String {
+        guard let separator = authority.lastIndex(of: "@") else {
+            return String(authority)
+        }
+        return authority[..<separator].urlEscaped + authority[separator...]
+    }
+
     public var withoutQuery: String {
         address + fragmentSuffix
     }
 
     func replacingQuery(with rows: [KeyValue]) -> String {
-        let pairs = rows.filter(\.isSent).map { "\($0.key.urlDisplayEncoded)=\($0.value.urlDisplayEncoded)" }
-        let query = pairs.isEmpty ? "" : "?\(pairs.joined(separator: "&"))"
-        return address + query + fragmentSuffix
+        address + Self.querySuffix(Self.displayPairs(of: rows)) + fragmentSuffix
+    }
+
+    func queryAndFragment(appending rows: [KeyValue], setting pair: LiteralQueryPair?) -> String {
+        let written = (query?.splitOutsideVariables(on: "&") ?? [])
+            .filter { $0.splitOutsideVariables(on: "=", maxSplits: 1)[0].decodedQueryText != pair?.name }
+            .map(\.urlEscaped)
+        let set = pair.map { ["\($0.name.urlDisplayEncoded)=\($0.value)"] } ?? []
+        let pairs = written + Self.displayPairs(of: rows.filter { $0.key != pair?.name }) + set
+        return Self.querySuffix(pairs.filter { !$0.isEmpty }) + (fragment.map { "#\($0.urlEscaped)" } ?? "")
+    }
+
+    private static func displayPairs(of rows: [KeyValue]) -> [String] {
+        rows.filter(\.isSent).map(\.displayEncodedPair)
+    }
+
+    private static func querySuffix(_ pairs: [String]) -> String {
+        pairs.isEmpty ? "" : "?\(pairs.joined(separator: "&"))"
     }
 
     private var fragmentSuffix: String {
@@ -97,6 +140,30 @@ private nonisolated extension StringProtocol where SubSequence == Substring {
         mapOutsideVariables { text in
             text.replacing("+", with: " ").removingPercentEncoding ?? String(text)
         }
+    }
+
+    /// Encodes what `URLComponents` would, for a URL it can't parse, so an escape stays one and a stray `%` doesn't.
+    var urlEscaped: String {
+        mapOutsideVariables { text in
+            let escapes = text.replacing(/%(?![0-9A-Fa-f]{2})/.matchingSemantics(.unicodeScalar), with: "%25")
+            return escapes.addingPercentEncoding(withAllowedCharacters: String.urlCharacters) ?? String(escapes)
+        }
+    }
+
+}
+
+private nonisolated extension String {
+
+    static let urlCharacters = CharacterSet(
+        charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%"
+    )
+
+}
+
+public nonisolated extension StringProtocol where SubSequence == Substring {
+
+    var hasVariable: Bool {
+        !variableRanges.isEmpty
     }
 
     var urlDisplayEncoded: String {

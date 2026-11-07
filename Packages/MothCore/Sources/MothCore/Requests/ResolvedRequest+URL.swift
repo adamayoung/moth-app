@@ -42,7 +42,7 @@ nonisolated extension ResolvedRequest {
 
     /// Only digits make `name:` a port. `URLComponents` reads the `localhost` of `localhost:8080` as a scheme,
     /// and `http://` in front of `mailto:a@b.com` would send a request to `b.com`.
-    private static func withScheme(_ address: String) -> String {
+    static func withScheme(_ address: String) -> String {
         address.prefixMatch(of: /[A-Za-z][A-Za-z0-9+.\-]*:(?!\d)/) == nil ? "http://\(address)" : address
     }
 
@@ -57,9 +57,7 @@ nonisolated extension ResolvedRequest {
                     return String(segment)
                 }
 
-                guard
-                    let row = pathParameters.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
-                else {
+                guard let row = pathParameters.row(filling: name) else {
                     if !namesWithoutValues.contains(name) {
                         namesWithoutValues.append(name)
                     }

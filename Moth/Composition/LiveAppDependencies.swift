@@ -20,6 +20,7 @@ final class LiveAppDependencies: AppDependencies {
     let requestTabStore = RequestTabStore(defaults: .standard, key: "RequestTabs")
     let requestDrafts: RequestDrafts
     let importFileSource = ImportFileSource.panel
+    let clipboard = Clipboard.general
 
     /// `openDataModel` has no default, so that no test can reach the real store or CloudKit by leaving it out.
     init(
