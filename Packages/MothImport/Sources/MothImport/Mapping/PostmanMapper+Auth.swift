@@ -29,7 +29,7 @@ nonisolated extension PostmanMapper {
         case .awsv4:
             return sigV4(postman)
         case .digest:
-            return storedButUnsupported(.digest, digest(postman))
+            return digest(postman)
         case .oauth2:
             return storedButUnsupported(.oauth2, oauth2(postman))
         case .edgegrid:

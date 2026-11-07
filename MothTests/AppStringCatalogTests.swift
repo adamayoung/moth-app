@@ -195,6 +195,11 @@ struct AppStringCatalogTests {
             ("RESPONSE_NOTE_MISSING_CREDENTIAL", "Sent without auth, because its credential has no value."),
             ("RESPONSE_NOTE_UNSUPPORTED_AUTH", "Sent without its unsupported auth."),
             ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body."),
+            ("RESPONSE_NOTE_DIGEST_SENT_AGAIN", "Sent again to answer a Digest challenge."),
+            (
+                "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED",
+                "This server\u{2019}s Digest challenge isn\u{2019}t supported."
+            ),
             ("RESPONSE_NOTE_SECRET_WITHOUT_VALUE_%@", "{{%@}} is a secret with no value, so it was sent as written."),
             ("RESPONSE_NOTE_VARIABLE_CYCLE_%@", "{{%@}} refers to itself, so it was sent as written."),
             (

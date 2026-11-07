@@ -5,17 +5,23 @@
 
 import XCTest
 
-/// Values mirror `SeedData` by hand: List Users inherits, with nothing above it that sets auth, Health has API key auth
-/// and Update User has Digest auth.
+/// Values mirror `SeedData` by hand: List Users inherits, with nothing above it that sets auth, Health has API key
+/// auth,
+/// Update User has Digest auth and Delete Admin, in Users > Admins, has OAuth2.
 final class RequestAuthTests: MothTestCase {
 
     @MainActor
-    private func openAuth(of name: String) -> (MainWindowScreen, RequestEditorScreen, AuthFieldsScreen) {
+    private func openAuth(
+        of name: String,
+        in folders: [String] = ["Users"]
+    ) -> (MainWindowScreen, RequestEditorScreen, AuthFieldsScreen) {
         let screen = MainWindowScreen(app: app)
         XCTAssertTrue(screen.sidebarText("Seeded Collection").waitForExistence(timeout: 10))
         screen.expand("Seeded Collection")
-        XCTAssertTrue(screen.sidebarText("Users").waitForExistence(timeout: 10))
-        screen.expand("Users")
+        for folder in folders {
+            XCTAssertTrue(screen.sidebarText(folder).waitForExistence(timeout: 10))
+            screen.expand(folder)
+        }
         XCTAssertTrue(screen.sidebarText(name).waitForExistence(timeout: 10))
         screen.select(name)
         let editor = RequestEditorScreen(app: app)
@@ -27,16 +33,16 @@ final class RequestAuthTests: MothTestCase {
     }
 
     @MainActor
-    func testAuthOffersInheritNoAuthBasicBearerAndAPIKey() {
+    func testAuthOffersEveryKindItCanEdit() {
         let (_, _, fields) = openAuth(of: "List Users")
 
         XCTAssertEqual(fields.kindPicker.value as? String, "Inherit")
 
         fields.openKinds()
-        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "API Key", "AWS Signature"] {
+        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "API Key", "Digest Auth", "AWS Signature"] {
             XCTAssertTrue(fields.kindMenuItem(title).waitForExistence(timeout: 10), title)
         }
-        XCTAssertEqual(fields.kindPicker.menuItems.count, 6)
+        XCTAssertEqual(fields.kindPicker.menuItems.count, 7)
         app.typeKey(.escape, modifierFlags: [])
     }
 
@@ -75,6 +81,12 @@ final class RequestAuthTests: MothTestCase {
         XCTAssertTrue(fields.secureTokenField.waitForExistence(timeout: 10))
         XCTAssertFalse(fields.usernameField.exists)
         XCTAssertFalse(fields.securePasswordField.exists)
+
+        fields.chooseKind("Digest Auth")
+        XCTAssertTrue(fields.usernameField.waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.securePasswordField.waitForExistence(timeout: 10))
+        XCTAssertFalse(fields.secureTokenField.exists)
+        XCTAssertFalse(fields.notSupportedText.exists)
 
         fields.chooseKind("API Key")
         XCTAssertTrue(fields.apiKeyNameField.waitForExistence(timeout: 10))
@@ -130,11 +142,23 @@ final class RequestAuthTests: MothTestCase {
 
     @MainActor
     func testAnAuthMothCantEditShowsNotSupported() {
+        let (screen, _, fields) = openAuth(of: "Delete Admin", in: ["Users", "Admins"])
+
+        XCTAssertEqual(fields.kindPicker.value as? String, "OAuth 2.0")
+        XCTAssertTrue(fields.notSupportedText.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.notSupportedText.value as? String, "Not Supported Yet")
+        XCTAssertFalse(screen.editedDot(on: "Delete Admin").exists)
+    }
+
+    @MainActor
+    func testAStoredDigestShowsItsFields() {
         let (screen, _, fields) = openAuth(of: "Update User")
 
         XCTAssertEqual(fields.kindPicker.value as? String, "Digest Auth")
-        XCTAssertTrue(fields.notSupportedText.waitForExistence(timeout: 10))
-        XCTAssertEqual(fields.notSupportedText.value as? String, "Not Supported Yet")
+        XCTAssertTrue(fields.usernameField.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.usernameField.value as? String, "ada")
+        XCTAssertTrue(fields.securePasswordField.exists)
+        XCTAssertFalse(fields.notSupportedText.exists)
         XCTAssertFalse(screen.editedDot(on: "Update User").exists)
     }
 

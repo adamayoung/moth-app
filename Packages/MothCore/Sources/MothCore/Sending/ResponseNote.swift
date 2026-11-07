@@ -28,6 +28,8 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     case unsupportedFile(String)
     case unsupportedFiles(Int)
     case formDataBoundaryReplaced
+    case sentAgainForDigestChallenge
+    case digestChallengeUnsupported
 
     public static func notes(
         unresolved: [UnresolvedVariable],

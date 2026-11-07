@@ -21,21 +21,28 @@ nonisolated extension ResolvedRequest {
             }
         case .awsSigV4(let sigV4):
             awsSigV4Provider(sigV4, signingAt: date)
-        case .inherit, .none, .apiKey, .digest, .oauth2:
+        case .digest:
+            digestProvider
+        case .inherit, .none, .apiKey, .oauth2:
             nil
         }
     }
 
+    var digestProvider: DigestAuthProvider? {
+        guard case .digest(let digest) = auth else {
+            return nil
+        }
+        return credentials[digest.password].map { DigestAuthProvider(username: digest.username, password: $0) }
+    }
+
     var authNotice: RequestBuildNotice? {
         switch auth {
-        case .none, .basic, .bearer, .awsSigV4:
+        case .none, .basic, .bearer, .digest, .awsSigV4:
             nil
         case .inherit:
             .inheritNotReplaced
         case .apiKey(let apiKey):
             apiKey.name.isEmpty ? .apiKeyWithoutName : nil
-        case .digest:
-            .unsupportedAuth(.digest)
         case .oauth2:
             .unsupportedAuth(.oauth2)
         }

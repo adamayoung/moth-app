@@ -1344,6 +1344,28 @@
         }
       }
     },
+    "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED" : {
+      "comment" : "Shown above a 401 response when the request has Digest auth but the server's Digest challenge uses an algorithm or protection Moth can't answer, so nothing more was sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This server’s Digest challenge isn’t supported."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_DIGEST_SENT_AGAIN" : {
+      "comment" : "Shown above a response when the server answered the first send with a Digest challenge, so Moth sent the request once more with the answer. The response shown is the second one.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent again to answer a Digest challenge."
+          }
+        }
+      }
+    },
     "RESPONSE_NOTE_EMPTY_FIELD_NAME_%@" : {
       "comment" : "Shown above a response when one form field was left out, because a variable in its name resolved to nothing. The argument is its name as the tab shows it. RESPONSE_NOTE_EMPTY_FIELD_NAMES_%lld covers several.",
       "localizations" : {

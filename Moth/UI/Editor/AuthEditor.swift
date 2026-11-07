@@ -44,7 +44,7 @@ struct AuthEditor: View {
                 .accessibilityIdentifier("auth.inherited")
         case .none:
             EmptyView()
-        case .basic:
+        case .basic, .digest:
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
                 GridRow {
                     Text("AUTH_USERNAME")
@@ -93,7 +93,7 @@ struct AuthEditor: View {
                     .accessibilityIdentifier("auth.apiKeyLocation")
                 }
             }
-        case .digest, .oauth2:
+        case .oauth2:
             Text("NOT_SUPPORTED_YET")
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("auth.notSupported")
@@ -253,6 +253,17 @@ private struct AuthEditorPreview: View {
     ))))
 }
 
-#Preview("Not Supported") {
+#Preview("Digest") {
     AuthEditorPreview(draft: AuthDraft(.digest(DigestAuth(username: "ada", password: SecretReference()))))
+}
+
+#Preview("Not Supported") {
+    AuthEditorPreview(draft: AuthDraft(.oauth2(OAuth2Auth(
+        grantType: .clientCredentials,
+        authorizationURL: "",
+        accessTokenURL: "https://example.com/token",
+        callbackURL: "",
+        clientID: "moth",
+        scope: ""
+    ))))
 }

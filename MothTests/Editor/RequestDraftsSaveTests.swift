@@ -19,7 +19,15 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
 
     @Test("An unsupported body and auth survive a Save through the real writer")
     func unsupportedKindsSurviveSave() async throws {
-        let auth = Auth.digest(DigestAuth(username: "ada", password: token))
+        let auth = Auth.oauth2(OAuth2Auth(
+            grantType: .clientCredentials,
+            authorizationURL: "",
+            accessTokenURL: "https://example.com/token",
+            callbackURL: "",
+            clientID: "moth",
+            clientSecret: token,
+            scope: ""
+        ))
         let body = RequestBody.binary(filePath: "/tmp/a.bin")
         let request = Request(name: "Request", body: body, auth: auth)
         let (dataModel, drafts) = try stored(request, secretStore: RecordingSecretStore())

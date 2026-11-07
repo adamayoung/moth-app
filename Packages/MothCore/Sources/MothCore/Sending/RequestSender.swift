@@ -26,25 +26,30 @@ public nonisolated struct RequestSender: Sendable {
     private let transport: any HTTPTransport
     private let secretStore: any SecretStore
     private let now: @Sendable () -> Date
+    private let cnonce: @Sendable () -> String
 
     public init(
         transport: any HTTPTransport,
         secretStore: any SecretStore,
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        cnonce: @escaping @Sendable () -> String = { UUID().uuidString.replacing("-", with: "").lowercased() }
     ) {
         self.transport = transport
         self.secretStore = secretStore
         self.now = now
+        self.cnonce = cnonce
     }
 
     @concurrent
     public func send(_ outgoing: OutgoingRequest, scopes: VariableScopes) async -> SendResult {
         let urlRequest: URLRequest
         let notes: [ResponseNote]
+        let digest: DigestAuthProvider?
         do {
             let resolved = try await resolve(outgoing, scopes: scopes)
             let built = try await RequestBuilder(now: now).build(resolved)
             urlRequest = built.urlRequest
+            digest = resolved.digestProvider
             notes = ResponseNote.notes(
                 unresolved: built.unresolved,
                 notices: built.notices.map { $0.namingRow(of: outgoing.request, resolvedAs: resolved) },
@@ -55,7 +60,7 @@ public nonisolated struct RequestSender: Sendable {
         } catch {
             return .failed(SendFailure(notSent: error), notes: [])
         }
-        return await transmit(urlRequest, notes: notes)
+        return await transmit(urlRequest, notes: notes, digest: digest)
     }
 
     private func resolve(_ outgoing: OutgoingRequest, scopes: VariableScopes) async throws -> ResolvedRequest {
@@ -68,17 +73,64 @@ public nonisolated struct RequestSender: Sendable {
         )
     }
 
-    private func transmit(_ request: URLRequest, notes: [ResponseNote]) async -> SendResult {
-        let clock = ContinuousClock()
-        let start = clock.now
+    private func transmit(
+        _ request: URLRequest,
+        notes: [ResponseNote],
+        digest: DigestAuthProvider?
+    ) async -> SendResult {
         do {
-            let response = try await transport.send(request)
-            return .response(SentResponse(response, measured: start.duration(to: clock.now), notes: notes))
+            let (response, measured) = try await timedSend(request)
+            guard response.status == 401, let digest else {
+                return .response(SentResponse(response, measured: measured, notes: notes))
+            }
+            return try await answerDigestChallenge(
+                in: response,
+                measured: measured,
+                notes: notes,
+                to: request,
+                with: digest
+            )
         } catch is CancellationError {
             return .cancelled
         } catch {
             return .failed(SendFailure(transportError: error), notes: notes)
         }
+    }
+
+}
+
+private nonisolated extension RequestSender {
+
+    func timedSend(_ request: URLRequest) async throws -> (HTTPResponse, Duration) {
+        let clock = ContinuousClock()
+        let start = clock.now
+        let response = try await transport.send(request)
+        return (response, start.duration(to: clock.now))
+    }
+
+    /// One answer, whatever the method: the server refused the first send for lack of credentials. No nonce is kept, so
+    /// every send starts again with none.
+    func answerDigestChallenge(
+        in refusal: HTTPResponse,
+        measured: Duration,
+        notes: [ResponseNote],
+        to request: URLRequest,
+        with digest: DigestAuthProvider
+    ) async throws -> SendResult {
+        let header = refusal.value(forHeader: "WWW-Authenticate") ?? ""
+        guard let challenge = DigestChallenge.first(in: header) else {
+            let note: [ResponseNote] = DigestChallenge.isOffered(in: header) ? [.digestChallengeUnsupported] : []
+            return .response(SentResponse(refusal, measured: measured, notes: notes + note))
+        }
+
+        try Task.checkCancellation()
+        var answer = request
+        answer.setValue(
+            digest.authorization(answering: challenge, to: request, cnonce: cnonce()),
+            forHTTPHeaderField: "Authorization"
+        )
+        let (response, measured) = try await timedSend(answer)
+        return .response(SentResponse(response, measured: measured, notes: notes + [.sentAgainForDigestChallenge]))
     }
 
 }

@@ -74,7 +74,7 @@ struct RequestSenderLeftOutVariableTests {
     @Test("A variable only in auth that wasn't sent shows just the auth's note", arguments: [
         (
             Auth.digest(DigestAuth(username: "{{x}}", password: SecretReference(identifier: "no-value"))),
-            ResponseNote.unsupportedAuth
+            ResponseNote.missingCredential
         ),
         (.basic(BasicAuth(username: "{{x}}", password: SecretReference(identifier: "no-value"))), .missingCredential)
     ])

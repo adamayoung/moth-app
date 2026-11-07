@@ -38,7 +38,19 @@ enum SeedData {
             children: [
                 CollectionItem(
                     sortOrder: 0,
-                    node: .request(Request(id: identifier(10), name: "Delete Admin", method: .delete))
+                    node: .request(Request(
+                        id: identifier(10),
+                        name: "Delete Admin",
+                        method: .delete,
+                        auth: .oauth2(OAuth2Auth(
+                            grantType: .clientCredentials,
+                            authorizationURL: "",
+                            accessTokenURL: "https://example.com/token",
+                            callbackURL: "",
+                            clientID: "moth",
+                            scope: ""
+                        ))
+                    ))
                 )
             ]
         )
