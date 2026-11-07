@@ -11,6 +11,7 @@ final nonisolated class RecordingTransport: HTTPTransport {
 
     private let sent = Mutex<[URLRequest]>([])
     private let jars = Mutex<[any CookieJar?]>([])
+    private let sentPolicies = Mutex<[SendPolicy]>([])
     private let result: @Sendable () throws -> HTTPResponse
 
     init(result: @escaping @Sendable () throws -> HTTPResponse = {
@@ -27,8 +28,13 @@ final nonisolated class RecordingTransport: HTTPTransport {
         jars.withLock(\.self)
     }
 
+    var policies: [SendPolicy] {
+        sentPolicies.withLock(\.self)
+    }
+
     @concurrent
-    func send(_ request: URLRequest, cookies: any CookieJar?) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies: any CookieJar?, policy: SendPolicy) async throws -> HTTPResponse {
+        sentPolicies.withLock { $0.append(policy) }
         sent.withLock { $0.append(request) }
         jars.withLock { $0.append(cookies) }
         return try result()

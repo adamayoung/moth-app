@@ -51,6 +51,7 @@ extension ResponseNote {
         case .sentAgainForDigestChallenge: String(localized: "RESPONSE_NOTE_DIGEST_SENT_AGAIN")
         case .digestChallengeUnsupported: String(localized: "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED")
         case .digestChallengeAfterRedirect: String(localized: "RESPONSE_NOTE_DIGEST_CHALLENGE_AFTER_REDIRECT")
+        case .sentWithoutTLSVerification: String(localized: "RESPONSE_NOTE_SENT_WITHOUT_TLS_VERIFICATION")
         }
     }
 

@@ -29,11 +29,13 @@ final class RequestDrafts {
             draft.auth.discardCredentials(matching: credentials, heldBy: saved.auth.requestAuth)
         }
 
-        /// A sync never takes what was typed, but a body or auth nobody touched follows it, and an edited auth moves to
-        /// the references the row now holds, because a Save from the old ones would release the new.
+        /// A sync never takes what was typed, but a body, auth or settings nobody touched follows it, and an edited
+        /// auth moves to the references the row now holds, because a Save from the old ones would release the new.
         mutating func moveSaved(to newSaved: RequestDraft) {
             var body = draft.body
             var auth = draft.auth
+            var settings = draft.settings
+            settings.follow(newSaved.settings, from: saved.settings)
             if body.hasSameContent(as: saved.body) {
                 body.follow(newSaved.body)
             }
@@ -47,6 +49,7 @@ final class RequestDrafts {
             }
             draft.body = body
             draft.auth = auth
+            draft.settings = settings
             saved = newSaved
         }
 
@@ -206,6 +209,22 @@ final class RequestDrafts {
     func keepRequests(_ ids: Set<Request.ID>) {
         if entries.keys.contains(where: { !ids.contains($0) }) {
             entries = entries.filter { ids.contains($0.key) }
+        }
+    }
+
+}
+
+private extension RequestSettings {
+
+    mutating func follow(_ synced: RequestSettings, from saved: RequestSettings) {
+        if timeout == saved.timeout {
+            timeout = synced.timeout
+        }
+        if followsRedirects == saved.followsRedirects {
+            followsRedirects = synced.followsRedirects
+        }
+        if verifiesTLS == saved.verifiesTLS {
+            verifiesTLS = synced.verifiesTLS
         }
     }
 

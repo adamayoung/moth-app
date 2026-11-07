@@ -101,6 +101,37 @@ struct RequestEditorScreen {
         pane.buttons.matching(identifier: "\(section).remove").element(boundBy: row).click()
     }
 
+    var timeoutField: XCUIElement {
+        pane.textFields["settings.timeout"]
+    }
+
+    var followRedirectsToggle: XCUIElement {
+        settingsElement("settings.followRedirects")
+    }
+
+    var verifyTLSToggle: XCUIElement {
+        settingsElement("settings.verifyTLS")
+    }
+
+    var tlsWarning: XCUIElement {
+        settingsElement("settings.tlsWarning")
+    }
+
+    /// A toggle reports its state as 1 or 0, as a number or as text depending on its style.
+    func isOn(_ toggle: XCUIElement) -> Bool {
+        (toggle.value as? NSNumber)?.boolValue ?? (toggle.value as? String == "1")
+    }
+
+    func replaceTimeout(with text: String) {
+        timeoutField.click()
+        app.typeKey("a", modifierFlags: .command)
+        app.typeText(text)
+    }
+
+    private func settingsElement(_ identifier: String) -> XCUIElement {
+        pane.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
     var pathVariableValue: XCUIElement {
         pane.textFields["pathVariables.value"]
     }

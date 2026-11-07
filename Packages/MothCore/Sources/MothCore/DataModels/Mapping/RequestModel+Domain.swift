@@ -29,8 +29,8 @@ nonisolated extension RequestModel: StoredAuthRow {
         }
     }
 
-    /// Rewrites a body or auth only when it changed, because encoding a decoded value drops any key this build can't
-    /// read.
+    /// Rewrites a body, auth or settings only when it changed, because encoding a decoded value drops any key this
+    /// build can't read.
     func apply(_ edit: RequestEdit, from base: RequestEdit) throws {
         assign(edit.method.rawValue, to: \.methodRawValue)
         assign(edit.urlTemplate, to: \.urlTemplate)
@@ -42,6 +42,9 @@ nonisolated extension RequestModel: StoredAuthRow {
         }
         if edit.auth != base.auth {
             try assign(StoredJSON.encode(edit.auth), to: \.authData)
+        }
+        if edit.settings != base.settings {
+            try assign(StoredJSON.encode(edit.settings), to: \.settingsData)
         }
     }
 

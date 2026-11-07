@@ -16,13 +16,13 @@ struct CookieExchange: Sendable {
         self.manualHeader = request.value(forHTTPHeaderField: "Cookie")
     }
 
-    func preparing(_ request: URLRequest) async -> URLRequest {
+    func preparing(_ request: URLRequest, withManualHeader: Bool = true) async -> URLRequest {
         guard let url = request.url else {
             return request
         }
         var request = request
         await request.setValue(
-            CookieHeader.merging(manual: manualHeader, jar: jar.cookies(for: url)),
+            CookieHeader.merging(manual: withManualHeader ? manualHeader : nil, jar: jar.cookies(for: url)),
             forHTTPHeaderField: "Cookie"
         )
         return request

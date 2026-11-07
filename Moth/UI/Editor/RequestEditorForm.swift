@@ -12,6 +12,7 @@ enum RequestEditorSection: CaseIterable, Identifiable {
     case headers
     case body
     case auth
+    case settings
 
     var id: Self {
         self
@@ -23,6 +24,7 @@ enum RequestEditorSection: CaseIterable, Identifiable {
         case .headers: "REQUEST_EDITOR_SECTION_HEADERS"
         case .body: "REQUEST_EDITOR_SECTION_BODY"
         case .auth: "REQUEST_EDITOR_SECTION_AUTH"
+        case .settings: "REQUEST_EDITOR_SECTION_SETTINGS"
         }
     }
 
@@ -127,7 +129,7 @@ struct RequestEditorForm: View {
                 .accessibilityIdentifier("headers.add")
             case .body:
                 addBodyRowButton
-            case .auth:
+            case .auth, .settings:
                 EmptyView()
             }
         }
@@ -198,6 +200,10 @@ struct RequestEditorForm: View {
                 ) { change in
                     update { change(&$0.auth) }
                 }
+            }
+        case .settings:
+            SettingsEditor(settings: draft.settings) { change in
+                update { change(&$0.settings) }
             }
         }
     }
