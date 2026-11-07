@@ -163,8 +163,8 @@ private nonisolated extension RequestSender {
     }
 
     /// One answer, whatever the method: the server refused the first send for lack of credentials. No nonce is kept, so
-    /// every send starts again with none. A challenge from another origin, after a redirect, isn't answered, so no
-    /// credential reaches a host the request didn't name.
+    /// every send starts again with none. After a redirect, only a request with no body to another URL on its origin is
+    /// answered: one with a body may have become a GET, and another origin is a host the request didn't name.
     func answerDigestChallenge(
         in refusal: HTTPResponse,
         measured: Duration,
@@ -172,11 +172,6 @@ private nonisolated extension RequestSender {
         to request: URLRequest,
         with digest: DigestAuthProvider
     ) async throws -> Transmission {
-        let challenger = refusal.url ?? request.url
-        guard let challenger, challenger.hasSameOrigin(as: request.url) else {
-            return Transmission(refusal, measured: measured, notes: notes)
-        }
-
         let challenges = AuthChallenge.all(in: refusal.value(forHeader: "WWW-Authenticate") ?? "")
         guard let challenge = DigestChallenge.first(in: challenges) else {
             let isOffered = challenges.contains { $0.isScheme("Digest") }
@@ -187,6 +182,10 @@ private nonisolated extension RequestSender {
             )
         }
 
+        guard let challenger = Self.answerableURL(after: refusal, to: request) else {
+            return Transmission(refusal, measured: measured, notes: notes + [.digestChallengeAfterRedirect])
+        }
+
         try Task.checkCancellation()
         var answer = request
         answer.url = challenger
@@ -194,8 +193,32 @@ private nonisolated extension RequestSender {
             digest.authorization(answering: challenge, to: answer, cnonce: cnonce()),
             forHTTPHeaderField: "Authorization"
         )
-        let (response, measured) = try await timedSend(answer)
-        return Transmission(response, measured: measured, notes: notes + [.sentAgainForDigestChallenge])
+        return try await transmitAnswer(answer, notes: notes + [.sentAgainForDigestChallenge])
+    }
+
+    private func transmitAnswer(_ answer: URLRequest, notes: [ResponseNote]) async throws -> Transmission {
+        let clock = ContinuousClock()
+        let start = clock.now
+        do {
+            let (response, measured) = try await timedSend(answer)
+            return Transmission(response, measured: measured, notes: notes)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            let failure = SendFailure(transportError: error)
+            return Transmission(result: .failed(failure, notes: notes), duration: start.duration(to: clock.now))
+        }
+    }
+
+    private static func answerableURL(after refusal: HTTPResponse, to request: URLRequest) -> URL? {
+        guard let sent = request.url else {
+            return nil
+        }
+        guard let challenger = refusal.url, challenger != sent else {
+            return sent
+        }
+        let hasBody = !(request.httpBody ?? Data()).isEmpty
+        return challenger.hasSameOrigin(as: sent) && !hasBody ? challenger : nil
     }
 
 }
@@ -213,8 +236,7 @@ private nonisolated extension URL {
         guard let scheme = scheme?.lowercased(), let host = host()?.lowercased() else {
             return nil
         }
-        let defaultPort = ["http": 80, "https": 443][scheme]
-        return "\(scheme)://\(host):\(port ?? defaultPort ?? -1)"
+        return "\(scheme)://\(host):\(port ?? HTTPDefaultPort.of(scheme: scheme) ?? -1)"
     }
 
 }

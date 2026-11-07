@@ -67,6 +67,13 @@ struct DigestChallengeTests {
         #expect(DigestChallenge.first(in: header) == nil)
     }
 
+    @Test("An unquoted value keeps an = inside it, such as base64 padding")
+    func unquotedValueWithEquals() throws {
+        let challenge = try #require(DigestChallenge.first(in: #"Digest realm="api", nonce=MTYxNjQ=, qop="auth""#))
+
+        #expect(challenge.nonce == "MTYxNjQ=")
+    }
+
     @Test("A header with no Digest challenge offers none", arguments: [#"Basic realm="api""#, "Bearer", ""])
     func notOffered(header: String) {
         #expect(!AuthChallenge.all(in: header).contains { $0.isScheme("Digest") })

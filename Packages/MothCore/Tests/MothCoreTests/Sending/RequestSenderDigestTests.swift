@@ -306,7 +306,7 @@ extension RequestSenderDigestTests {
     }
 
     @Test(
-        "A challenge from a redirect to another origin is shown as it came, with nothing sent there",
+        "A challenge from a redirect to another origin is shown with a note, and nothing is sent there",
         arguments: ["https://other.example/a", "http://example.com/a", "https://example.com:8443/a"]
     )
     func crossOriginRedirect(address: String) async throws {
@@ -326,7 +326,61 @@ extension RequestSenderDigestTests {
         let response = try response(of: result)
         #expect(transport.requests.count == 1)
         #expect(response.status == 401)
-        #expect(response.notes.isEmpty)
+        #expect(response.notes == [.digestChallengeAfterRedirect])
+    }
+
+    @Test(
+        "A request with a body isn't answered after a redirect, which may have changed its method",
+        arguments: [HTTPMethod.post, .put, .patch, .delete]
+    )
+    func redirectedRequestWithABody(method: HTTPMethod) async throws {
+        let redirected = HTTPResponse(
+            status: 401,
+            headers: ["WWW-Authenticate": Self.challengeHeader],
+            body: Data(),
+            url: URL(string: "https://example.com/account")
+        )
+        let transport = ScriptedTransport(redirected, Self.accepted)
+        let request = Request(
+            name: "Login",
+            method: method,
+            urlTemplate: "https://example.com/login",
+            body: .raw(content: "name=ada", contentType: "application/x-www-form-urlencoded"),
+            auth: Self.digest()
+        )
+
+        let result = try await send(request, through: transport)
+
+        let response = try response(of: result)
+        #expect(transport.requests.count == 1)
+        #expect(response.status == 401)
+        #expect(response.notes == [.digestChallengeAfterRedirect])
+    }
+
+    @Test("An answer that fails to send keeps the note, and is timed alone")
+    func answerFails() async throws {
+        let transport = ScriptedTransport([
+            {
+                try await Task.sleep(for: .milliseconds(300))
+                return Self.challenge
+            },
+            { throw HTTPTransportError.timedOut(description: "The request timed out.") }
+        ])
+
+        try await secretStore.save("Circle of Life", for: Self.password.identifier)
+        let sender = RequestSender(transport: transport, secretStore: secretStore, cnonce: { "c" })
+        let request = Request(name: "Digest", urlTemplate: "https://example.com", auth: Self.digest())
+
+        let recorded = await sender.sendRecording(OutgoingRequest(request: request), scopes: VariableScopes())
+
+        guard case .failed(let failure, let notes) = recorded.result else {
+            Issue.record("Expected a failure, got \(recorded.result)")
+            return
+        }
+        #expect(transport.requests.count == 2)
+        #expect(failure.kind == .timedOut)
+        #expect(notes == [.sentAgainForDigestChallenge])
+        #expect(try #require(recorded.entry).duration < .milliseconds(300))
     }
 
 }

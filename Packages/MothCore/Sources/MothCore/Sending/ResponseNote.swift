@@ -30,6 +30,7 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     case formDataBoundaryReplaced
     case sentAgainForDigestChallenge
     case digestChallengeUnsupported
+    case digestChallengeAfterRedirect
 
     public static func notes(
         unresolved: [UnresolvedVariable],

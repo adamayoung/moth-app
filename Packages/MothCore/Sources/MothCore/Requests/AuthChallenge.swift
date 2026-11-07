@@ -64,7 +64,7 @@ private nonisolated struct ChallengeScanner {
         skip { $0 == " " || $0 == "\t" }
         guard index < text.endIndex, text[index] == "\"" else {
             let start = index
-            skip { !Self.endsToken($0) }
+            skip { !Self.endsValue($0) }
             return String(text[start ..< index])
         }
         return quotedString()
@@ -93,6 +93,11 @@ private nonisolated struct ChallengeScanner {
         while index < text.endIndex, matches(text[index]) {
             index = text.index(after: index)
         }
+    }
+
+    /// Unlike a token, a value can hold `=`, as base64 padding does in a nonce some servers send unquoted.
+    private static func endsValue(_ character: Character) -> Bool {
+        character == " " || character == "\t" || character == ","
     }
 
     private static func endsToken(_ character: Character) -> Bool {

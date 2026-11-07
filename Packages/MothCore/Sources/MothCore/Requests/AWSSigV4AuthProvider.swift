@@ -12,8 +12,6 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
         "authorization", "connection", "content-length", "proxy-authenticate", "proxy-authorization", "www-authenticate"
     ]
 
-    private static let defaultPorts = ["http": 80, "https": 443]
-
     private let credentials: AWSSigV4Signer.Credentials
     private let sessionToken: String
     private let date: Date
@@ -96,7 +94,7 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
     private static func host(of components: URLComponents?) -> String {
         let host = components?.encodedHost?.lowercased() ?? ""
 
-        guard let port = components?.port, port != defaultPorts[components?.scheme?.lowercased() ?? ""] else {
+        guard let port = components?.port, port != HTTPDefaultPort.of(scheme: components?.scheme) else {
             return host
         }
 

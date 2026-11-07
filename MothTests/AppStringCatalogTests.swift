@@ -247,6 +247,10 @@ extension AppStringCatalogTests {
         ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body."),
         ("RESPONSE_NOTE_DIGEST_SENT_AGAIN", "Sent again to answer a Digest challenge."),
         (
+            "RESPONSE_NOTE_DIGEST_CHALLENGE_AFTER_REDIRECT",
+            "Not sent again, because the Digest challenge came after a redirect."
+        ),
+        (
             "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED",
             "This server\u{2019}s Digest challenge isn\u{2019}t supported."
         ),

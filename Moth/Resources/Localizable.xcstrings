@@ -1509,6 +1509,17 @@
         }
       }
     },
+    "RESPONSE_NOTE_DIGEST_CHALLENGE_AFTER_REDIRECT" : {
+      "comment" : "Shown above a 401 response when the request has Digest auth but the challenge came after a redirect Moth can't answer safely: to another site, or for a request with a body, so nothing more was sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not sent again, because the Digest challenge came after a redirect."
+          }
+        }
+      }
+    },
     "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED" : {
       "comment" : "Shown above a 401 response when the request has Digest auth but the server's Digest challenge uses an algorithm or protection Moth can't answer, so nothing more was sent.",
       "localizations" : {

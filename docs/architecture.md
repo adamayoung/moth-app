@@ -672,9 +672,11 @@ computed `Authorization` and sends it again, whatever the method, because the
 server refused for lack of credentials. No nonce is kept, so every send starts
 over. `AuthChallenge` reads the header URLSession joined with commas, and the
 first challenge with a known algorithm and `qop=auth` wins, in the server's order.
-The answer goes to the URL that sent the challenge, which a redirect can change,
-and a challenge from another origin isn't answered, so no credential reaches a host
-the request didn't name.
+The answer goes to the URL that sent the challenge, which a redirect can change.
+After a redirect, a request with a body isn't answered, because URLSession may have
+made it a GET, and nor is a challenge from another origin, so no credential reaches a
+host the request didn't name; the 401 says so. An answer that fails keeps its note
+and is timed alone.
 MD5, SHA-256 and their `-sess` forms are known. The response shown is the final
 one, timed alone, with a note; a 401 whose Digest challenge can't be answered says
 so; any other 401, and a second one, are shown as they came.
