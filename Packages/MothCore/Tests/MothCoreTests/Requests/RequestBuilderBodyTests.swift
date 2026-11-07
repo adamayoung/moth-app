@@ -158,6 +158,17 @@ struct RequestBuilderBodyTests {
         #expect(built.notices == [.bodyNotSent(method: method)])
     }
 
+    @Test("A form with no row to send stays off a GET without a notice", arguments: [
+        [FormDataField](),
+        [FormDataField(key: "title", value: .text("Hello"), isEnabled: false)]
+    ])
+    func emptyFormOnBodilessMethod(fields: [FormDataField]) async throws {
+        let built = try await build(.formData(fields), method: .get)
+
+        #expect(built.urlRequest.httpBody == nil)
+        #expect(built.notices.isEmpty)
+    }
+
     @Test("A body on DELETE is sent")
     func bodyOnDelete() async throws {
         let built = try await build(.raw(content: "{}", contentType: "application/json"), method: .delete)

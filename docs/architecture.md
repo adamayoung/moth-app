@@ -581,11 +581,12 @@ binary as text. `JSONReindenter` lays out the text the server sent, because
 stays raw. `ReadOnlyTextView` shows it, because `Text` lays out megabytes on the main
 thread.
 
-A credential with no value sends no auth, and the response says so. So does every
-other difference between the request sent and the tab: an unresolved variable, by
-its reason; a header that isn't valid; a form-data file; a body on GET or HEAD; and
-a manual `Content-Type` that replaces the form-data boundary. `ResponseNote.notes`
-keeps them in one order, naming one and counting several. A request that
+A credential with no value sends no auth, and the response says so. It also says so
+for an unresolved variable, by its reason; a header that isn't valid; an unsupported
+auth or body; a form-data file; a body on GET or HEAD; and a manual `Content-Type`
+that replaces the form-data boundary. `ResponseNote.notes` keeps them in one order,
+naming one and counting several. A note names a row as the tab shows it, because a
+resolved name can hold a secret. A request that
 can't be built was not sent, so it carries no "sent as written" note.
 That includes `{{host}}` in the host with no active environment, which reads "This
 URL isn’t valid." A failure after that keeps its notes, because the request went out.
