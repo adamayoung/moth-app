@@ -25,6 +25,8 @@ final class RequestTabsModel {
     let responses: RequestResponses
     let code: RequestCodeModel
     var pendingClose: RequestTab?
+    /// A count the editor watches, because focus is the view's to move and the menu has no view in reach.
+    private(set) var urlFocusRequests = 0
 
     init(store: RequestTabStore, drafts: RequestDrafts, responses: RequestResponses, code: RequestCodeModel) {
         self.store = store
@@ -54,11 +56,60 @@ final class RequestTabsModel {
         tabs.close(id)
     }
 
+    var canEditURL: Bool {
+        selectedEditorDraft != nil
+    }
+
+    /// What the selected tab's editor shows, which is nothing for a row that can't be read.
+    private var selectedEditorDraft: RequestDraft? {
+        guard let id = selectedTab?.id, !drafts.isUnreadable(id) else {
+            return nil
+        }
+        return drafts.draft(for: id)
+    }
+
+    func focusURL() {
+        if canEditURL {
+            urlFocusRequests += 1
+        }
+    }
+
+    var canCycleTabs: Bool {
+        openTabs.count > 1
+    }
+
+    func selectNextTab() {
+        selectTab(offsetBy: 1)
+    }
+
+    func selectPreviousTab() {
+        selectTab(offsetBy: -1)
+    }
+
+    /// Steps over the tabs on show, so a tab hidden until its row syncs is never selected.
+    private func selectTab(offsetBy step: Int) {
+        let ids = openTabs.map(\.id)
+        guard let selected = tabs.selected, let index = ids.firstIndex(of: selected) else {
+            return
+        }
+        select(ids[(index + step + ids.count) % ids.count])
+    }
+
     /// A text field commits as it is torn down with focus, and that text must not land on a tab that has just closed.
     func editDraft(_ id: Request.ID, _ change: (inout RequestDraft) -> Void) {
         if tabs.selected == id {
             drafts.update(id, change)
         }
+    }
+
+    var sendCommand: SendCommand {
+        guard let id = selectedTab?.id, let draft = selectedEditorDraft else {
+            return .unavailable
+        }
+        if responses.isSending(id) {
+            return .cancel(id)
+        }
+        return draft.hasURL ? .send(id) : .unavailable
     }
 
     @discardableResult

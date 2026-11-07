@@ -14,6 +14,9 @@ struct RequestTabCommandContext {
     let hasOpenTabs: Bool
     let selectedRequest: Request.ID?
     let savableRequest: Request.ID?
+    let send: SendCommand
+    let canEditURL: Bool
+    let canCycleTabs: Bool
 
 }
 

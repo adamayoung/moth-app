@@ -87,7 +87,7 @@ struct SidebarView: View {
                 model: model,
                 environments: environments,
                 newItemContainer: model.newItemContainer,
-                importContainer: model.importContainer
+                newRequestContainer: model.newRequestContainer
             )
         )
     }
