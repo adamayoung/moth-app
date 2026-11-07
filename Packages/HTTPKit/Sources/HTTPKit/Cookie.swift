@@ -52,8 +52,10 @@ public struct Cookie: Sendable, Hashable {
         Identity(name: name, domain: domain, path: path)
     }
 
+    /// Not `<=`: the 27.2 SDK binds `Date.<=` to a symbol macOS 27.0's Foundation lacks, so code using it won't load
+    /// there, CI's runner included. `<` is safe.
     public func isExpired(at now: Date) -> Bool {
-        expiresAt.map { $0 <= now } ?? false
+        expiresAt.map { !(now < $0) } ?? false
     }
 
     /// RFC 6265 section 5.4. `HttpOnly` and `SameSite` don't apply: there are no scripts and no browsing context.

@@ -61,7 +61,7 @@ public struct CookieList: Sendable, Hashable {
     public func sending(to url: URL, at now: Date) -> [Cookie] {
         cookies
             .filter { $0.matches(url, at: now) }
-            .sorted { ($0.path.count, $1.createdAt) > ($1.path.count, $0.createdAt) }
+            .sorted { $0.path.count == $1.path.count ? $0.createdAt < $1.createdAt : $0.path.count > $1.path.count }
     }
 
     @discardableResult
