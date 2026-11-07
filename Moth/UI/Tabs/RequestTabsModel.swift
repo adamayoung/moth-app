@@ -123,17 +123,28 @@ final class RequestTabsModel {
         return draft.hasURL ? .send(id) : .unavailable
     }
 
-    /// Reads the tokens on show again once the send ends, because a send can store a new one.
+    /// Reads the request's OAuth 2.0 token again once the send ends, because the send may have stored a new one.
     @discardableResult
     func send(_ id: Request.ID) -> Task<Void, Never>? {
         guard let draft = drafts.draft(for: id) else {
             return nil
         }
         let sending = responses.send(id, draft: draft, tree: tree)
+        guard let reference = tokenReference(sentBy: draft, id: id) else {
+            return sending
+        }
         return Task { [accessTokens] in
             await sending.value
-            await accessTokens.reloadLoaded()
+            await accessTokens.load(reference)
         }
+    }
+
+    private func tokenReference(sentBy draft: RequestDraft, id: Request.ID) -> SecretReference? {
+        let auth = draft.auth.kind == .inherit ? try? tree.effectiveAuth(of: .request(id)) : draft.auth.requestAuth
+        guard case .oauth2(let oauth2) = auth else {
+            return nil
+        }
+        return oauth2.tokenReference
     }
 
     /// The source is read when the button is pressed, so it carries what the editor holds then.

@@ -137,28 +137,33 @@ body. Digest's provider only removes an `Authorization` header, because Digest
 answers a 401 challenge, and [sending](#sending-a-request) does that.
 
 OAuth 2.0 runs the Client Credentials grant (RFC 6749 section 4.4). `RequestSender`
-gets a token after resolution and before the build, and `BearerAuthProvider` sends
-it. A send with no token, or one expiring within 60 seconds, asks the Token URL
-for a new one first, with the client credentials in a Basic header, each
-form-encoded as section 2.3.1 says. A token with no expiry is used until it is
+builds the request once to check it, then gets a token, then builds it again, and
+`BearerAuthProvider` sends the token, so a request that can't be sent never sends
+its client secret. A send with no token, or one expiring within 60 seconds, asks
+the Token URL for a new one first, with the client credentials in a Basic header,
+each form-encoded as section 2.3.1 says. A token with no expiry is used until it is
 cleared, and a 401 doesn't renew one. A failed token request stops the send with
-"Couldn't Get Access Token" and the server's `error` and `error_description`. The
-token request carries no cookies and goes to no History. It takes the request's
-timeout, Follow Redirects and Verify TLS Certificate, because a token endpoint
-often shares the API's host. Two sends that both need
-a token both ask for one, and the last stored wins. Any other grant sends no auth
-and is noted, as an unsupported kind is.
+"Couldn't Get Access Token", the server's `error` and `error_description`, and the
+notes for any variable that didn't resolve. The token request carries no cookies
+and goes to no History. It takes the request's timeout, Follow Redirects and Verify
+TLS Certificate, because a token endpoint often shares the API's host. A folder's
+or collection's sheet has no request, so its Get New Access Token uses the
+defaults. Two sends that both need a token both ask for one, and the last stored
+wins. Any other grant sends no auth and is noted, as an unsupported kind is.
 
-`OAuth2Tokens` keeps the token, with its expiry, as JSON under the auth's
-`accessToken` reference, so the stored JSON needs no new field. A request that
-inherits the auth resolves to the same `OAuth2Auth`, so it shares that token. A
-stored value that isn't that JSON, such as a Postman import's token, has no expiry.
-`VariableResolver` resolves only an OAuth 2.0 auth's Client Secret and password, so
-a missing token isn't reported as a missing credential, and a token is never
-expanded. `OAuth2Draft` mints a token reference for a row that holds none, and the
-row takes it on its next Save. Until then a send gets a token each time and stores
-none. Each window's `AccessTokens` shows the token's state, runs Get New Access
-Token and Clear Token, and reads the tokens it shows again after each send.
+`OAuth2Tokens` keeps the token as JSON under the auth's `accessToken` reference,
+with its expiry and the resolved Token URL, Client ID and Scope it was issued for,
+so the stored JSON needs no new field. A token issued for others, such as another
+environment's, is replaced on the next send, as is an imported token, which records
+none. A request that inherits the auth resolves to the same `OAuth2Auth`, so it
+shares that token. A row stored before Moth sent OAuth 2.0 can hold no
+`accessToken`. `OAuth2Auth.tokenReference` derives one from its unresolved fields,
+so the editor and the sender agree on it, opening the row is no edit, and a Save
+that changes the auth writes it. `VariableResolver` resolves only an OAuth 2.0
+auth's Client Secret and password, so a missing token isn't reported as a missing
+credential, and a token is never expanded. Each window's `AccessTokens` shows the
+token's state, runs Get New Access Token and Clear Token, and reads the sent
+request's token again after a send.
 
 `RequestBuilder` applies the provider last, so `AWSSigV4AuthProvider` signs the
 final URL, headers and body, with the time the send started, which History records
@@ -608,9 +613,9 @@ Replacing a credential on a request, folder or collection removes its Keychain i
 once the row has changed, unless another row's auth holds that reference. Deleting
 one leaves the item behind as a stray.
 
-An OAuth 2.0 token syncs like any other secret, under the auth's `accessToken`
-reference. Clear Token removes the item. A token fetched under a reference that a
-draft minted, then never saved, is a stray.
+An OAuth 2.0 token syncs like any other secret, under the auth's token reference.
+Clear Token removes the item. A token fetched for a new auth that is then reverted
+or never saved is a stray, live until it expires.
 
 ### Cookie Values
 

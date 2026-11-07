@@ -55,6 +55,7 @@ public nonisolated struct RequestSender: Sendable {
         scopes: VariableScopes,
         cookies: any CookieJar? = nil
     ) async -> RecordedSend {
+        let outgoing = outgoing.withTokenReference
         let sentAt = now()
         let dynamicValues = DynamicValueLog()
         let sent = await send(
@@ -113,9 +114,14 @@ public nonisolated struct RequestSender: Sendable {
         let digest: DigestAuthProvider?
         let delivery: Delivery
         do {
-            let resolved = try await withAccessToken(
-                outgoing.resolved(with: secretStore, scopes: scopes, dynamicVariables: dynamicVariables),
-                tokens: OAuth2Tokens(transport: transport, secretStore: secretStore, now: now)
+            let resolved = try await authorised(
+                outgoing.resolved(
+                    with: secretStore,
+                    scopes: scopes,
+                    dynamicVariables: dynamicVariables
+                ),
+                tokens: OAuth2Tokens(transport: transport, secretStore: secretStore, now: now),
+                at: sentAt
             )
             let built = try await RequestBuilder(now: { sentAt }).build(resolved)
             urlRequest = built.urlRequest
@@ -129,7 +135,7 @@ public nonisolated struct RequestSender: Sendable {
         } catch is CancellationError {
             return Transmission(result: .cancelled)
         } catch let tokenFailure as AccessTokenFailure {
-            return Transmission(result: .failed(tokenFailure.failure, notes: []))
+            return Transmission(result: .failed(tokenFailure.failure, notes: tokenFailure.notes))
         } catch {
             return Transmission(result: .failed(SendFailure(notSent: error), notes: []))
         }

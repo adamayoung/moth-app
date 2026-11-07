@@ -7,29 +7,52 @@ import Foundation
 
 nonisolated extension RequestSender {
 
-    /// An auth with no `accessToken` reference, from a row older than the editor's, gets a token for this send alone.
-    func withAccessToken(_ resolved: ResolvedRequest, tokens: OAuth2Tokens) async throws -> ResolvedRequest {
-        guard case .oauth2(var oauth2) = resolved.auth, oauth2.grantType == .clientCredentials else {
+    /// Builds once first, so a request that can't be sent never sends its client secret to the token endpoint.
+    func authorised(
+        _ resolved: ResolvedRequest,
+        tokens: OAuth2Tokens,
+        at sentAt: Date
+    ) async throws -> ResolvedRequest {
+        guard resolved.getsAccessTokenAtSend, case .oauth2(let oauth2) = resolved.auth else {
             return resolved
         }
+        _ = try await RequestBuilder(now: { sentAt }).build(resolved)
+
         let token: String
         do {
             token = try await tokens.validToken(for: oauth2, in: resolved)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            throw AccessTokenFailure(failure: SendFailure(
-                kind: .accessTokenFailed,
-                description: error.localizedDescription
-            ))
+            throw AccessTokenFailure(
+                failure: SendFailure(kind: .accessTokenFailed, description: error.localizedDescription),
+                notes: ResponseNote.notes(
+                    unresolved: resolved.unresolved,
+                    notices: [],
+                    unresolvedCredentials: resolved.unresolvedCredentials
+                )
+            )
         }
 
         var authorised = resolved
-        let reference = oauth2.accessToken ?? SecretReference()
-        oauth2.accessToken = reference
-        authorised.auth = .oauth2(oauth2)
-        authorised.credentials[reference] = token
+        authorised.credentials[oauth2.tokenReference] = token
         return authorised
+    }
+
+}
+
+nonisolated extension OutgoingRequest {
+
+    /// Done before resolution, because the reference derives from the fields as written, not as an environment
+    /// expands them.
+    var withTokenReference: OutgoingRequest {
+        guard case .oauth2(var oauth2) = request.auth, oauth2.accessToken == nil else {
+            return self
+        }
+        var outgoing = self
+        oauth2.accessToken = oauth2.tokenReference
+        outgoing.request.auth = .oauth2(oauth2)
+        return outgoing
     }
 
 }
@@ -37,5 +60,6 @@ nonisolated extension RequestSender {
 struct AccessTokenFailure: Error {
 
     let failure: SendFailure
+    let notes: [ResponseNote]
 
 }

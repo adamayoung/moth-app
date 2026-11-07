@@ -16,8 +16,6 @@ final class AuthorizationModel {
 
     let target: AuthorizationSheetTarget
     private(set) var draft: AuthDraft
-    /// Kept, not rebuilt from `target`, because a draft mints an OAuth 2.0 token reference the row may not hold.
-    private let opened: AuthDraft
     private(set) var isSaving = false
     private(set) var saveFailed = false
     private var credentials = StoredCredentials()
@@ -27,9 +25,7 @@ final class AuthorizationModel {
 
     init(target: AuthorizationSheetTarget, secretStore: any SecretStore, write: @escaping Write) {
         self.target = target
-        let opened = AuthDraft(target.auth)
-        self.draft = opened
-        self.opened = opened
+        self.draft = AuthDraft(target.auth)
         self.secretStore = secretStore
         self.write = write
     }
@@ -58,7 +54,7 @@ final class AuthorizationModel {
         guard !isSaving else {
             return false
         }
-        guard !draft.hasSameContent(as: opened) else {
+        guard !draft.hasSameContent(as: AuthDraft(target.auth)) else {
             return true
         }
         isSaving = true

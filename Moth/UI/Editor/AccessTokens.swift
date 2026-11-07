@@ -35,6 +35,8 @@ final class AccessTokens {
     private var statuses: [SecretReference: Status] = [:]
     private var fetching: Set<SecretReference> = []
     private var failures: [SecretReference: String] = [:]
+    /// Moves on with each Get New Access Token and Clear Token, so a read that started before one can't undo it.
+    private var generations: [SecretReference: Int] = [:]
     private let tokens: OAuth2Tokens
     private let prepare: Prepare
 
@@ -84,18 +86,16 @@ final class AccessTokens {
     }
 
     func load(_ reference: SecretReference) async {
+        let generation = generations[reference, default: 0]
+        let status: Status
         do {
-            statuses[reference] = try await tokens.token(for: reference).map(Status.token) ?? Status.none
+            status = try await tokens.token(for: reference).map(Status.token) ?? Status.none
         } catch {
             Logger.editor.error("Reading a token failed: \(String(describing: error), privacy: .private)")
-            statuses[reference] = Status.none
+            status = Status.none
         }
-    }
-
-    /// A send may have stored a token, so every token on show is read again.
-    func reloadLoaded() async {
-        for reference in statuses.keys {
-            await load(reference)
+        if generations[reference, default: 0] == generation {
+            statuses[reference] = status
         }
     }
 
@@ -104,6 +104,7 @@ final class AccessTokens {
             return
         }
         defer { fetching.remove(reference) }
+        generations[reference, default: 0] += 1
         failures[reference] = nil
         do {
             let (outgoing, scopes) = try prepare(source)
@@ -117,6 +118,7 @@ final class AccessTokens {
     }
 
     func clear(_ reference: SecretReference) async {
+        generations[reference, default: 0] += 1
         do {
             try await tokens.clearToken(for: reference)
         } catch {

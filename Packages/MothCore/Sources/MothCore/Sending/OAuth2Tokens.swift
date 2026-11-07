@@ -35,38 +35,43 @@ public nonisolated struct OAuth2Tokens: Sendable {
     /// Resolves the way a send does, so the active environment and a Client Secret typed but not saved both apply.
     @concurrent
     public func getNewToken(for outgoing: OutgoingRequest, scopes: VariableScopes) async throws -> OAuth2Token {
-        let resolved = try await outgoing.resolved(with: secretStore, scopes: scopes)
+        let resolved = try await outgoing.withTokenReference.resolved(with: secretStore, scopes: scopes)
         guard case .oauth2(let oauth2) = resolved.auth, oauth2.grantType == .clientCredentials else {
             throw OAuth2TokenError.unsupportedGrant
         }
         return try await fetchToken(for: oauth2, in: resolved)
     }
 
+    /// A stored token issued for another Token URL, Client ID or Scope, or an imported one, is replaced.
     func validToken(for oauth2: OAuth2Auth, in resolved: ResolvedRequest) async throws -> String {
-        if let reference = oauth2.accessToken, let stored = try await token(for: reference),
-           !stored.needsRenewal(at: now()) {
+        let fingerprint = Self.tokenRequest(for: oauth2, in: resolved).fingerprint
+        if let stored = try await token(for: oauth2.tokenReference),
+           stored.issuedFor == fingerprint, !stored.needsRenewal(at: now()) {
             return stored.value
         }
         return try await fetchToken(for: oauth2, in: resolved).value
     }
 
-    private func fetchToken(for oauth2: OAuth2Auth, in resolved: ResolvedRequest) async throws -> OAuth2Token {
-        let tokenRequest = OAuth2TokenRequest(
+    private static func tokenRequest(for oauth2: OAuth2Auth, in resolved: ResolvedRequest) -> OAuth2TokenRequest {
+        OAuth2TokenRequest(
             tokenURL: oauth2.accessTokenURL,
             clientID: oauth2.clientID,
             clientSecret: oauth2.clientSecret.flatMap { resolved.credentials[$0] } ?? "",
             scope: oauth2.scope
         )
+    }
+
+    private func fetchToken(for oauth2: OAuth2Auth, in resolved: ResolvedRequest) async throws -> OAuth2Token {
+        let tokenRequest = Self.tokenRequest(for: oauth2, in: resolved)
         let settings = resolved.settings
         let response = try await transport.send(
             tokenRequest.urlRequest(timeout: settings.timeout),
             cookies: nil,
             policy: SendPolicy(followsRedirects: settings.followsRedirects, verifiesTLS: settings.verifiesTLS)
         )
-        let token = try OAuth2TokenRequest.token(from: response, receivedAt: now())
-        if let reference = oauth2.accessToken {
-            try await secretStore.save(token.storedValue, for: reference.identifier)
-        }
+        var token = try OAuth2TokenRequest.token(from: response, receivedAt: now())
+        token.issuedFor = tokenRequest.fingerprint
+        try await secretStore.save(token.storedValue, for: oauth2.tokenReference.identifier)
         return token
     }
 

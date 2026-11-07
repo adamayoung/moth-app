@@ -15,7 +15,6 @@ public nonisolated struct OAuth2Draft: Sendable {
     public var scope = ""
     private var stored: OAuth2Auth?
     private var clientSecret = DraftCredential()
-    private var storedAccessToken: SecretReference?
     private var newAccessToken = SecretReference()
 
     init() {}
@@ -27,7 +26,6 @@ public nonisolated struct OAuth2Draft: Sendable {
         self.scope = auth.scope
         self.stored = auth
         clientSecret.stored = auth.clientSecret
-        self.storedAccessToken = auth.accessToken
     }
 
     public var grantTypes: [OAuth2GrantType] {
@@ -45,11 +43,13 @@ public nonisolated struct OAuth2Draft: Sendable {
         clientSecret.reference
     }
 
-    /// Minted for a row that holds none, so a token has somewhere to go before the next Save writes the row.
+    /// A row that holds none uses the reference its fields derive, as the sender does. A new auth mints one.
     public var accessTokenReference: SecretReference {
-        storedAccessToken ?? newAccessToken
+        stored?.tokenReference ?? newAccessToken
     }
 
+    /// An unchanged row keeps its missing reference, so opening it is no edit. A changed one takes the reference,
+    /// so the token stays with it.
     var auth: OAuth2Auth {
         var auth = stored ?? OAuth2Auth(
             grantType: grantType,
@@ -64,7 +64,9 @@ public nonisolated struct OAuth2Draft: Sendable {
         auth.clientID = clientID
         auth.scope = scope
         auth.clientSecret = clientSecret.savedIfSet
-        auth.accessToken = accessTokenReference
+        if auth != stored {
+            auth.accessToken = accessTokenReference
+        }
         return auth
     }
 
@@ -98,18 +100,11 @@ public nonisolated struct OAuth2Draft: Sendable {
         clientID = saved.clientID
         scope = saved.scope
         clientSecret.typed = nil
-        if saved.storedAccessToken == nil {
-            newAccessToken = saved.newAccessToken
-        }
     }
 
     mutating func rebaseCredentials(onto saved: OAuth2Draft) {
         stored = saved.stored
         clientSecret.rebase(onto: saved.clientSecret)
-        storedAccessToken = saved.storedAccessToken
-        if newAccessToken == storedAccessToken {
-            newAccessToken = SecretReference()
-        }
     }
 
 }

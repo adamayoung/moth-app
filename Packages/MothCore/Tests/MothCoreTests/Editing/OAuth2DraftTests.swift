@@ -139,13 +139,34 @@ struct OAuth2DraftTests {
         #expect(draft.oauth2.accessTokenReference == Self.accessToken)
     }
 
-    @Test("A stored auth with no token reference gets one, kept by every copy of the draft")
-    func mintedTokenReference() throws {
-        let saved = AuthDraft(.oauth2(Self.oauth2(accessToken: nil)))
-        let draft = saved
+    @Test("A stored auth with no token reference uses one derived from the auth, and comes back unchanged")
+    func derivedTokenReference() throws {
+        let auth = Self.oauth2(accessToken: nil)
+        let draft = AuthDraft(.oauth2(auth))
 
-        #expect(try oauth2(of: draft).accessToken == draft.oauth2.accessTokenReference)
-        #expect(draft.hasSameContent(as: saved))
+        #expect(draft.oauth2.accessTokenReference == auth.tokenReference)
+        #expect(draft.oauth2.accessTokenReference == AuthDraft(.oauth2(auth)).oauth2.accessTokenReference)
+        #expect(draft.requestAuth == .oauth2(auth))
+        #expect(draft.hasSameContent(as: AuthDraft(.oauth2(auth))))
+    }
+
+    @Test("Editing a stored auth with no token reference writes the derived one, so its token stays")
+    func editedAuthTakesTheDerivedReference() throws {
+        let auth = Self.oauth2(accessToken: nil)
+        var draft = AuthDraft(.oauth2(auth))
+
+        draft.oauth2.scope = "write"
+
+        #expect(try oauth2(of: draft).accessToken == auth.tokenReference)
+    }
+
+    @Test("Two auths that differ derive different token references, and one with a reference keeps it")
+    func tokenReferences() {
+        var other = Self.oauth2(accessToken: nil)
+        other.clientID = "other"
+
+        #expect(Self.oauth2(accessToken: nil).tokenReference != other.tokenReference)
+        #expect(Self.oauth2().tokenReference == Self.accessToken)
     }
 
     @Test("Following the saved auth takes its fields and drops what was typed")
@@ -163,15 +184,15 @@ struct OAuth2DraftTests {
         #expect(draft.hasSameContent(as: saved))
     }
 
-    @Test("A draft following a row with no token reference takes the saved draft's, so it isn't edited")
-    func followTakesMintedTokenReference() {
+    @Test("A draft following a row with no token reference isn't edited")
+    func followWithoutTokenReference() {
         let auth = Auth.oauth2(Self.oauth2(accessToken: nil))
         var draft = AuthDraft(auth)
-        let saved = AuthDraft(auth)
 
-        draft.follow(saved)
+        draft.follow(AuthDraft(auth))
 
-        #expect(draft.hasSameContent(as: saved))
+        #expect(draft.hasSameContent(as: AuthDraft(auth)))
+        #expect(draft.requestAuth == auth)
     }
 
     @Test("Rebasing an edited draft takes the row's references and keeps its fields")

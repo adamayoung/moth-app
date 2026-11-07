@@ -14,6 +14,11 @@ import Testing
 struct AccessTokensTests {
 
     private nonisolated static let now = Date(timeIntervalSince1970: 1_800_000_000)
+    private static let tokenWithNoExpiry = OAuth2Token(
+        value: "stub-access-token",
+        expiresAt: nil,
+        issuedFor: "https://stub.invalid/token/forever\nmoth\n"
+    )
     private let secretStore = RecordingSecretStore()
 
     private func accessTokens(transport: any HTTPTransport = StubHTTPTransport()) -> AccessTokens {
@@ -52,7 +57,11 @@ struct AccessTokensTests {
 
         await tokens.getNewToken(for: reference, from: source(draft))
 
-        let token = OAuth2Token(value: "stub-access-token", expiresAt: Self.now.addingTimeInterval(3600))
+        let token = OAuth2Token(
+            value: "stub-access-token",
+            expiresAt: Self.now.addingTimeInterval(3600),
+            issuedFor: "https://stub.invalid/token\nmoth\n"
+        )
         #expect(tokens.status(of: reference) == .token(token))
         #expect(tokens.failure(of: reference) == nil)
         #expect(!tokens.isFetching(reference))
@@ -110,21 +119,21 @@ struct AccessTokensTests {
         await tokens.load(stored)
         await tokens.load(missing)
 
-        #expect(tokens.status(of: stored) == .token(OAuth2Token(value: "stub-access-token", expiresAt: nil)))
+        #expect(tokens.status(of: stored) == .token(Self.tokenWithNoExpiry))
         #expect(tokens.status(of: missing) == .none)
     }
 
-    @Test("Reloading after a send picks up a token stored elsewhere")
-    func reloadsAfterASend() async {
+    @Test("Loading again, as after a send, picks up a token stored elsewhere")
+    func loadsAgain() async {
         let draft = draft(tokenURL: "https://stub.invalid/token/forever")
         let reference = draft.oauth2.accessTokenReference
         let tokens = accessTokens()
         await tokens.load(reference)
         await accessTokens().getNewToken(for: reference, from: source(draft))
 
-        await tokens.reloadLoaded()
+        await tokens.load(reference)
 
-        #expect(tokens.status(of: reference) == .token(OAuth2Token(value: "stub-access-token", expiresAt: nil)))
+        #expect(tokens.status(of: reference) == .token(Self.tokenWithNoExpiry))
     }
 
     @Test("A folder's token resolves its collection's variables and the active environment's")

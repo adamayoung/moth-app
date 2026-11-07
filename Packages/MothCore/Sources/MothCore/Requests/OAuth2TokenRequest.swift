@@ -14,6 +14,10 @@ nonisolated struct OAuth2TokenRequest: Sendable {
     let clientSecret: String
     let scope: String
 
+    var fingerprint: String {
+        [tokenURL, clientID, scope].joined(separator: "\n")
+    }
+
     func urlRequest(timeout: Duration) throws -> URLRequest {
         guard
             let url = URL(string: tokenURL),

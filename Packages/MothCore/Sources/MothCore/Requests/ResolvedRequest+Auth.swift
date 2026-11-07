@@ -24,7 +24,7 @@ nonisolated extension ResolvedRequest {
         case .digest:
             digestProvider
         case .oauth2(let oauth2) where oauth2.grantType == .clientCredentials:
-            oauth2.accessToken.flatMap { credentials[$0] }.map { BearerAuthProvider(token: $0) }
+            credentials[oauth2.tokenReference].map { BearerAuthProvider(token: $0) }
         case .inherit, .none, .apiKey, .oauth2:
             nil
         }
