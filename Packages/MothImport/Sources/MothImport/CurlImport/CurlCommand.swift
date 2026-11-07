@@ -9,6 +9,10 @@ import MothCore
 /// What a command asks for, in curl's terms. Reads no file and runs nothing: what would need either is listed.
 nonisolated struct CurlCommand {
 
+    private static let otherAuthSchemes: Set = [
+        "--anyauth", "--aws-sigv4", "--digest", "--negotiate", "--ntlm", "--ntlm-wb"
+    ]
+
     private(set) var method: String?
     private(set) var urls: [String] = []
     private(set) var headers: [KeyValue] = []
@@ -26,6 +30,7 @@ nonisolated struct CurlCommand {
     private(set) var ignored: [String] = []
 
     private var words: ArraySlice<String>
+    private var userFlag: String?
 
     init(_ text: String) throws {
         guard let shell = try? ShellWords(text) else {
@@ -41,6 +46,10 @@ nonisolated struct CurlCommand {
             try read(word)
         }
         (urls.dropFirst() + shell.redirections).forEach { ignore($0) }
+        if usesAnotherAuthScheme, let userFlag {
+            self.user = nil
+            ignore(userFlag)
+        }
         if let rest = shell.rest {
             ignore(rest)
         }
@@ -49,6 +58,11 @@ nonisolated struct CurlCommand {
         guard !urls.isEmpty, !(hasForm && hasData) else {
             throw CurlImportError.notACurlCommand
         }
+    }
+
+    /// Moth would send these credentials as Basic, which gives away what the named scheme keeps off the wire.
+    var usesAnotherAuthScheme: Bool {
+        !Self.otherAuthSchemes.isDisjoint(with: ignored)
     }
 
     private mutating func read(_ word: String) throws {
@@ -115,7 +129,9 @@ nonisolated struct CurlCommand {
         case .referer: referer = value
         case .cookie: addCookie(value, flag: flag)
         case .url: urls.append(value)
-        case .user: user = value
+        case .user:
+            user = value
+            userFlag = flag
         case .location: followsRedirects = true
         case .insecure: verifiesTLS = false
         case .compressed: break
@@ -227,7 +243,7 @@ private nonisolated extension FormDataField {
         return ([String(parts[start].dropFirst(5))] + parameters).joined(separator: ";")
     }
 
-    /// A value in double quotes can hold a `;`, and `\` escapes within them.
+    /// A value in double quotes can hold a `;`, and a backslash there escapes only a backslash or a quote.
     private static func split(_ argument: Substring) -> (content: String, attributes: Substring) {
         guard argument.hasPrefix("\"") else {
             let end = argument.firstIndex(of: ";") ?? argument.endIndex
@@ -237,7 +253,11 @@ private nonisolated extension FormDataField {
         var content = ""
         var rest = argument.dropFirst()
         while let character = rest.popFirst(), character != "\"" {
-            content.append(character == "\\" ? rest.popFirst() ?? character : character)
+            if character == "\\", rest.first == "\\" || rest.first == "\"" {
+                content.append(rest.removeFirst())
+            } else {
+                content.append(character)
+            }
         }
         return (content, rest)
     }

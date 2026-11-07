@@ -244,7 +244,9 @@ and roll back as a Postman import's do.
   URL, as in curl. A second credential header is dropped, because an auth provider
   replaces a manual one. A Basic value that won't decode, and any other scheme,
   stays a plain header, so that secret stays in the row, and the request's auth is
-  `.none`, or inherited auth would replace the header.
+  `.none`, or inherited auth would replace the header. A command that names another
+  scheme, such as `--digest` or `--aws-sigv4`, imports no `-u` or URL credential and
+  has `.none`, because Basic would send the secret as it stands.
 - `followsRedirects` is true only with `-L`, because curl doesn't follow redirects,
   and `verifiesTLS` is false only with `-k`. Sending doesn't read either setting
   yet.

@@ -165,6 +165,24 @@ struct CurlImportBodyTests {
         #expect(fields.map(\.contentType) == [contentType])
     }
 
+    @Test(
+        "A quoted form value unescapes only a backslash and a quote, as curl does",
+        arguments: [
+            (#"a="b\nc""#, #"b\nc"#),
+            (#"a="b\"c""#, #"b"c"#),
+            (#"a="b\\c""#, #"b\c"#)
+        ]
+    )
+    func quotedFormValue(argument: String, value: String) async throws {
+        let request = try await CurlImportTesting.request("curl -F '\(argument)' https://a.example")
+
+        guard case .formData(let fields) = request.body else {
+            Issue.record("Expected form-data")
+            return
+        }
+        #expect(fields.map(\.value) == [.text(value)])
+    }
+
     private func rows(of body: RequestBody) -> [Pair] {
         guard case .urlEncoded(let rows) = body else {
             return []

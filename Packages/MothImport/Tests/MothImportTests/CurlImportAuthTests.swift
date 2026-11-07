@@ -132,6 +132,35 @@ struct CurlImportAuthTests {
         #expect(await store.values.isEmpty)
     }
 
+    @Test(
+        "-u under another scheme stays out of Basic, because Basic would send the secret as it stands",
+        arguments: ["--digest", "--ntlm", "--negotiate", "--anyauth", "--aws-sigv4 aws:amz"]
+    )
+    func userUnderAnotherScheme(flag: String) async throws {
+        let store = RecordingSecretStore()
+        let result = try await CurlImportTesting.importing(
+            "curl \(flag) -u user:s3cret https://a.example",
+            secretStore: store
+        )
+
+        #expect(result.request.auth == .none)
+        #expect(result.ignored.contains("-u"))
+        #expect(await store.values.isEmpty)
+    }
+
+    @Test("A URL's password under another scheme leaves the template and reaches no store")
+    func urlUserinfoUnderAnotherScheme() async throws {
+        let store = RecordingSecretStore()
+        let request = try await CurlImportTesting.importing(
+            "curl --digest https://user:s3cret@a.example/x",
+            secretStore: store
+        ).request
+
+        #expect(request.urlTemplate == "https://a.example/x")
+        #expect(request.auth == .none)
+        #expect(await store.values.isEmpty)
+    }
+
     @Test("A URL's user splits before it decodes, so an encoded colon stays in the name")
     func urlUserinfoSplitsBeforeDecoding() async throws {
         let auth = try await basic("curl https://a%3Ab:pw@a.example")

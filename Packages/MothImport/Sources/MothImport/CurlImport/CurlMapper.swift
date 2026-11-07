@@ -30,7 +30,7 @@ nonisolated struct CurlMapper {
             queryParameters: queryRows,
             headers: headerRows,
             body: Self.body(of: command, text: dataText, headers: headers),
-            auth: auth(headers: headers, keptRows: headerRows, user: command.user, userinfo: userinfo),
+            auth: auth(headers: headers, keptRows: headerRows, command: command, userinfo: userinfo),
             settings: RequestSettings(followsRedirects: command.followsRedirects, verifiesTLS: command.verifiesTLS)
         )
     }
@@ -39,16 +39,16 @@ nonisolated struct CurlMapper {
     private mutating func auth(
         headers: [KeyValue],
         keptRows: [KeyValue],
-        user: String?,
+        command: CurlCommand,
         userinfo: CurlCredential?
     ) -> Auth {
         if let credential = headers.lazy.compactMap(CurlCredential.init).first {
             return auth(credential)
         }
-        if keptRows.contains(named: "Authorization") {
+        if keptRows.contains(named: "Authorization") || command.usesAnotherAuthScheme {
             return .none
         }
-        return (user.map(CurlCredential.init) ?? userinfo).map { auth($0) } ?? .inherit
+        return (command.user.map(CurlCredential.init) ?? userinfo).map { auth($0) } ?? .inherit
     }
 
     private mutating func auth(_ credential: CurlCredential) -> Auth {
