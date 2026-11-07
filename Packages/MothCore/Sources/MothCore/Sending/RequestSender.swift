@@ -258,10 +258,10 @@ private nonisolated extension RequestSender {
 /// How each send of one request travels: the workspace's jar, and the request's settings as the transport's policy.
 private nonisolated struct Delivery {
 
-    var cookies: (any CookieJar)?
+    var cookies: any CookieJar?
     var policy: SendPolicy
 
-    init(cookies: (any CookieJar)?, settings: RequestSettings) {
+    init(cookies: any CookieJar?, settings: RequestSettings) {
         self.cookies = cookies
         self.policy = SendPolicy(followsRedirects: settings.followsRedirects, verifiesTLS: settings.verifiesTLS)
     }
