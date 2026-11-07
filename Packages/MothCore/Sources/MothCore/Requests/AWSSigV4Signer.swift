@@ -138,9 +138,7 @@ nonisolated struct AWSSigV4Signer: Sendable {
     }
 
     private static func escapedByte(at text: Substring.UTF8View) -> UInt8? {
-        let digits = String(decoding: text.prefix(2), as: UTF8.self)
-
-        guard digits.count == 2, digits.allSatisfy(\.isHexDigit) else {
+        guard let digits = String(text.prefix(2)), digits.count == 2, digits.allSatisfy(\.isHexDigit) else {
             return nil
         }
 
