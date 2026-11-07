@@ -166,17 +166,54 @@ struct RequestSenderTests {
         #expect(response.notes == [.missingCredential])
     }
 
+    @Test("An API key whose name resolves to empty sends no key, and is noted like a credential with no value")
+    func emptyAPIKeyName() async throws {
+        let key = SecretReference(identifier: "key")
+        try await secretStore.save("abc", for: key.identifier)
+        let transport = RecordingTransport()
+        let request = Request(
+            name: "List",
+            urlTemplate: "https://example.com",
+            auth: .apiKey(APIKeyAuth(name: "{{keyName}}", value: key, location: .query))
+        )
+
+        let result = await send(
+            request,
+            scopes: VariableScopes(environment: [.plain("keyName", "")]),
+            through: transport
+        )
+
+        guard case .response(let response) = result else {
+            Issue.record("Expected a response, got \(result)")
+            return
+        }
+        let url = try #require(transport.requests.first?.url)
+        #expect(url.absoluteString == "https://example.com")
+        #expect(response.notes == [.missingCredential])
+    }
+
+    @Test("A value typed but not saved goes out as the API key")
+    func typedAPIKeyValue() async {
+        let transport = RecordingTransport()
+        let key = SecretReference(identifier: "key")
+        let request = Request(
+            name: "List",
+            urlTemplate: "https://example.com",
+            auth: .apiKey(APIKeyAuth(name: "X-Key", value: key, location: .header))
+        )
+
+        _ = await send(request, typed: [CredentialWrite(reference: key, value: "typed")], through: transport)
+
+        #expect(transport.requests.first?.value(forHTTPHeaderField: "X-Key") == "typed")
+    }
+
     @Test("An unsupported auth and body are noted")
     func unsupportedNotes() async {
         let request = Request(
             name: "Health",
             urlTemplate: "https://example.com",
             body: .binary(filePath: "/tmp/health.bin"),
-            auth: .apiKey(APIKeyAuth(
-                name: "X-Key",
-                value: SecretReference(identifier: "key"),
-                location: .header
-            ))
+            auth: .digest(DigestAuth(username: "ada", password: SecretReference(identifier: "key")))
         )
 
         let result = await send(request)

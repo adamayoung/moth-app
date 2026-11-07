@@ -39,6 +39,18 @@ struct AuthFieldsScreen {
         root.buttons["auth.passwordVisibility"]
     }
 
+    var apiKeyNameField: XCUIElement {
+        root.textFields["auth.apiKeyName"]
+    }
+
+    var secureAPIKeyValueField: XCUIElement {
+        root.secureTextFields["auth.apiKeyValue"]
+    }
+
+    var apiKeyLocationPicker: XCUIElement {
+        root.popUpButtons["auth.apiKeyLocation"]
+    }
+
     var inheritedText: XCUIElement {
         root.staticTexts["auth.inherited"]
     }

@@ -56,6 +56,27 @@ struct RequestDraftsCredentialTests: RequestDraftsTesting {
         #expect(!storedText(of: row).contains("s3cret-token"))
     }
 
+    @Test("A typed API key value reaches the secret store under its reference, and no row holds it")
+    func apiKeyValueReachesTheSecretStore() async throws {
+        let secretStore = RecordingSecretStore()
+        let request = Request(name: "Request")
+        let (dataModel, drafts) = try stored(request, secretStore: secretStore)
+        drafts.update(request.id) { draft in
+            draft.auth.kind = .apiKey
+            draft.auth.apiKeyName = "X-Key"
+            draft.auth.apiKeyLocation = .query
+            draft.auth.setCredential("s3cret-key", for: draft.auth.apiKeyValueReference)
+        }
+        let reference = try #require(drafts.draft(for: request.id)?.auth.apiKeyValueReference)
+
+        #expect(await drafts.save(request.id))
+
+        #expect(secretStore.values == [reference.identifier: "s3cret-key"])
+        let row = try savedRequest(request.id, in: dataModel)
+        #expect(try row.asDomain().auth == .apiKey(APIKeyAuth(name: "X-Key", value: reference, location: .query)))
+        #expect(!storedText(of: row).contains("s3cret-key"))
+    }
+
     @Test("A typed password reaches the secret store under its reference, and no row holds it")
     func passwordReachesTheSecretStore() async throws {
         let secretStore = RecordingSecretStore()

@@ -21,7 +21,7 @@ nonisolated extension PostmanMapper {
         case .bearer:
             return .bearer(BearerAuth(token: secret(postman.text("token"))))
         case .apikey:
-            return storedButUnsupported(.apiKey, apiKey(postman))
+            return apiKey(postman)
         case .awsv4:
             return storedButUnsupported(.awsSigV4, sigV4(postman))
         case .digest:
