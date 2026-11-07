@@ -23,7 +23,6 @@ public nonisolated enum RequestBuildNotice: Sendable, Hashable {
 
 public nonisolated enum UnsupportedAuthKind: Sendable, Hashable {
 
-    case digest
     case oauth2
 
 }

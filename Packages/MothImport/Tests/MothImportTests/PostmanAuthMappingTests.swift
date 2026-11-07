@@ -107,7 +107,7 @@ struct PostmanAuthMappingTests {
         #expect(await Fixture.stored(bearer.token, in: store) == "wkjehbxoqnunc2k3")
     }
 
-    @Test("Digest is stored by kind, with its password in the secret store, and counted as unsupported")
+    @Test("Digest maps with its password in the secret store, ready to send, and isn't counted as unsupported")
     func mapsDigest() async throws {
         let store = InMemorySecretStore()
         let result = try await Fixture.importing(Self.helpers, secretStore: store)
@@ -120,7 +120,7 @@ struct PostmanAuthMappingTests {
 
         #expect(digest.username == "abhijit")
         #expect(await Fixture.stored(digest.password, in: store) == "kane")
-        #expect(result.imported.unsupportedAuth[.digest] == 1)
+        #expect(result.imported.unsupportedAuth == [.oauth2: 1])
     }
 
     @Test("OAuth2 is stored by kind, with its four credentials in the secret store, and counted as unsupported")

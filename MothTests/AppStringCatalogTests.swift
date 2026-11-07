@@ -190,34 +190,7 @@ struct AppStringCatalogTests {
             ("RESPONSE_TIMING_TLS", "TLS"),
             ("RESPONSE_TIMING_FIRST_BYTE", "First Byte"),
             ("RESPONSE_TIMING_DOWNLOAD", "Download"),
-            ("RESPONSE_TIMING_TOTAL", "Total"),
-            ("RESPONSE_NOTE_UNDEFINED_VARIABLE_%@", "{{%@}} isn\u{2019}t defined, so it was sent as written."),
-            ("RESPONSE_NOTE_MISSING_CREDENTIAL", "Sent without auth, because its credential has no value."),
-            ("RESPONSE_NOTE_UNSUPPORTED_AUTH", "Sent without its unsupported auth."),
-            ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body."),
-            ("RESPONSE_NOTE_SECRET_WITHOUT_VALUE_%@", "{{%@}} is a secret with no value, so it was sent as written."),
-            ("RESPONSE_NOTE_VARIABLE_CYCLE_%@", "{{%@}} refers to itself, so it was sent as written."),
-            (
-                "RESPONSE_NOTE_VARIABLE_NOT_EXPANDED_%@",
-                "{{%@}} couldn\u{2019}t be expanded, so it was sent as written."
-            ),
-            (
-                "RESPONSE_NOTE_UNSENDABLE_HEADER_%@",
-                "Sent without header %@, because its name or value isn\u{2019}t valid."
-            ),
-            ("RESPONSE_NOTE_EMPTY_HEADER_NAME_%@", "Sent without header %@, because its name is empty."),
-            ("RESPONSE_NOTE_EMPTY_FIELD_NAME_%@", "Sent without field %@, because its name is empty."),
-            (
-                "RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAME_%@",
-                "Sent without query parameter %@, because its name is empty."
-            ),
-            ("RESPONSE_NOTE_PATH_VARIABLE_WITHOUT_VALUE_%@", ":%@ has no value, so it was sent as written."),
-            ("RESPONSE_NOTE_UNSUPPORTED_FILE_%@", "Sent without file %@, because Moth can\u{2019}t send files yet."),
-            ("RESPONSE_NOTE_BODY_NOT_SENT_%@", "Sent without its body, because Moth can\u{2019}t send a body with %@."),
-            (
-                "RESPONSE_NOTE_FORM_DATA_BOUNDARY_REPLACED",
-                "Your Content-Type header replaced the form-data boundary, so the server may not read the body."
-            )
+            ("RESPONSE_TIMING_TOTAL", "Total")
         ]
     )
     func catalogHoldsEnglishValue(key: String, expected: String) throws {
@@ -266,6 +239,48 @@ struct AppStringCatalogTests {
 }
 
 extension AppStringCatalogTests {
+
+    @Test("Each response note holds its English value", arguments: [
+        ("RESPONSE_NOTE_UNDEFINED_VARIABLE_%@", "{{%@}} isn\u{2019}t defined, so it was sent as written."),
+        ("RESPONSE_NOTE_MISSING_CREDENTIAL", "Sent without auth, because its credential has no value."),
+        ("RESPONSE_NOTE_UNSUPPORTED_AUTH", "Sent without its unsupported auth."),
+        ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body."),
+        ("RESPONSE_NOTE_DIGEST_SENT_AGAIN", "Sent again to answer a Digest challenge."),
+        (
+            "RESPONSE_NOTE_DIGEST_CHALLENGE_AFTER_REDIRECT",
+            "Not sent again, because the Digest challenge came after a redirect."
+        ),
+        (
+            "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED",
+            "This server\u{2019}s Digest challenge isn\u{2019}t supported."
+        ),
+        ("RESPONSE_NOTE_SECRET_WITHOUT_VALUE_%@", "{{%@}} is a secret with no value, so it was sent as written."),
+        ("RESPONSE_NOTE_VARIABLE_CYCLE_%@", "{{%@}} refers to itself, so it was sent as written."),
+        (
+            "RESPONSE_NOTE_VARIABLE_NOT_EXPANDED_%@",
+            "{{%@}} couldn\u{2019}t be expanded, so it was sent as written."
+        ),
+        (
+            "RESPONSE_NOTE_UNSENDABLE_HEADER_%@",
+            "Sent without header %@, because its name or value isn\u{2019}t valid."
+        ),
+        ("RESPONSE_NOTE_EMPTY_HEADER_NAME_%@", "Sent without header %@, because its name is empty."),
+        ("RESPONSE_NOTE_EMPTY_FIELD_NAME_%@", "Sent without field %@, because its name is empty."),
+        (
+            "RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAME_%@",
+            "Sent without query parameter %@, because its name is empty."
+        ),
+        ("RESPONSE_NOTE_PATH_VARIABLE_WITHOUT_VALUE_%@", ":%@ has no value, so it was sent as written."),
+        ("RESPONSE_NOTE_UNSUPPORTED_FILE_%@", "Sent without file %@, because Moth can\u{2019}t send files yet."),
+        ("RESPONSE_NOTE_BODY_NOT_SENT_%@", "Sent without its body, because Moth can\u{2019}t send a body with %@."),
+        (
+            "RESPONSE_NOTE_FORM_DATA_BOUNDARY_REPLACED",
+            "Your Content-Type header replaced the form-data boundary, so the server may not read the body."
+        )
+    ])
+    func responseNoteHoldsEnglishValue(key: String, expected: String) throws {
+        try catalogHoldsEnglishValue(key: key, expected: expected)
+    }
 
     @Test(
         "The Cookies sheet's copy comes from the catalog with its en-GB value",

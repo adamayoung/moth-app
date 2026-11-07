@@ -5,8 +5,8 @@
 
 import XCTest
 
-/// Values mirror `StubHTTPTransport` and `SeedData` by hand: the stub answers every path but `/wait`, `/refused` and
-/// `/timeout` with one JSON body, and Health has an empty URL.
+/// Values mirror `StubHTTPTransport` and `SeedData` by hand: the stub answers every path but `/wait`, `/refused`,
+/// `/timeout` and an unanswered `/digest` with one JSON body, and Health has an empty URL.
 final class SendRequestTests: MothTestCase {
 
     private let statusLine = "200 OK · 142 ms · 22 bytes"
@@ -83,6 +83,27 @@ final class SendRequestTests: MothTestCase {
 
         XCTAssertTrue(response.text("Request Cancelled").waitForExistence(timeout: 10))
         XCTAssertTrue(editor.sendButton.waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testAnAnsweredDigestChallengeShowsTheFinalResponseAndANote() {
+        openListUsers()
+        let (_, editor, response) = screens()
+        editor.showSection("Auth")
+        let fields = editor.authFields
+        fields.chooseKind("Digest Auth")
+        XCTAssertTrue(fields.usernameField.waitForExistence(timeout: 10))
+        fields.usernameField.click()
+        app.typeText("ada")
+        fields.securePasswordField.click()
+        app.typeText("s3cret")
+        editor.replaceURL(with: "{{host}}/digest")
+        XCTAssertTrue(editor.waitForValue("{{host}}/digest", of: editor.urlField))
+
+        editor.sendButton.click()
+
+        XCTAssertTrue(response.waitForStatus(statusLine))
+        XCTAssertTrue(response.text("Sent again to answer a Digest challenge.").waitForExistence(timeout: 10))
     }
 
     @MainActor

@@ -55,7 +55,7 @@ final class AuthorizationSheetTests: MothTestCase {
         XCTAssertEqual(sheet.fields.kindPicker.value as? String, "Inherit")
 
         sheet.fields.openKinds()
-        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "API Key", "AWS Signature"] {
+        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "API Key", "Digest Auth", "AWS Signature"] {
             XCTAssertTrue(sheet.fields.kindMenuItem(title).waitForExistence(timeout: 10), title)
         }
         app.typeKey(.escape, modifierFlags: [])

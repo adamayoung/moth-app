@@ -21,9 +21,15 @@ final nonisolated class StubHTTPTransport: HTTPTransport {
         download: .milliseconds(10)
     )
 
+    private static let digestChallenge = [
+        "WWW-Authenticate": #"Digest realm="stub", nonce="stub-nonce", qop="auth", algorithm=SHA-256"#
+    ]
+
     @concurrent
     func send(_ request: URLRequest, cookies _: any CookieJar?) async throws -> HTTPResponse {
         switch request.url?.path() {
+        case "/digest" where request.value(forHTTPHeaderField: "Authorization") == nil:
+            return HTTPResponse(status: 401, headers: Self.digestChallenge, body: Data())
         case "/wait":
             try await Task.sleep(for: .seconds(600))
         case "/refused":

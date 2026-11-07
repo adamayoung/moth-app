@@ -47,21 +47,24 @@ struct RequestBuilderAuthTests {
         #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer abc")
     }
 
-    @Test(
-        "An unsupported auth kind sends no auth and is reported",
-        arguments: [
-            (
-                Auth.digest(DigestAuth(username: "user", password: SecretReference(identifier: "secret"))),
-                UnsupportedAuthKind.digest
-            ),
-            (.oauth2(RequestBuilderAuthTests.oauth2), .oauth2)
-        ]
-    )
-    func unsupportedAuth(auth: Auth, kind: UnsupportedAuthKind) async throws {
-        let built = try await build(auth: auth, credentials: [secret: "abc"])
+    @Test("An unsupported auth kind sends no auth and is reported")
+    func unsupportedAuth() async throws {
+        let built = try await build(auth: .oauth2(Self.oauth2), credentials: [secret: "abc"])
 
         #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == nil)
-        #expect(built.notices == [.unsupportedAuth(kind)])
+        #expect(built.notices == [.unsupportedAuth(.oauth2)])
+    }
+
+    @Test("Digest replaces a manual Authorization header with none, and has no notice")
+    func digestSendsNoAuthorization() async throws {
+        let built = try await build(
+            auth: .digest(DigestAuth(username: "user", password: secret)),
+            credentials: [secret: "abc"],
+            headers: [KeyValue(key: "Authorization", value: "Bearer manual")]
+        )
+
+        #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == nil)
+        #expect(built.notices.isEmpty)
     }
 
     @Test("No auth leaves a manual header alone")

@@ -123,7 +123,7 @@
       }
     },
     "AUTH_KIND_DIGEST" : {
-      "comment" : "Stored auth kind Moth can't edit yet.",
+      "comment" : "Auth kind.",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
@@ -1714,6 +1714,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sent without its body, because Moth can’t send a body with %@."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_DIGEST_CHALLENGE_AFTER_REDIRECT" : {
+      "comment" : "Shown above a 401 response when the request has Digest auth but the challenge came after a redirect Moth can't answer safely: to another site, or for a request with a body, so nothing more was sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not sent again, because the Digest challenge came after a redirect."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED" : {
+      "comment" : "Shown above a 401 response when the request has Digest auth but the server's Digest challenge uses an algorithm or protection Moth can't answer, so nothing more was sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This server’s Digest challenge isn’t supported."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_DIGEST_SENT_AGAIN" : {
+      "comment" : "Shown above a response when the server answered the first send with a Digest challenge, so Moth sent the request once more with the answer. The response shown is the second one.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent again to answer a Digest challenge."
           }
         }
       }

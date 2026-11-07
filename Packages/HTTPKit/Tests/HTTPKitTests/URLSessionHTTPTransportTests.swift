@@ -33,6 +33,16 @@ struct URLSessionHTTPTransportTests {
         #expect(response.body == body)
     }
 
+    @Test("A response carries the URL URLSession says it came from, which is the last one after redirects")
+    func returnsTheURL() async throws {
+        let session = StubURLProtocol.session(replying: .http(status: 200, headers: [:], body: Data()))
+        let transport = URLSessionHTTPTransport(session: session)
+
+        let response = try await transport.send(request)
+
+        #expect(response.url == request.url)
+    }
+
     @Test("A response carries the metrics URLSession recorded for it")
     func returnsTheMetrics() async throws {
         let session = StubURLProtocol.session(replying: .http(status: 200, headers: [:], body: Data()))

@@ -26,15 +26,18 @@ public nonisolated struct RequestSender: Sendable {
     private let transport: any HTTPTransport
     private let secretStore: any SecretStore
     private let now: @Sendable () -> Date
+    private let cnonce: @Sendable () -> String
 
     public init(
         transport: any HTTPTransport,
         secretStore: any SecretStore,
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        cnonce: @escaping @Sendable () -> String = { UUID().uuidString.replacing("-", with: "").lowercased() }
     ) {
         self.transport = transport
         self.secretStore = secretStore
         self.now = now
+        self.cnonce = cnonce
     }
 
     @concurrent
@@ -107,10 +110,12 @@ public nonisolated struct RequestSender: Sendable {
     ) async -> Transmission {
         let urlRequest: URLRequest
         let notes: [ResponseNote]
+        let digest: DigestAuthProvider?
         do {
             let resolved = try await resolve(outgoing, scopes: scopes, dynamicVariables: dynamicVariables)
             let built = try await RequestBuilder(now: { sentAt }).build(resolved)
             urlRequest = built.urlRequest
+            digest = resolved.digestProvider
             notes = ResponseNote.notes(
                 unresolved: built.unresolved,
                 notices: built.notices.map { $0.namingRow(of: outgoing.request, resolvedAs: resolved) },
@@ -121,7 +126,7 @@ public nonisolated struct RequestSender: Sendable {
         } catch {
             return Transmission(result: .failed(SendFailure(notSent: error), notes: []))
         }
-        return await transmit(urlRequest, cookies: cookies, notes: notes)
+        return await transmit(urlRequest, cookies: cookies, notes: notes, digest: digest)
     }
 
     private func resolve(
@@ -140,15 +145,25 @@ public nonisolated struct RequestSender: Sendable {
 
     private func transmit(
         _ request: URLRequest,
-        cookies: any CookieJar?,
-        notes: [ResponseNote]
+        cookies: (any CookieJar)?,
+        notes: [ResponseNote],
+        digest: DigestAuthProvider?
     ) async -> Transmission {
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            let response = try await transport.send(request, cookies: cookies)
-            let sent = SentResponse(response, measured: start.duration(to: clock.now), notes: notes)
-            return Transmission(result: .response(sent), duration: sent.duration, response: response)
+            let (response, measured) = try await timedSend(request, cookies: cookies)
+            guard response.status == 401, let digest else {
+                return Transmission(response, measured: measured, notes: notes)
+            }
+            return try await answerDigestChallenge(
+                in: response,
+                measured: measured,
+                notes: notes,
+                to: request,
+                with: digest,
+                cookies: cookies
+            )
         } catch is CancellationError {
             return Transmission(result: .cancelled)
         } catch {
@@ -159,12 +174,117 @@ public nonisolated struct RequestSender: Sendable {
 
 }
 
+private nonisolated extension RequestSender {
+
+    func timedSend(_ request: URLRequest, cookies: (any CookieJar)?) async throws -> (HTTPResponse, Duration) {
+        let clock = ContinuousClock()
+        let start = clock.now
+        let response = try await transport.send(request, cookies: cookies)
+        return (response, start.duration(to: clock.now))
+    }
+
+    /// One answer, whatever the method: the server refused the first send for lack of credentials. No nonce is kept, so
+    /// every send starts again with none. After a redirect, only a request with no body to another URL on its origin is
+    /// answered: one with a body may have become a GET, and another origin is a host the request didn't name.
+    func answerDigestChallenge(
+        in refusal: HTTPResponse,
+        measured: Duration,
+        notes: [ResponseNote],
+        to request: URLRequest,
+        with digest: DigestAuthProvider,
+        cookies: (any CookieJar)?
+    ) async throws -> Transmission {
+        let challenges = AuthChallenge.all(in: refusal.value(forHeader: "WWW-Authenticate") ?? "")
+        guard let challenge = DigestChallenge.first(in: challenges) else {
+            let isOffered = challenges.contains { $0.isScheme("Digest") }
+            return Transmission(
+                refusal,
+                measured: measured,
+                notes: notes + (isOffered ? [.digestChallengeUnsupported] : [])
+            )
+        }
+
+        guard let challenger = Self.answerableURL(after: refusal, to: request) else {
+            return Transmission(refusal, measured: measured, notes: notes + [.digestChallengeAfterRedirect])
+        }
+
+        try Task.checkCancellation()
+        var answer = request
+        answer.url = challenger
+        answer.setValue(
+            digest.authorization(answering: challenge, to: answer, cnonce: cnonce()),
+            forHTTPHeaderField: "Authorization"
+        )
+        return try await transmitAnswer(answer, cookies: cookies, notes: notes + [.sentAgainForDigestChallenge])
+    }
+
+    /// The same jar as the first send, so a cookie the refusal set goes with the answer.
+    private func transmitAnswer(
+        _ answer: URLRequest,
+        cookies: (any CookieJar)?,
+        notes: [ResponseNote]
+    ) async throws -> Transmission {
+        let clock = ContinuousClock()
+        let start = clock.now
+        do {
+            let (response, measured) = try await timedSend(answer, cookies: cookies)
+            return Transmission(response, measured: measured, notes: notes)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            let failure = SendFailure(transportError: error)
+            return Transmission(result: .failed(failure, notes: notes), duration: start.duration(to: clock.now))
+        }
+    }
+
+    private static func answerableURL(after refusal: HTTPResponse, to request: URLRequest) -> URL? {
+        guard let sent = request.url else {
+            return nil
+        }
+        guard let challenger = refusal.url, challenger != sent else {
+            return sent
+        }
+        let hasBody = !(request.httpBody ?? Data()).isEmpty
+        return challenger.hasSameOrigin(as: sent) && !hasBody ? challenger : nil
+    }
+
+}
+
+private nonisolated extension URL {
+
+    func hasSameOrigin(as other: URL?) -> Bool {
+        guard let other, let origin, let otherOrigin = other.origin else {
+            return false
+        }
+        return origin == otherOrigin
+    }
+
+    private var origin: String? {
+        guard let scheme = scheme?.lowercased(), let host = host()?.lowercased() else {
+            return nil
+        }
+        return "\(scheme)://\(host):\(port ?? HTTPDefaultPort.of(scheme: scheme) ?? -1)"
+    }
+
+}
+
 /// What history needs from a send: the raw body, which ``SentResponse`` doesn't keep.
 private nonisolated struct Transmission {
 
     var result: SendResult
     var duration: Duration = .zero
     var response: HTTPResponse?
+
+    init(result: SendResult, duration: Duration = .zero, response: HTTPResponse? = nil) {
+        self.result = result
+        self.duration = duration
+        self.response = response
+    }
+
+    init(_ response: HTTPResponse, measured: Duration, notes: [ResponseNote]) {
+        let shown = SentResponse(response, measured: measured, notes: notes)
+        self.init(result: .response(shown), duration: shown.duration, response: response)
+    }
 
 }
 

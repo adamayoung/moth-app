@@ -273,9 +273,17 @@ struct RequestSenderHistoryTests {
     }
 
     @Test("Send Again with a masked row under an auth that has no provider sends nothing")
-    func sendAgainWithAMaskedRowUnderDigest() async throws {
-        try await secretStore.save("password", for: "digest-ref")
-        let digest = Auth.digest(DigestAuth(username: "ada", password: SecretReference(identifier: "digest-ref")))
+    func sendAgainWithAMaskedRowUnderOAuth2() async throws {
+        try await secretStore.save("secret", for: "client-secret")
+        let oauth2 = Auth.oauth2(OAuth2Auth(
+            grantType: .clientCredentials,
+            authorizationURL: "",
+            accessTokenURL: "https://example.com/token",
+            callbackURL: "",
+            clientID: "moth",
+            clientSecret: SecretReference(identifier: "client-secret"),
+            scope: ""
+        ))
         let transport = RecordingTransport()
 
         let outcome = await sender(transport).sendAgain(HistoryEntry(
@@ -283,7 +291,7 @@ struct RequestSenderHistoryTests {
                 name: "List",
                 urlTemplate: "https://example.com",
                 headers: [KeyValue(key: "Authorization", value: HistoryEntry.maskedValue)],
-                auth: digest
+                auth: oauth2
             ),
             sentAt: sentAt,
             duration: .zero

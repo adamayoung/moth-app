@@ -45,6 +45,19 @@ struct StubHTTPTransportTests {
         }
     }
 
+    @Test("/digest answers 401 with a Digest challenge until a request carries Authorization")
+    func digest() async throws {
+        var request = try request("https://stub.invalid/digest")
+
+        let challenged = try await StubHTTPTransport().send(request)
+        request.setValue("Digest username=\"ada\"", forHTTPHeaderField: "Authorization")
+        let answered = try await StubHTTPTransport().send(request)
+
+        #expect(challenged.status == 401)
+        #expect(challenged.value(forHeader: "WWW-Authenticate")?.hasPrefix("Digest ") == true)
+        #expect(answered.status == 200)
+    }
+
     @Test("/refused fails to connect")
     func refused() async throws {
         let request = try request("https://stub.invalid/refused")
