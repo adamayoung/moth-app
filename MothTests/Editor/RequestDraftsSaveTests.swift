@@ -17,10 +17,10 @@ struct RequestDraftsSaveTests: RequestDraftsTesting {
     private let token = SecretReference(identifier: "token")
     private let newerToken = SecretReference(identifier: "newer-token")
 
-    @Test("An unsupported body and auth survive a Save through the real writer")
+    @Test("An unsupported body and an OAuth 2.0 grant Moth can't run survive a Save through the real writer")
     func unsupportedKindsSurviveSave() async throws {
         let auth = Auth.oauth2(OAuth2Auth(
-            grantType: .clientCredentials,
+            grantType: .implicit,
             authorizationURL: "",
             accessTokenURL: "https://example.com/token",
             callbackURL: "",

@@ -6,49 +6,11 @@
 /// Follows `AuthDraft`'s rules for a credential, for each of the three this auth holds.
 public nonisolated struct AWSSigV4Draft: Sendable {
 
-    private struct Credential: Sendable {
-
-        var stored: SecretReference?
-        var new = SecretReference()
-        var typed: String?
-
-        var reference: SecretReference {
-            stored ?? new
-        }
-
-        var saved: SecretReference {
-            typed == nil ? reference : new
-        }
-
-        /// A cleared field has no reference at all, unlike a required credential, whose row reports it as missing.
-        var savedIfSet: SecretReference? {
-            guard let typed else {
-                return stored
-            }
-            return typed.isEmpty ? nil : new
-        }
-
-        var write: CredentialWrite? {
-            guard let typed, !typed.isEmpty else {
-                return nil
-            }
-            return CredentialWrite(reference: new, value: typed)
-        }
-
-        mutating func rebase(onto saved: Credential) {
-            stored = saved.stored
-            if new == stored {
-                new = SecretReference()
-            }
-        }
-
-    }
-
     public var region = ""
     public var service = ""
-    private var accessKey = Credential()
-    private var secretKey = Credential()
-    private var sessionToken = Credential()
+    private var accessKey = DraftCredential()
+    private var secretKey = DraftCredential()
+    private var sessionToken = DraftCredential()
 
     init() {}
 
@@ -94,7 +56,7 @@ public nonisolated struct AWSSigV4Draft: Sendable {
         [accessKey, secretKey, sessionToken].map(\.typed)
     }
 
-    private var credentialPaths: [WritableKeyPath<Self, Credential>] {
+    private var credentialPaths: [WritableKeyPath<Self, DraftCredential>] {
         [\.accessKey, \.secretKey, \.sessionToken]
     }
 

@@ -34,6 +34,17 @@
         }
       }
     },
+    "OAUTH2_TOKEN_ERROR_UNSUPPORTED_GRANT" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when the auth's grant type has no token request in Moth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth can’t get a token for this grant type yet."
+          }
+        }
+      }
+    },
     "REQUEST_BUILD_INCOMPLETE_AWS_SIGNATURE" : {
       "comment" : "Shown when a request cannot be sent because an AWS Signature field is empty.",
       "localizations" : {

@@ -31,7 +31,7 @@ nonisolated extension PostmanMapper {
         case .digest:
             return digest(postman)
         case .oauth2:
-            return storedButUnsupported(.oauth2, oauth2(postman))
+            return oauth2(postman)
         case .edgegrid:
             return dropped(.edgeGrid)
         case .hawk:
@@ -82,9 +82,11 @@ nonisolated extension PostmanMapper {
         ))
     }
 
+    /// Mints a token reference with no value, so the token a send gets has somewhere to go.
     private mutating func oauth2(_ postman: PostmanAuth) -> Auth {
-        .oauth2(OAuth2Auth(
-            grantType: Self.grantType(named: postman.text("grant_type", "grantType")),
+        let grantType = Self.grantType(named: postman.text("grant_type", "grantType"))
+        let auth = Auth.oauth2(OAuth2Auth(
+            grantType: grantType,
             authorizationURL: postman.text("authUrl") ?? "",
             accessTokenURL: postman.text("accessTokenUrl") ?? "",
             callbackURL: postman.text("redirect_uri", "callBackUrl", "redirectUri") ?? "",
@@ -93,9 +95,10 @@ nonisolated extension PostmanMapper {
             scope: postman.text("scope") ?? "",
             username: postman.text("username") ?? "",
             password: optionalSecret(postman.text("password")),
-            accessToken: optionalSecret(postman.text("accessToken")),
+            accessToken: optionalSecret(postman.text("accessToken")) ?? SecretReference(),
             refreshToken: optionalSecret(postman.text("refreshToken"))
         ))
+        return OAuth2Draft.supportedGrantTypes.contains(grantType) ? auth : storedButUnsupported(.oauth2, auth)
     }
 
     private static func grantType(named name: String?) -> OAuth2GrantType {

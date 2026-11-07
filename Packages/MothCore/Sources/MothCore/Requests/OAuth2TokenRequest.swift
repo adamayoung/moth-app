@@ -93,6 +93,7 @@ public nonisolated enum OAuth2TokenError: LocalizedError, Hashable {
 
     case invalidTokenURL
     case noAccessToken
+    case unsupportedGrant
     case refused(status: Int, error: String?, description: String?)
 
     public var errorDescription: String? {
@@ -101,6 +102,8 @@ public nonisolated enum OAuth2TokenError: LocalizedError, Hashable {
             String(localized: "OAUTH2_TOKEN_ERROR_INVALID_URL", bundle: .module)
         case .noAccessToken:
             String(localized: "OAUTH2_TOKEN_ERROR_NO_TOKEN", bundle: .module)
+        case .unsupportedGrant:
+            String(localized: "OAUTH2_TOKEN_ERROR_UNSUPPORTED_GRANT", bundle: .module)
         case .refused(_, let error?, let description?):
             "\(error): \(description)"
         case .refused(_, let error?, nil):

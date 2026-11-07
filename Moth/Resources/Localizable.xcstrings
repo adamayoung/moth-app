@@ -1740,6 +1740,17 @@
         }
       }
     },
+    "RESPONSE_FAILED_ACCESS_TOKEN" : {
+      "comment" : "Title of the response pane when a request wasn't sent because its OAuth 2.0 token request failed. The server's error shows under it.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Get Access Token"
+          }
+        }
+      }
+    },
     "RESPONSE_FAILED_CONNECT" : {
       "comment" : "Response pane title when a connection, TLS or other transport failure stops a request.",
       "localizations" : {

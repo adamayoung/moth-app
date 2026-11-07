@@ -31,7 +31,8 @@ nonisolated enum HistorySnapshot {
 
     /// A masked row is lost unless an auth provider replaces it, as one with no credential, or Digest, doesn't.
     static func hasLostRow(in resolved: ResolvedRequest) -> Bool {
-        let replaced = resolved.authProvider(signingAt: .distantPast) == nil ? [] : resolved.rowsReplacedByAuth
+        let hasProvider = resolved.getsAccessTokenAtSend || resolved.authProvider(signingAt: .distantPast) != nil
+        let replaced = hasProvider ? resolved.rowsReplacedByAuth : []
         return (resolved.headers + resolved.queryParameters).contains { row in
             row.isEnabled && row.value == HistoryEntry.maskedValue && !replaced.contains(.row(row.id))
         }

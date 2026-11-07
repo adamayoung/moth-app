@@ -40,6 +40,42 @@ struct PostmanStoredAuthMappingTests {
         #expect(oauth2.callbackURL == "https://a.test/cb")
     }
 
+    @Test("Client Credentials maps as a supported auth, with a token reference for the token a send gets")
+    func mapsClientCredentials() async throws {
+        let result = try await Fixture.importingAuth(#"""
+        {
+            "type": "oauth2",
+            "oauth2": [
+                { "key": "grant_type", "value": "client_credentials" },
+                { "key": "accessTokenUrl", "value": "https://a.test/token" }
+            ]
+        }
+        """#)
+
+        guard case .oauth2(let oauth2) = result.collection?.requests.first?.auth else {
+            Issue.record("Expected OAuth2 auth")
+            return
+        }
+
+        #expect(oauth2.accessToken != nil)
+        #expect(result.imported.unsupportedAuth.isEmpty)
+        #expect(result.secrets.isEmpty)
+    }
+
+    @Test("A grant Moth can't run yet is counted as unsupported", arguments: [
+        "authorization_code",
+        "authorization_code_with_pkce",
+        "implicit",
+        "password_credentials"
+    ])
+    func countsUnsupportedGrants(grant: String) async throws {
+        let result = try await Fixture.importingAuth(#"""
+        { "type": "oauth2", "oauth2": [{ "key": "grant_type", "value": "\#(grant)" }] }
+        """#)
+
+        #expect(result.imported.unsupportedAuth == [.oauth2: 1])
+    }
+
     @Test("An optional credential left empty has no reference")
     func emptyOptionalCredentialHasNoReference() async throws {
         let result = try await Fixture.importingAuth(#"""

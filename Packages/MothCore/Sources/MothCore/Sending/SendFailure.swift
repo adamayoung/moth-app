@@ -13,6 +13,7 @@ public nonisolated struct SendFailure: Sendable, Hashable {
         case timedOut
         case couldNotConnect
         case notSent
+        case accessTokenFailed
 
     }
 

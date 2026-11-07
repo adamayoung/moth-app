@@ -86,7 +86,7 @@ struct VariableResolverCredentialTests {
         }
     }
 
-    @Test("Every credential of every auth kind resolves")
+    @Test("Every credential an auth kind sends resolves, and OAuth 2.0 leaves its tokens to the token store")
     func everyCredentialResolves() async throws {
         let first = SecretReference(identifier: "first")
         let second = SecretReference(identifier: "second")
@@ -122,11 +122,29 @@ struct VariableResolverCredentialTests {
         let digest = try await resolve(auth: .digest(DigestAuth(username: "", password: first)))
         let apiKey = try await resolve(auth: .apiKey(APIKeyAuth(name: "", value: first, location: .header)))
 
-        #expect(resolvedOAuth2.credentials == [first: "1", second: "2", third: "3", fourth: "4"])
+        #expect(resolvedOAuth2.credentials == [first: "1", second: "2"])
         #expect(resolvedSigV4.credentials == [first: "1", second: "2", third: "3"])
         #expect(basic.credentials == [first: "1"])
         #expect(digest.credentials == [first: "1"])
         #expect(apiKey.credentials == [first: "1"])
+    }
+
+    @Test("An OAuth 2.0 token with no value isn't reported missing, because a send gets one")
+    func missingTokenIsNotReported() async throws {
+        let oauth2 = OAuth2Auth(
+            grantType: .clientCredentials,
+            authorizationURL: "",
+            accessTokenURL: "",
+            callbackURL: "",
+            clientID: "",
+            scope: "",
+            accessToken: SecretReference(identifier: "no-token-yet"),
+            refreshToken: SecretReference(identifier: "no-refresh-token")
+        )
+
+        let resolved = try await resolve(auth: .oauth2(oauth2))
+
+        #expect(resolved.unresolvedCredentials.isEmpty)
     }
 
     @Test("A credential a kind leaves out is not reported")

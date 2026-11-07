@@ -47,12 +47,24 @@ struct RequestBuilderAuthTests {
         #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer abc")
     }
 
-    @Test("An unsupported auth kind sends no auth and is reported")
+    @Test("An OAuth 2.0 grant Moth can't run sends no auth and is reported")
     func unsupportedAuth() async throws {
-        let built = try await build(auth: .oauth2(Self.oauth2), credentials: [secret: "abc"])
+        let built = try await build(auth: .oauth2(Self.oauth2(grantType: .implicit)), credentials: [secret: "abc"])
 
         #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == nil)
         #expect(built.notices == [.unsupportedAuth(.oauth2)])
+    }
+
+    @Test("Client Credentials sends its token as a Bearer header, replacing a manual one, with no notice")
+    func clientCredentialsSendsBearer() async throws {
+        let built = try await build(
+            auth: .oauth2(Self.oauth2(grantType: .clientCredentials)),
+            credentials: [secret: "abc"],
+            headers: [KeyValue(key: "Authorization", value: "Bearer manual")]
+        )
+
+        #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer abc")
+        #expect(built.notices.isEmpty)
     }
 
     @Test("Digest replaces a manual Authorization header with none, and has no notice")
@@ -127,11 +139,11 @@ struct RequestBuilderAuthTests {
         )
     }
 
-    private nonisolated static var oauth2: OAuth2Auth {
+    private nonisolated static func oauth2(grantType: OAuth2GrantType) -> OAuth2Auth {
         let reference = SecretReference(identifier: "secret")
 
         return OAuth2Auth(
-            grantType: .clientCredentials,
+            grantType: grantType,
             authorizationURL: "",
             accessTokenURL: "",
             callbackURL: "",

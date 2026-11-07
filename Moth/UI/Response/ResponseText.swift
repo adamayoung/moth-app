@@ -13,6 +13,7 @@ extension SendFailure.Kind {
         case .couldNotConnect: String(localized: "RESPONSE_FAILED_CONNECT")
         case .timedOut: String(localized: "RESPONSE_FAILED_TIMEOUT")
         case .notSent: String(localized: "RESPONSE_FAILED_NOT_SENT")
+        case .accessTokenFailed: String(localized: "RESPONSE_FAILED_ACCESS_TOKEN")
         }
     }
 

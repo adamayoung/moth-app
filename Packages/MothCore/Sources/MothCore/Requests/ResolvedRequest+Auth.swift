@@ -23,9 +23,19 @@ nonisolated extension ResolvedRequest {
             awsSigV4Provider(sigV4, signingAt: date)
         case .digest:
             digestProvider
+        case .oauth2(let oauth2) where oauth2.grantType == .clientCredentials:
+            oauth2.accessToken.flatMap { credentials[$0] }.map { BearerAuthProvider(token: $0) }
         case .inherit, .none, .apiKey, .oauth2:
             nil
         }
+    }
+
+    /// The sender puts the token in `credentials` after resolution, so a resolution alone holds none yet.
+    var getsAccessTokenAtSend: Bool {
+        guard case .oauth2(let oauth2) = auth else {
+            return false
+        }
+        return oauth2.grantType == .clientCredentials
     }
 
     var digestProvider: DigestAuthProvider? {
@@ -43,8 +53,8 @@ nonisolated extension ResolvedRequest {
             .inheritNotReplaced
         case .apiKey(let apiKey):
             apiKey.name.isEmpty ? .apiKeyWithoutName : nil
-        case .oauth2:
-            .unsupportedAuth(.oauth2)
+        case .oauth2(let oauth2):
+            oauth2.grantType == .clientCredentials ? nil : .unsupportedAuth(.oauth2)
         }
     }
 

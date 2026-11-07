@@ -214,7 +214,7 @@ struct RequestSenderTests {
             urlTemplate: "https://example.com",
             body: .binary(filePath: "/tmp/health.bin"),
             auth: .oauth2(OAuth2Auth(
-                grantType: .clientCredentials,
+                grantType: .implicit,
                 authorizationURL: "",
                 accessTokenURL: "https://example.com/token",
                 callbackURL: "",
