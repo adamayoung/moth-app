@@ -42,6 +42,22 @@ struct CurlImportMappingTests {
         #expect(request.queryParameters.pairs == [Pair("a", "{{b}}")])
     }
 
+    @Test(
+        "A query rows can't send back unchanged stays in the template, which goes out as written",
+        arguments: [
+            "https://a.example/svc?wsdl",
+            "https://a.example/s?q=caf%E9",
+            "https://a.example/s?a=1&flag",
+            "https://a.example/s?=x"
+        ]
+    )
+    func keepsAQueryRowsCantHold(url: String) async throws {
+        let request = try await CurlImportTesting.request("curl '\(url)'")
+
+        #expect(request.urlTemplate == url)
+        #expect(request.queryParameters.isEmpty)
+    }
+
     @Test("A URL with no query stays as written")
     func keepsAPlainURL() async throws {
         let request = try await CurlImportTesting.request("curl example.com/users")

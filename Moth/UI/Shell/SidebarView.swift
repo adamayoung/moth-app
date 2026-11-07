@@ -83,7 +83,12 @@ struct SidebarView: View {
         }
         .focusedSceneValue(
             \.sidebarCommands,
-            SidebarCommandContext(model: model, environments: environments, newItemContainer: model.newItemContainer)
+            SidebarCommandContext(
+                model: model,
+                environments: environments,
+                newItemContainer: model.newItemContainer,
+                importContainer: model.importContainer
+            )
         )
     }
 

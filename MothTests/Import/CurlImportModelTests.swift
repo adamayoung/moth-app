@@ -186,6 +186,41 @@ final class CurlImportModelTests {
         #expect(sidebar.renaming == nil)
     }
 
+    @Test("A rename left open commits before the new request takes the selection")
+    func commitsAnOpenRename() async throws {
+        try deliverRows()
+        await sidebar.beginRename(of: .request(top.id))
+        sidebar.renameDraft = "Renamed"
+
+        await importing("curl https://a.example/users", into: makeModel())
+        try deliverRows()
+
+        #expect(sidebar.renaming == nil)
+        #expect(sidebar.tree.node(.request(top.id))?.name == "Renamed")
+    }
+
+    @Test("The pasted command leaves memory once it is imported, because it can hold a password")
+    func importClearsTheText() async throws {
+        try deliverRows()
+        let model = makeModel()
+
+        await importing("curl -u user:pass https://a.example/users", into: model)
+
+        #expect(model.curlText.isEmpty)
+    }
+
+    @Test("Cancel clears the text too")
+    func cancelClearsTheText() throws {
+        try deliverRows()
+        let model = makeModel()
+        model.beginCurlImport()
+        model.curlText = "curl -u user:pass https://a.example/users"
+
+        model.cancelCurlImport()
+
+        #expect(model.curlText.isEmpty)
+    }
+
     @Test("Import needs some text", arguments: ["", "  ", "\n\t\n"])
     func blankTextCannotBeSubmitted(text: String) throws {
         try deliverRows()

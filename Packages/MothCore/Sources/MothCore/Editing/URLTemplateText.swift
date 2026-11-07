@@ -9,7 +9,7 @@ import Foundation
 public nonisolated struct URLTemplateText {
 
     public let address: String
-    let query: String?
+    public let query: String?
     let fragment: String?
 
     public init(_ text: String) {

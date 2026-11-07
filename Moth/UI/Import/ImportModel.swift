@@ -77,10 +77,12 @@ final class ImportModel {
     func cancelCurlImport() {
         if !isImporting {
             isEnteringCurl = false
+            curlText = ""
         }
     }
 
-    /// A failure keeps the sheet, because closing it would lose the pasted text.
+    /// A failure keeps the sheet, because closing it would lose the pasted text. Success clears the text, which can
+    /// hold a password.
     func importCurl() async {
         guard canSubmitCurl, let container = sidebar.importContainer else {
             return
@@ -94,7 +96,8 @@ final class ImportModel {
                 try await createRequest(request, container)
             }
             isEnteringCurl = false
-            sidebar.revealRequest(result.request.id, in: container)
+            curlText = ""
+            await sidebar.revealRequest(result.request.id, in: container)
             openRequest(result.request.id)
             report = ImportReport(result)
         } catch CurlImportError.notACurlCommand {

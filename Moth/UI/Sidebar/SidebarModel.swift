@@ -89,7 +89,8 @@ final class SidebarModel {
         }
     }
 
-    func revealRequest(_ id: Request.ID, in container: TreeContainerID) {
+    func revealRequest(_ id: Request.ID, in container: TreeContainerID) async {
+        await commitActiveRename()
         expandAncestors(of: container)
         selection = .request(id)
     }

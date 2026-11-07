@@ -235,7 +235,9 @@ and roll back as a Postman import's do.
   and anything that names a file to read, such as `--data @file`, `-H @file`, `-b file` or
   `-F a=<file`, go in `CurlCommand.ignored`, and the result sheet lists them. With
   nothing ignored, no sheet appears. `-F a=@file` keeps its path in a file row.
-- A query leaves the template for rows, as in a [Postman import](#postman-import).
+- A query leaves the template for rows, as in a [Postman import](#postman-import),
+  unless rows can't send it back unchanged, as with `?flag` or `?q=%E9`. Such a
+  query stays in the template, and a Save moves it into rows.
   `-d` makes `.urlEncoded` rows if its text is `key=value` pairs under the form
   type, decoded as a query is, because `RequestBuilder` encodes rows. Anything else
   stays `.raw`, under the command's `Content-Type` or the form type curl would send.

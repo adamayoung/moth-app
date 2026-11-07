@@ -17,7 +17,7 @@ nonisolated struct CurlMapper {
         let url = URLTemplateText(address)
         let dataText = command.dataParts.joined(separator: "&")
         let dataRows = command.movesDataToQuery ? Self.rows(fromFormText: dataText) : []
-        let queryRows = url.queryPairs.map { KeyValue(key: $0.key, value: $0.value) } + dataRows
+        let urlRows = Self.rows(ofQueryIn: url)
 
         let method = Self.method(of: command)
         let headers = Self.headers(of: command)
@@ -26,8 +26,8 @@ nonisolated struct CurlMapper {
         return Request(
             name: "\(method.rawValue) \(Self.path(of: url.address))",
             method: method,
-            urlTemplate: queryRows.isEmpty ? address : url.withoutQuery,
-            queryParameters: queryRows,
+            urlTemplate: urlRows.isEmpty ? address : url.withoutQuery,
+            queryParameters: urlRows + dataRows,
             headers: headerRows,
             body: Self.body(of: command, text: dataText, headers: headers),
             auth: auth(headers: headers, keptRows: headerRows, command: command, userinfo: userinfo),
@@ -115,6 +115,14 @@ nonisolated struct CurlMapper {
             return .urlEncoded(rows(fromFormText: text))
         }
         return .raw(content: text, contentType: contentType)
+    }
+
+    /// A query rows can't send back unchanged stays in the template, which `RequestBuilder` sends as written.
+    private static func rows(ofQueryIn url: URLTemplateText) -> [KeyValue] {
+        guard let query = url.query, isFormText(query) else {
+            return []
+        }
+        return url.queryPairs.map { KeyValue(key: $0.key, value: $0.value) }
     }
 
     /// Only text that rows can send back unchanged: an escape that isn't UTF-8 can't be decoded, and a template trims.

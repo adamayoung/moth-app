@@ -10,7 +10,6 @@ struct ImportCommandContext {
 
     let model: ImportModel
     let canImport: Bool
-    let canImportCurl: Bool
 
 }
 
@@ -23,6 +22,7 @@ extension FocusedValues {
 struct ImportCommands: Commands {
 
     @FocusedValue(\.importCommands) private var context
+    @FocusedValue(\.sidebarCommands) private var sidebar
 
     var body: some Commands {
         CommandGroup(after: .importExport) {
@@ -36,7 +36,7 @@ struct ImportCommands: Commands {
             Button("MENU_IMPORT_CURL") {
                 context?.model.beginCurlImport()
             }
-            .disabled(context?.canImportCurl != true)
+            .disabled(context?.canImport != true || sidebar?.importContainer == nil)
         }
     }
 

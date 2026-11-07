@@ -134,7 +134,10 @@ struct CurlImportAuthTests {
 
     @Test(
         "-u under another scheme stays out of Basic, because Basic would send the secret as it stands",
-        arguments: ["--digest", "--ntlm", "--negotiate", "--anyauth", "--aws-sigv4 aws:amz"]
+        arguments: [
+            "--digest", "--ntlm", "--negotiate", "--anyauth", "--aws-sigv4 aws:amz", "--expand-aws-sigv4 aws:amz",
+            "--oauth2-bearer token"
+        ]
     )
     func userUnderAnotherScheme(flag: String) async throws {
         let store = RecordingSecretStore()

@@ -10,7 +10,8 @@ import MothCore
 nonisolated struct CurlCommand {
 
     private static let otherAuthSchemes: Set = [
-        "--anyauth", "--aws-sigv4", "--digest", "--negotiate", "--ntlm", "--ntlm-wb"
+        "--anyauth", "--aws-sigv4", "--digest", "--expand-aws-sigv4", "--negotiate", "--ntlm", "--ntlm-wb",
+        "--oauth2-bearer"
     ]
 
     private(set) var method: String?

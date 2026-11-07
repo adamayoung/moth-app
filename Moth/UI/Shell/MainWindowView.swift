@@ -106,11 +106,7 @@ struct MainWindowView: View {
         }
         .focusedSceneValue(
             \.importCommands,
-            ImportCommandContext(
-                model: imports,
-                canImport: imports.canImport,
-                canImportCurl: imports.canImportCurl
-            )
+            ImportCommandContext(model: imports, canImport: imports.canImport)
         )
         .modelContainer(dataModel.container)
     }
