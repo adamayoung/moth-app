@@ -129,6 +129,42 @@ struct CurlImportBodyTests {
         #expect(fields.map(\.contentType) == [nil, "image/png", "text/plain", nil])
     }
 
+    @Test("A multipart Content-Type leaves the rows, because only the builder knows the boundary it will use")
+    func formDropsItsContentTypeHeader() async throws {
+        let request = try await CurlImportTesting.request(
+            "curl -H 'Accept: a' -H 'Content-Type: multipart/form-data' -F a=b https://a.example"
+        )
+
+        #expect(request.headers.pairs == [Pair("Accept", "a")])
+    }
+
+    @Test("--data-urlencode looks for = before @, as curl does")
+    func dataURLEncodePrefersTheEquals() async throws {
+        let result = try await CurlImportTesting.importing("curl --data-urlencode 'user@host=a' https://a.example")
+
+        #expect(result.ignored.isEmpty)
+        #expect(result.request.body == .raw(content: "user@host=a", contentType: Self.formType))
+    }
+
+    @Test(
+        "A form part's type survives a blank before it and a parameter after it",
+        arguments: [
+            ("a=@b.json; type=application/json", "application/json"),
+            ("a=b;type=text/plain;charset=utf-8", "text/plain;charset=utf-8"),
+            ("a=@b;type=text/plain;filename=c.txt", "text/plain"),
+            ("a=@b;filename=c.txt;type=text/plain", "text/plain")
+        ]
+    )
+    func formPartType(argument: String, contentType: String) async throws {
+        let request = try await CurlImportTesting.request("curl -F '\(argument)' https://a.example")
+
+        guard case .formData(let fields) = request.body else {
+            Issue.record("Expected form-data")
+            return
+        }
+        #expect(fields.map(\.contentType) == [contentType])
+    }
+
     private func rows(of body: RequestBody) -> [Pair] {
         guard case .urlEncoded(let rows) = body else {
             return []

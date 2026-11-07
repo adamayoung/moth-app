@@ -21,7 +21,7 @@ nonisolated struct CurlMapper {
 
         let method = Self.method(of: command)
         let headers = Self.headers(of: command)
-        let headerRows = headers.filter { CurlCredential($0) == nil }
+        let headerRows = headers.filter { CurlCredential($0) == nil && !Self.hidesBoundary($0, in: command) }
 
         return Request(
             name: "\(method.rawValue) \(Self.path(of: url.address))",
@@ -62,6 +62,11 @@ nonisolated struct CurlMapper {
             pendingSecrets.append(PendingSecret(reference: reference, value: token))
             return .bearer(BearerAuth(token: reference))
         }
+    }
+
+    /// curl adds its boundary to this header. `RequestBuilder` can't, so a kept row would hide the one the body uses.
+    private static func hidesBoundary(_ header: KeyValue, in command: CurlCommand) -> Bool {
+        !command.formFields.isEmpty && header.hasName("Content-Type")
     }
 
     private static func method(of command: CurlCommand) -> HTTPMethod {

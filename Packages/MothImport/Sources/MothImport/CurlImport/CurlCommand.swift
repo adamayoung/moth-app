@@ -28,14 +28,15 @@ nonisolated struct CurlCommand {
     private var words: ArraySlice<String>
 
     init(_ text: String) throws {
-        guard
-            let shell = try? ShellWords(text),
-            shell.words.first == "curl"
-        else {
+        guard let shell = try? ShellWords(text) else {
+            throw CurlImportError.notACurlCommand
+        }
+        let command = shell.words.drop { $0 == "$" || $0 == "%" }
+        guard let program = command.first, program == "curl" || program.hasSuffix("/curl") else {
             throw CurlImportError.notACurlCommand
         }
 
-        self.words = shell.words.dropFirst()
+        self.words = command.dropFirst()
         while let word = words.popFirst() {
             try read(word)
         }
@@ -160,7 +161,7 @@ nonisolated struct CurlCommand {
     /// curl's forms are `content`, `=content`, `name=content`, `@file` and `name@file`.
     private mutating func addURLEncodedData(_ text: String, flag: String) {
         hasData = true
-        guard let separator = text.firstIndex(where: { $0 == "=" || $0 == "@" }) else {
+        guard let separator = text.firstIndex(of: "=") ?? text.firstIndex(of: "@") else {
             dataParts.append(text.percentEncoded)
             return
         }
@@ -210,9 +211,20 @@ private nonisolated extension FormDataField {
         self.init(
             key: String(text[..<separator]),
             value: isFile ? .file(paths: [content]) : .text(content),
-            contentType: attributes.split(separator: ";").first { $0.hasPrefix("type=") }
-                .map { String($0.dropFirst(5)) }
+            contentType: Self.contentType(in: attributes)
         )
+    }
+
+    /// A type's own parameters run on after it, up to curl's next attribute.
+    private static func contentType(in attributes: Substring) -> String? {
+        let parts = attributes.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+        guard let start = parts.firstIndex(where: { $0.hasPrefix("type=") }) else {
+            return nil
+        }
+        let parameters = parts[(start + 1)...].prefix { part in
+            !["filename=", "headers=", "encoder="].contains { part.hasPrefix($0) }
+        }
+        return ([String(parts[start].dropFirst(5))] + parameters).joined(separator: ";")
     }
 
     /// A value in double quotes can hold a `;`, and `\` escapes within them.

@@ -238,6 +238,8 @@ and roll back as a Postman import's do.
   and `verifiesTLS` is false only with `-k`. Sending doesn't read either setting
   yet.
 - `.inherit` is the auth of a command with no credential, as for New Request.
+- With `-F`, a `Content-Type` header leaves the rows, because curl adds its boundary
+  to that header and `RequestBuilder` can't.
 
 The destination matches New Request, and `SidebarModel.importContainer` falls back
 to the first collection with nothing selected. A store write that fails keeps the

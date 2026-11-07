@@ -31,6 +31,18 @@ struct CurlCommandTests {
     }
 
     @Test(
+        "A prompt copied with the command, and a full path to curl, are still a command",
+        arguments: [
+            "$ curl https://a.example/x",
+            "% curl https://a.example/x",
+            "/usr/bin/curl https://a.example/x"
+        ]
+    )
+    func acceptsPromptsAndPaths(text: String) async throws {
+        #expect(try await CurlImportTesting.request(text).urlTemplate == "https://a.example/x")
+    }
+
+    @Test(
         "-X sets the method, attached or not, and the last one wins",
         arguments: [
             ("curl -X PUT a.example", "PUT"),
