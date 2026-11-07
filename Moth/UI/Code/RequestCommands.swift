@@ -55,32 +55,38 @@ struct RequestCommands: Commands {
 
     @ViewBuilder
     private var sendButton: some View {
-        switch context?.send {
-        case .cancel(let id):
+        if case .cancel(let id) = context?.send {
             Button("MENU_CANCEL_SEND") {
-                withMainWindow { $0.cancelSend(id) }
+                cancelSend(id)
             }
             .keyboardShortcut(".")
-        case .send(let id):
+        } else {
             Button("MENU_SEND") {
-                withMainWindow { $0.send(id) }
+                if case .send(let id) = context?.send {
+                    withMainWindow { $0.send(id) }
+                }
             }
             .keyboardShortcut(.return)
-        case .unavailable, nil:
-            Button("MENU_SEND") {}
-                .keyboardShortcut(.return)
-                .disabled(true)
+            .disabled(context?.send == .unavailable || context == nil)
         }
     }
 
-    /// The focused value outlives a sheet or panel taking the keyboard, and a second sheet must not open behind one.
+    /// ⌘. is also the key binding that cancels a sheet, so with one up the key goes on to it.
+    private func cancelSend(_ id: Request.ID) {
+        if NSApp.keyWindow == NSApp.mainWindow {
+            context?.tabs.cancelSend(id)
+        } else {
+            NSApp.sendAction(#selector(NSResponder.cancelOperation(_:)), to: nil, from: nil)
+        }
+    }
+
     private func withSelectedRequest(_ action: (RequestTabsModel, Request.ID) -> Void) {
-        if let context, let id = context.selectedRequest, NSApp.keyWindow == NSApp.mainWindow {
-            action(context.tabs, id)
+        if let id = context?.selectedRequest {
+            withMainWindow { action($0, id) }
         }
     }
 
-    /// The focused value outlives a sheet or panel taking the keyboard, and the tabs must not change behind one.
+    /// The focused value outlives a sheet or panel taking the keyboard, and nothing may change or open behind one.
     private func withMainWindow(_ action: (RequestTabsModel) -> Void) {
         if let context, NSApp.keyWindow == NSApp.mainWindow {
             action(context.tabs)

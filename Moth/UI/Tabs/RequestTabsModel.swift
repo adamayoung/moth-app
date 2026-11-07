@@ -86,10 +86,13 @@ final class RequestTabsModel {
         selectTab(offsetBy: -1)
     }
 
-    /// Steps over the tabs on show, so a tab hidden until its row syncs is never selected.
+    /// Steps over the tabs on show, so a tab hidden until its row syncs is never selected, and from one goes to an end.
     private func selectTab(offsetBy step: Int) {
         let ids = openTabs.map(\.id)
         guard let selected = tabs.selected, let index = ids.firstIndex(of: selected) else {
+            if let end = step > 0 ? ids.first : ids.last {
+                select(end)
+            }
             return
         }
         select(ids[(index + step + ids.count) % ids.count])

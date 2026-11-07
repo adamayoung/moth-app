@@ -161,6 +161,30 @@ final class RequestTabsModelTests {
         #expect(model.selectedTab?.name == "Last")
     }
 
+    @Test("From a tab hidden until its row syncs, next goes to the first tab on show and previous to the last")
+    func hiddenSelectionMovesToAnEnd() throws {
+        let model = try openedModel()
+        model.open(inFolder.id)
+        model.open(last.id)
+        model.open(top.id)
+        let context = ModelContext(dataModel.container)
+        let requests = try context.fetch(FetchDescriptor<RequestModel>())
+        let treeWithoutTop = try CollectionTree(
+            collections: context.fetch(FetchDescriptor<CollectionModel>()),
+            folders: context.fetch(FetchDescriptor<FolderModel>()),
+            requests: requests.filter { $0.id != top.id }
+        )
+        model.collectionDidChange(CollectionSnapshot(tree: treeWithoutTop, requestIDs: Set(requests.map(\.id))))
+        #expect(model.selectedTab == nil)
+
+        model.selectNextTab()
+        #expect(model.selectedTab?.name == "In Folder")
+
+        model.select(top.id)
+        model.selectPreviousTab()
+        #expect(model.selectedTab?.name == "Last")
+    }
+
     @Test("Moving between tabs needs two of them")
     func cyclingNeedsTwoTabs() throws {
         let model = try openedModel()

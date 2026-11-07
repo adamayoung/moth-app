@@ -81,6 +81,11 @@ struct RequestEditorForm: View {
                     isURLFocused = true
                     urlSelection = TextSelection(range: draft.url.startIndex ..< draft.url.endIndex)
                 }
+                .onChange(of: isURLFocused) { _, isFocused in
+                    if !isFocused {
+                        urlSelection = nil
+                    }
+                }
 
             if isSending {
                 Button("REQUEST_EDITOR_CANCEL_SEND", action: cancelSend)

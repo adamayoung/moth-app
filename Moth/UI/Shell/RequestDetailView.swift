@@ -90,6 +90,7 @@ private struct AlternateTabShortcuts: View {
             Button("MENU_PREVIOUS_TAB", action: tabs.selectPreviousTab)
                 .keyboardShortcut("[", modifiers: [.command, .shift])
         }
+        .focusable(false)
         .frame(width: 0, height: 0)
         .opacity(0)
         .accessibilityHidden(true)
