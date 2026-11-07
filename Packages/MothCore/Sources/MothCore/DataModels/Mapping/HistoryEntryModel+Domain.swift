@@ -5,33 +5,47 @@
 
 import Foundation
 
-nonisolated extension HistoryEntryModel {
+public nonisolated extension HistoryEntryModel {
 
     convenience init(_ entry: HistoryEntry) throws {
         self.init()
         self.id = entry.id
         self.requestID = entry.request.id
         self.requestData = try StoredJSON.encode(entry.request)
+        self.method = entry.request.method.rawValue
+        self.url = RequestDraft(entry.request).url
         self.sentAt = entry.sentAt
         self.durationSeconds = entry.duration.components.seconds
         self.durationAttoseconds = entry.duration.components.attoseconds
-        self.failure = entry.failure
+        self.failure = entry.failure?.description
+        self.failureKind = entry.failure?.kind.rawValue
         if let response = entry.response {
             self.statusCode = response.status
+            self.reasonPhrase = response.reasonPhrase
             self.responseHeadersData = try StoredJSON.encode(response.headers)
+            self.timingData = try StoredJSON.encode(response.timing)
+            self.responseSize = response.size
             self.responseBody = response.body
         }
     }
 
-    public func asDomain() throws -> HistoryEntry {
+    func asDomain() throws -> HistoryEntry {
         try HistoryEntry(
             id: id,
             request: StoredJSON.decode(Request.self, from: requestData, default: Request(id: requestID, name: "")),
             sentAt: sentAt,
-            duration: Duration(secondsComponent: durationSeconds, attosecondsComponent: durationAttoseconds),
+            duration: duration,
             response: response(),
-            failure: failure
+            failure: sendFailure
         )
+    }
+
+    private var duration: Duration {
+        Duration(secondsComponent: durationSeconds, attosecondsComponent: durationAttoseconds)
+    }
+
+    private var sendFailure: SendFailure? {
+        failureKind.map { SendFailure(kind: SendFailure.Kind(rawValue: $0) ?? .couldNotConnect, description: failure) }
     }
 
     private func response() throws -> HistoryResponse? {
@@ -41,8 +55,11 @@ nonisolated extension HistoryEntryModel {
 
         return try HistoryResponse(
             status: statusCode,
+            reasonPhrase: reasonPhrase,
             headers: StoredJSON.decode([KeyValue].self, from: responseHeadersData, default: []),
-            body: responseBody ?? Data()
+            timing: StoredJSON.decode([PhaseTiming].self, from: timingData, default: []),
+            size: responseSize,
+            body: responseSize > HistoryResponse.bodyLimit ? nil : responseBody ?? Data()
         )
     }
 

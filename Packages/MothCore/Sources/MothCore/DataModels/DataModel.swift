@@ -23,7 +23,7 @@ public final class DataModel {
         let configurations = StoreConfigurations(location: location, containerIdentifier: containerIdentifier)
         try configurations.verifyStoresAreKnown()
         self.container = try ModelContainer(
-            for: Schema(versionedSchema: SchemaV1.self),
+            for: Schema(versionedSchema: CurrentSchema.self),
             migrationPlan: MothMigrationPlan.self,
             configurations: configurations.all
         )
