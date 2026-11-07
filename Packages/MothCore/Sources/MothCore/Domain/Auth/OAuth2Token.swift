@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// Stored as JSON under the auth's `accessToken` reference, so its expiry needs no model field.
+/// Stored as JSON in the Keychain, under the auth's token reference, so its expiry needs no model field.
 public nonisolated struct OAuth2Token: Sendable, Hashable, Codable {
 
     public enum State: Sendable, Hashable {
