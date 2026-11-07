@@ -1,6 +1,50 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "CODE_NOTE_AWS" : {
+      "comment" : "A comment in generated code, for a request that signs with AWS Signature auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AWS Signature auth is left out of this code."
+          }
+        }
+      }
+    },
+    "CODE_NOTE_BODY_%@" : {
+      "comment" : "A comment in generated code, for a body that the request's method doesn't send. The argument is the method, such as GET.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The body is left out, because %@ doesn’t send one."
+          }
+        }
+      }
+    },
+    "CODE_NOTE_DIGEST" : {
+      "comment" : "A comment in generated code, for a request that uses Digest auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digest auth is left out of this code."
+          }
+        }
+      }
+    },
+    "CODE_NOTE_OAUTH2" : {
+      "comment" : "A comment in generated code, for a request that uses OAuth 2.0.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OAuth 2.0 is left out of this code."
+          }
+        }
+      }
+    },
     "IMPORT_AUTH_API_KEY" : {
       "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
       "localizations" : {

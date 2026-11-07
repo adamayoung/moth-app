@@ -24,7 +24,7 @@ public nonisolated struct CodeGenerator: Sendable {
             environment: scopes.environment,
             globals: scopes.globals
         )
-        let written = CodeRequest(resolved)
+        let written = try CodeRequest(resolved)
         return GeneratedCode(curl: written.curl, swift: written.urlSession)
     }
 
