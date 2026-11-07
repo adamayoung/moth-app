@@ -6,14 +6,17 @@
 import Foundation
 
 /// One send's cookies: the `Cookie` header the person typed, and the jar that adds to it and keeps what comes back.
+/// The typed header goes only to the origin it was typed for.
 struct CookieExchange: Sendable {
 
     let jar: any CookieJar
     let manualHeader: String?
+    let origin: URL?
 
     init(jar: any CookieJar, request: URLRequest) {
         self.jar = jar
         self.manualHeader = request.value(forHTTPHeaderField: "Cookie")
+        self.origin = request.url
     }
 
     func preparing(_ request: URLRequest) async -> URLRequest {
@@ -21,8 +24,9 @@ struct CookieExchange: Sendable {
             return request
         }
         var request = request
+        let manual = url.hasSameOrigin(as: origin) ? manualHeader : nil
         await request.setValue(
-            CookieHeader.merging(manual: manualHeader, jar: jar.cookies(for: url)),
+            CookieHeader.merging(manual: manual, jar: jar.cookies(for: url)),
             forHTTPHeaderField: "Cookie"
         )
         return request

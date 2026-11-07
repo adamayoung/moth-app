@@ -25,14 +25,18 @@ public struct URLSessionHTTPTransport: HTTPTransport {
     }
 
     @concurrent
-    public func send(_ request: URLRequest, cookies jar: any CookieJar?) async throws -> HTTPResponse {
+    public func send(
+        _ request: URLRequest,
+        cookies jar: any CookieJar?,
+        policy: SendPolicy
+    ) async throws -> HTTPResponse {
         let cookies = jar.map { CookieExchange(jar: $0, request: request) }
         let request = await cookies?.preparing(request) ?? request
-        let recorder = TaskMetricsRecorder(cookies: cookies)
+        let recorder = TaskMetricsRecorder(cookies: cookies, policy: policy, origin: request.url)
         let body: Data
         let response: URLResponse
         do {
-            (body, response) = try await session.data(for: request, delegate: recorder)
+            (body, response) = try await data(for: request, delegate: recorder, verifyingTLS: policy.verifiesTLS)
         } catch {
             throw HTTPTransportError.translating(error)
         }
@@ -49,6 +53,23 @@ public struct URLSessionHTTPTransport: HTTPTransport {
             metrics: recorder.metrics,
             url: httpResponse.url
         )
+    }
+
+    /// An unverified send gets a session of its own, so no later verified send can reuse a connection whose
+    /// certificate nobody checked.
+    private func data(
+        for request: URLRequest,
+        delegate: TaskMetricsRecorder,
+        verifyingTLS: Bool
+    ) async throws -> (Data, URLResponse) {
+        guard !verifyingTLS else {
+            return try await session.data(for: request, delegate: delegate)
+        }
+        let unverified = URLSession(configuration: session.configuration)
+        defer {
+            unverified.finishTasksAndInvalidate()
+        }
+        return try await unverified.data(for: request, delegate: delegate)
     }
 
 }

@@ -14,6 +14,7 @@ final nonisolated class ScriptedTransport: HTTPTransport {
 
     private let sent = Mutex<[URLRequest]>([])
     private let jars = Mutex<[any CookieJar?]>([])
+    private let sentPolicies = Mutex<[SendPolicy]>([])
     private let replies: [Reply]
     private let arrival: AsyncStream<Int>.Continuation
     let arrivals: AsyncStream<Int>
@@ -35,8 +36,13 @@ final nonisolated class ScriptedTransport: HTTPTransport {
         jars.withLock(\.self)
     }
 
+    var policies: [SendPolicy] {
+        sentPolicies.withLock(\.self)
+    }
+
     @concurrent
-    func send(_ request: URLRequest, cookies: any CookieJar?) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies: any CookieJar?, policy: SendPolicy) async throws -> HTTPResponse {
+        sentPolicies.withLock { $0.append(policy) }
         jars.withLock { $0.append(cookies) }
         let count = sent.withLock {
             $0.append(request)

@@ -21,7 +21,7 @@ final nonisolated class RecordingHTTPTransport: HTTPTransport {
     }
 
     @concurrent
-    func send(_ request: URLRequest, cookies: any CookieJar?) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies: any CookieJar?, policy _: SendPolicy) async throws -> HTTPResponse {
         sent.withLock { $0.append(request) }
         jars.withLock { $0.append(cookies) }
         return HTTPResponse(status: 200, headers: [:], body: Data("{}".utf8))
@@ -60,7 +60,7 @@ final nonisolated class HoldingHTTPTransport: HTTPTransport {
     }
 
     @concurrent
-    func send(_ request: URLRequest, cookies _: any CookieJar?) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies _: any CookieJar?, policy _: SendPolicy) async throws -> HTTPResponse {
         await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
                 gate.withLock { $0 = continuation }

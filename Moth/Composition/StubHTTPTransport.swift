@@ -26,7 +26,7 @@ final nonisolated class StubHTTPTransport: HTTPTransport {
     ]
 
     @concurrent
-    func send(_ request: URLRequest, cookies _: any CookieJar?) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies _: any CookieJar?, policy _: SendPolicy) async throws -> HTTPResponse {
         switch request.url?.path() {
         case "/digest" where request.value(forHTTPHeaderField: "Authorization") == nil:
             return HTTPResponse(status: 401, headers: Self.digestChallenge, body: Data())

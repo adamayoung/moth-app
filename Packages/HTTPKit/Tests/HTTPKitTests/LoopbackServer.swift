@@ -7,8 +7,8 @@ import Foundation
 import Network
 import Synchronization
 
-/// Writes raw responses on 127.0.0.1, for what `StubURLProtocol` cannot show: wire bytes, protocol, redirects
-/// and repeated header names.
+/// Writes raw responses on 127.0.0.1, for what `StubURLProtocol` cannot show: wire bytes, protocol, redirects,
+/// repeated header names and, given an identity, TLS.
 final class LoopbackServer: Sendable {
 
     private let listener: NWListener
@@ -25,8 +25,8 @@ final class LoopbackServer: Sendable {
         received.requests.withLock(\.self)
     }
 
-    init(routes: [String: String], fallback: String? = nil) async throws {
-        let parameters = NWParameters.tcp
+    init(routes: [String: String], fallback: String? = nil, identity: SecIdentity? = nil) async throws {
+        let parameters = Self.parameters(identity: identity)
         parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
         let listener = try NWListener(using: parameters)
         let queue = DispatchQueue(label: "LoopbackServer")
@@ -61,6 +61,15 @@ final class LoopbackServer: Sendable {
 
     deinit {
         listener.cancel()
+    }
+
+    private static func parameters(identity: SecIdentity?) -> NWParameters {
+        guard let identity, let secIdentity = sec_identity_create(identity) else {
+            return .tcp
+        }
+        let tls = NWProtocolTLS.Options()
+        sec_protocol_options_set_local_identity(tls.securityProtocolOptions, secIdentity)
+        return NWParameters(tls: tls)
     }
 
     func url(path: String, scheme: String = "http", host: String = "127.0.0.1") throws -> URL {
