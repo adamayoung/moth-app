@@ -154,9 +154,9 @@ HEAD, a key that resolved to empty, and a path variable with no value. A
 credential with no stored value sends no auth, and
 `ResolvedRequest.unresolvedCredentials` already reports it. `VariableResolution`
 records which part of the request each unresolved variable came from, and
-`BuiltRequest.unresolved` drops one only a left-out part held, so a note never
-says a variable was sent when it wasn't. A key that resolved to empty is reported
-as written, because the builder can't tell it from one left blank in the tab. An auth provider's
+`BuiltRequest.unresolved` leaves out one that only a left-out part held. A key
+that resolved to empty is reported as the tab shows it, because it has no resolved
+name to show. An auth provider's
 `Authorization` header replaces a manual one. `URLRequest` holds one value per
 header name, so repeated names go out comma-joined, and repeated cookies joined by
 `; `.

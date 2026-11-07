@@ -10,8 +10,11 @@ import Testing
 
 struct RequestSenderLeftOutVariableTests {
 
-    private func sentNotes(_ request: Request) async -> [ResponseNote] {
-        let sender = RequestSender(transport: RecordingTransport(), secretStore: InMemorySecretStore())
+    private func sentNotes(
+        _ request: Request,
+        secretStore: InMemorySecretStore = InMemorySecretStore()
+    ) async -> [ResponseNote] {
+        let sender = RequestSender(transport: RecordingTransport(), secretStore: secretStore)
         let result = await sender.send(OutgoingRequest(request: request), scopes: VariableScopes())
 
         guard case .response(let response) = result else {
@@ -117,6 +120,61 @@ struct RequestSenderLeftOutVariableTests {
         )
 
         #expect(await sentNotes(request).isEmpty)
+    }
+
+    @Test("A variable only in a manual Authorization header that auth replaced has no note", arguments: [
+        "Authorization",
+        "authorization"
+    ])
+    func variableInReplacedAuthorizationHeader(name: String) async {
+        let token = SecretReference(identifier: "token")
+        let secretStore = InMemorySecretStore()
+        await secretStore.save("stored", for: token.identifier)
+        let request = Request(
+            name: "List",
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: name, value: "Bearer {{x}}")],
+            auth: .bearer(BearerAuth(token: token))
+        )
+
+        #expect(await sentNotes(request, secretStore: secretStore).isEmpty)
+    }
+
+    @Test("A manual Authorization header keeps its variable's note when no auth replaced it")
+    func variableInKeptAuthorizationHeader() async {
+        let request = Request(
+            name: "List",
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: "Authorization", value: "Bearer {{x}}")],
+            auth: .none
+        )
+
+        #expect(await sentNotes(request) == [.undefinedVariable("x")])
+    }
+
+    @Test("A variable only in a raw body's Content-Type has no note when a manual header replaced it")
+    func variableInReplacedContentType() async {
+        let request = Request(
+            name: "Upload",
+            method: .post,
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: "Content-Type", value: "text/plain")],
+            body: .raw(content: "hello", contentType: "{{x}}")
+        )
+
+        #expect(await sentNotes(request).isEmpty)
+    }
+
+    @Test("A raw body's Content-Type keeps its variable's note when it went out")
+    func variableInSentContentType() async {
+        let request = Request(
+            name: "Upload",
+            method: .post,
+            urlTemplate: "https://example.com",
+            body: .raw(content: "hello", contentType: "{{x}}")
+        )
+
+        #expect(await sentNotes(request) == [.undefinedVariable("x")])
     }
 
     @Test("A variable in a sent part and a left-out part keeps its note")

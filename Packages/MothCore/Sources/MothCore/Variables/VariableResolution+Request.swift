@@ -28,6 +28,7 @@ nonisolated extension VariableResolution {
             return try await .urlEncoded(resolve(rows))
         case .raw(let content, let contentType):
             let content = try await resolve(content)
+            part = .bodyContentType
             return try await .raw(content: content, contentType: resolve(contentType))
         case .graphQL(let query, let variables):
             let query = try await resolve(query)

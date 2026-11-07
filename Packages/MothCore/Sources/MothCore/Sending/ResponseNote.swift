@@ -106,7 +106,7 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
 
     private static func emptyHeaderNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
         namedOrCounted(
-            Set(notices.compactMap(\.headerWithEmptyName)),
+            notices.compactMap(\.headerWithEmptyName),
             named: ResponseNote.emptyHeaderName,
             counted: ResponseNote.emptyHeaderNames
         )
@@ -114,7 +114,7 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
 
     private static func emptyQueryParameterNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
         namedOrCounted(
-            Set(notices.compactMap(\.queryParameterWithEmptyName)),
+            notices.compactMap(\.queryParameterWithEmptyName),
             named: ResponseNote.emptyQueryParameterName,
             counted: ResponseNote.emptyQueryParameterNames
         )
@@ -122,14 +122,14 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
 
     private static func emptyFieldNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
         namedOrCounted(
-            Set(notices.compactMap(\.fieldWithEmptyName)),
+            notices.compactMap(\.fieldWithEmptyName),
             named: ResponseNote.emptyFieldName,
             counted: ResponseNote.emptyFieldNames
         )
     }
 
     private static func namedOrCounted(
-        _ names: Set<String>,
+        _ names: some Collection<String>,
         named: (String) -> ResponseNote,
         counted: (Int) -> ResponseNote
     ) -> ResponseNote? {

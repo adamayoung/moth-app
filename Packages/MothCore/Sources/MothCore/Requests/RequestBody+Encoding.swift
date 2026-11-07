@@ -26,7 +26,7 @@ nonisolated extension RequestBody {
     }
 
     var parts: Set<RequestPart> {
-        Set(rowIDs.map { .row($0) }).union([.body])
+        Set(rowIDs.map { .row($0) }).union([.body, .bodyContentType])
     }
 
     func encoded(multipartBoundary: () -> String) -> EncodedBody {

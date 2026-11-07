@@ -10,6 +10,7 @@ nonisolated enum RequestPart: Sendable, Hashable {
     case address
     case row(UUID)
     case body
+    case bodyContentType
     case auth
 
 }

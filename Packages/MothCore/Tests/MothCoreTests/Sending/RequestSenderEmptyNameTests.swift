@@ -60,6 +60,29 @@ struct RequestSenderEmptyNameTests {
         #expect(await sentNotes(request) == [.emptyHeaderNames(2)])
     }
 
+    @Test("Rows that share a written key each count", arguments: [
+        (["{{x}}", "{{x}}"], ResponseNote.emptyHeaderNames(2)),
+        (["{{x}}", "{{x}}", "{{y}}"], .emptyHeaderNames(3))
+    ])
+    func repeatedHeaderKeys(keys: [String], note: ResponseNote) async {
+        let request = Request(name: "List", urlTemplate: "https://example.com", headers: keys.map { row($0) })
+
+        #expect(await sentNotes(request) == [note])
+    }
+
+    @Test("Query and body rows that share a written key each count")
+    func repeatedQueryAndFieldKeys() async {
+        let request = Request(
+            name: "Upload",
+            method: .post,
+            urlTemplate: "https://example.com",
+            queryParameters: [row("{{x}}"), row("{{x}}")],
+            body: .urlEncoded([row("{{x}}"), row("{{x}}")])
+        )
+
+        #expect(await sentNotes(request) == [.emptyQueryParameterNames(2), .emptyFieldNames(2)])
+    }
+
     @Test("A query key that resolves to empty is named as written")
     func queryParameter() async {
         let request = Request(name: "List", urlTemplate: "https://example.com", queryParameters: [row("{{x}}")])

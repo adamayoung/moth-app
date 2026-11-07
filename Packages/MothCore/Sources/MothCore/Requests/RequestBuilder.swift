@@ -35,9 +35,9 @@ public nonisolated struct RequestBuilder: Sendable {
         let authProvider = request.authProvider
         try await authProvider?.apply(to: &urlRequest)
 
-        if authProvider == nil {
-            omissions.leftOut.insert(.auth)
-        }
+        omissions.leftOut.formUnion(
+            authProvider == nil ? [.auth] : Self.manualAuthorizationRows(of: request)
+        )
 
         if let authNotice = request.authNotice {
             omissions.notices.append(authNotice)
@@ -47,6 +47,14 @@ public nonisolated struct RequestBuilder: Sendable {
             urlRequest: urlRequest,
             notices: omissions.notices,
             unresolved: request.unresolved(outside: omissions.leftOut)
+        )
+    }
+
+    private static func manualAuthorizationRows(of request: ResolvedRequest) -> Set<RequestPart> {
+        Set(
+            request.headers
+                .filter { $0.key.caseInsensitiveCompare("Authorization") == .orderedSame }
+                .map { .row($0.id) }
         )
     }
 
@@ -117,6 +125,7 @@ public nonisolated struct RequestBuilder: Sendable {
             if body.needsItsContentType {
                 omissions.notices.append(.formDataBoundaryNotDeclared)
             }
+            omissions.leftOut.insert(.bodyContentType)
             return omissions
         }
 
