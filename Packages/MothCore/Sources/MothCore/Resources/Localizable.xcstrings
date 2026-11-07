@@ -1,6 +1,39 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "OAUTH2_TOKEN_ERROR_INVALID_URL" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when an OAuth 2.0 Token URL can't be requested.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The token URL isn’t a valid http or https URL."
+          }
+        }
+      }
+    },
+    "OAUTH2_TOKEN_ERROR_NO_TOKEN" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when the token endpoint succeeded but sent no access_token.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The token endpoint’s answer had no access token."
+          }
+        }
+      }
+    },
+    "OAUTH2_TOKEN_ERROR_STATUS_%lld" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when the token endpoint refused with no OAuth error. The argument is the HTTP status code, not a count.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The token endpoint answered %lld."
+          }
+        }
+      }
+    },
     "REQUEST_BUILD_INCOMPLETE_AWS_SIGNATURE" : {
       "comment" : "Shown when a request cannot be sent because an AWS Signature field is empty.",
       "localizations" : {
