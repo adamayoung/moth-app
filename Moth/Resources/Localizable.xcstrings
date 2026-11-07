@@ -1,6 +1,61 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "AUTH_API_KEY_ADD_TO" : {
+      "comment" : "API Key auth: label for where the key goes in the request.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add To"
+          }
+        }
+      }
+    },
+    "AUTH_API_KEY_LOCATION_HEADER" : {
+      "comment" : "API Key auth: send the key as a request header.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Header"
+          }
+        }
+      }
+    },
+    "AUTH_API_KEY_LOCATION_QUERY" : {
+      "comment" : "API Key auth: send the key as a URL query parameter.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Query Params"
+          }
+        }
+      }
+    },
+    "AUTH_API_KEY_NAME" : {
+      "comment" : "API Key auth: label for the name of the header or query parameter.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key"
+          }
+        }
+      }
+    },
+    "AUTH_API_KEY_VALUE" : {
+      "comment" : "API Key auth: label for the secret value.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Value"
+          }
+        }
+      }
+    },
     "AUTH_INHERITED_FROM_%@" : {
       "comment" : "Says where inherited auth comes from. The argument is a folder's or collection's name.",
       "localizations" : {
@@ -13,7 +68,7 @@
       }
     },
     "AUTH_KIND_API_KEY" : {
-      "comment" : "Stored auth kind Moth can't edit yet.",
+      "comment" : "Auth kind that sends a named key in a header or query parameter.",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
@@ -1150,7 +1205,7 @@
       }
     },
     "RESPONSE_NOTE_MISSING_CREDENTIAL" : {
-      "comment" : "Shown above a response when the request's password or token has no stored value, so it went out with no auth.",
+      "comment" : "Shown above a response when the request's password, token or API key has no stored value or no name, so it went out with no auth.",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {

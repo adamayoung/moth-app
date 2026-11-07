@@ -64,7 +64,34 @@ struct AuthEditor: View {
                     credentialField("AUTH_TOKEN", identifier: "auth.token", for: draft.tokenReference)
                 }
             }
-        case .apiKey, .digest, .oauth2, .awsSigV4:
+        case .apiKey:
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+                GridRow {
+                    Text("AUTH_API_KEY_NAME")
+                    TextField("AUTH_API_KEY_NAME", text: apiKeyName)
+                        .labelsHidden()
+                        .accessibilityIdentifier("auth.apiKeyName")
+                }
+                GridRow {
+                    Text("AUTH_API_KEY_VALUE")
+                    credentialField(
+                        "AUTH_API_KEY_VALUE",
+                        identifier: "auth.apiKeyValue",
+                        for: draft.apiKeyValueReference
+                    )
+                }
+                GridRow {
+                    Text("AUTH_API_KEY_ADD_TO")
+                    Picker("AUTH_API_KEY_ADD_TO", selection: apiKeyLocation) {
+                        Text("AUTH_API_KEY_LOCATION_HEADER").tag(APIKeyLocation.header)
+                        Text("AUTH_API_KEY_LOCATION_QUERY").tag(APIKeyLocation.query)
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .accessibilityIdentifier("auth.apiKeyLocation")
+                }
+            }
+        case .digest, .oauth2, .awsSigV4:
             Text("NOT_SUPPORTED_YET")
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("auth.notSupported")
@@ -105,6 +132,22 @@ struct AuthEditor: View {
         }
     }
 
+    private var apiKeyName: Binding<String> {
+        Binding {
+            draft.apiKeyName
+        } set: { name in
+            update { $0.apiKeyName = name }
+        }
+    }
+
+    private var apiKeyLocation: Binding<APIKeyLocation> {
+        Binding {
+            draft.apiKeyLocation
+        } set: { location in
+            update { $0.apiKeyLocation = location }
+        }
+    }
+
 }
 
 private struct AuthEditorPreview: View {
@@ -137,6 +180,14 @@ private struct AuthEditorPreview: View {
 
 #Preview("Bearer, Not Yet Available") {
     AuthEditorPreview(draft: AuthDraft(.bearer(BearerAuth(token: SecretReference()))), value: .notYetAvailable)
+}
+
+#Preview("API Key") {
+    AuthEditorPreview(draft: AuthDraft(.apiKey(APIKeyAuth(
+        name: "X-API-Key",
+        value: SecretReference(),
+        location: .query
+    ))))
 }
 
 #Preview("Not Supported") {

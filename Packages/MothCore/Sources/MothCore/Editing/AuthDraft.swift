@@ -14,7 +14,7 @@ public nonisolated enum AuthKind: Sendable, Hashable {
     case oauth2
     case awsSigV4
 
-    public static let editable: [AuthKind] = [.inherit, .none, .basic, .bearer]
+    public static let editable: [AuthKind] = [.inherit, .none, .basic, .bearer, .apiKey]
 
     init(_ auth: Auth) {
         switch auth {
@@ -51,12 +51,17 @@ public nonisolated struct AuthDraft: Sendable {
 
     public var kind: AuthKind
     public var username = ""
+    public var apiKeyName = ""
+    public var apiKeyLocation = APIKeyLocation.header
     private var storedPassword: SecretReference?
     private var storedToken: SecretReference?
+    private var storedAPIKeyValue: SecretReference?
     private var newPassword = SecretReference()
     private var newToken = SecretReference()
+    private var newAPIKeyValue = SecretReference()
     private var typedPassword: String?
     private var typedToken: String?
+    private var typedAPIKeyValue: String?
     private var unsupportedAuth: Auth?
 
     public init(_ auth: Auth) {
@@ -69,7 +74,11 @@ public nonisolated struct AuthDraft: Sendable {
             self.storedPassword = basic.password
         case .bearer(let bearer):
             self.storedToken = bearer.token
-        case .apiKey, .digest, .oauth2, .awsSigV4:
+        case .apiKey(let apiKey):
+            self.apiKeyName = apiKey.name
+            self.apiKeyLocation = apiKey.location
+            self.storedAPIKeyValue = apiKey.value
+        case .digest, .oauth2, .awsSigV4:
             self.unsupportedAuth = auth
         }
     }
@@ -83,7 +92,12 @@ public nonisolated struct AuthDraft: Sendable {
                 password: typedPassword == nil ? passwordReference : newPassword
             ))
         case .bearer: .bearer(BearerAuth(token: typedToken == nil ? tokenReference : newToken))
-        case .apiKey, .digest, .oauth2, .awsSigV4: unsupportedAuth ?? .none
+        case .apiKey: .apiKey(APIKeyAuth(
+                name: apiKeyName,
+                value: typedAPIKeyValue == nil ? apiKeyValueReference : newAPIKeyValue,
+                location: apiKeyLocation
+            ))
+        case .digest, .oauth2, .awsSigV4: unsupportedAuth ?? .none
         }
     }
 
@@ -100,11 +114,16 @@ public nonisolated struct AuthDraft: Sendable {
         storedToken ?? newToken
     }
 
+    public var apiKeyValueReference: SecretReference {
+        storedAPIKeyValue ?? newAPIKeyValue
+    }
+
     public var credentialReference: SecretReference? {
         switch kind {
         case .basic: passwordReference
         case .bearer: tokenReference
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4: nil
+        case .apiKey: apiKeyValueReference
+        case .inherit, .none, .digest, .oauth2, .awsSigV4: nil
         }
     }
 
@@ -113,6 +132,8 @@ public nonisolated struct AuthDraft: Sendable {
             typedPassword
         } else if reference == tokenReference {
             typedToken
+        } else if reference == apiKeyValueReference {
+            typedAPIKeyValue
         } else {
             nil
         }
@@ -123,6 +144,8 @@ public nonisolated struct AuthDraft: Sendable {
             typedPassword = text
         } else if reference == tokenReference {
             typedToken = text
+        } else if reference == apiKeyValueReference {
+            typedAPIKeyValue = text
         }
     }
 
@@ -134,10 +157,13 @@ public nonisolated struct AuthDraft: Sendable {
         if let typedToken, isStored(tokenReference, typedToken) {
             self.typedToken = nil
         }
+        if let typedAPIKeyValue, isStored(apiKeyValueReference, typedAPIKeyValue) {
+            self.typedAPIKeyValue = nil
+        }
     }
 
-    /// A password is always saved, because Basic can send a username alone. An empty token is not, because a header
-    /// can't send one, and a credential with no value is reported rather than sent.
+    /// A password is always saved, because Basic can send a username alone. An empty token or API key value is not,
+    /// because a credential with no value is reported rather than sent.
     public func credentialWrites() -> [CredentialWrite] {
         switch kind {
         case .basic:
@@ -154,7 +180,13 @@ public nonisolated struct AuthDraft: Sendable {
             } else {
                 []
             }
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4:
+        case .apiKey:
+            if let typedAPIKeyValue, !typedAPIKeyValue.isEmpty {
+                [CredentialWrite(reference: newAPIKeyValue, value: typedAPIKeyValue)]
+            } else {
+                []
+            }
+        case .inherit, .none, .digest, .oauth2, .awsSigV4:
             []
         }
     }
@@ -169,7 +201,8 @@ public nonisolated struct AuthDraft: Sendable {
         switch kind {
         case .basic: typedPassword
         case .bearer: typedToken
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4: nil
+        case .apiKey: typedAPIKeyValue
+        case .inherit, .none, .digest, .oauth2, .awsSigV4: nil
         }
     }
 
@@ -182,7 +215,11 @@ public nonisolated struct AuthDraft: Sendable {
             typedPassword = nil
         case .bearer:
             typedToken = nil
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4:
+        case .apiKey:
+            apiKeyName = saved.apiKeyName
+            apiKeyLocation = saved.apiKeyLocation
+            typedAPIKeyValue = nil
+        case .inherit, .none, .digest, .oauth2, .awsSigV4:
             break
         }
         rebaseCredentials(onto: saved)
@@ -192,6 +229,7 @@ public nonisolated struct AuthDraft: Sendable {
     public mutating func rebaseCredentials(onto saved: AuthDraft) {
         storedPassword = saved.storedPassword
         storedToken = saved.storedToken
+        storedAPIKeyValue = saved.storedAPIKeyValue
         unsupportedAuth = saved.unsupportedAuth
         if unsupportedAuth == nil, !AuthKind.editable.contains(kind) {
             kind = saved.kind
@@ -201,6 +239,9 @@ public nonisolated struct AuthDraft: Sendable {
         }
         if newToken == storedToken {
             newToken = SecretReference()
+        }
+        if newAPIKeyValue == storedAPIKeyValue {
+            newAPIKeyValue = SecretReference()
         }
     }
 
