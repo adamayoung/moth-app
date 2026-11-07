@@ -145,20 +145,19 @@ public nonisolated struct RequestSender: Sendable {
 
     private func transmit(
         _ request: URLRequest,
-        cookies: (any CookieJar)?,
+        cookies: any CookieJar?,
         notes: [ResponseNote],
         digest: DigestAuthProvider?
     ) async -> Transmission {
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            let (response, measured) = try await timedSend(request, cookies: cookies)
-            guard response.status == 401, let digest else {
-                return Transmission(response, measured: measured, notes: notes)
+            let sent = try await timedSend(request, cookies: cookies)
+            guard sent.response.status == 401, let digest else {
+                return Transmission(sent.response, measured: sent.measured, notes: notes)
             }
             return try await answerDigestChallenge(
-                in: response,
-                measured: measured,
+                in: sent,
                 notes: notes,
                 to: request,
                 with: digest,
@@ -176,7 +175,10 @@ public nonisolated struct RequestSender: Sendable {
 
 private nonisolated extension RequestSender {
 
-    func timedSend(_ request: URLRequest, cookies: (any CookieJar)?) async throws -> (HTTPResponse, Duration) {
+    func timedSend(
+        _ request: URLRequest,
+        cookies: any CookieJar?
+    ) async throws -> (response: HTTPResponse, measured: Duration) {
         let clock = ContinuousClock()
         let start = clock.now
         let response = try await transport.send(request, cookies: cookies)
@@ -187,13 +189,13 @@ private nonisolated extension RequestSender {
     /// every send starts again with none. After a redirect, only a request with no body to another URL on its origin is
     /// answered: one with a body may have become a GET, and another origin is a host the request didn't name.
     func answerDigestChallenge(
-        in refusal: HTTPResponse,
-        measured: Duration,
+        in sent: (response: HTTPResponse, measured: Duration),
         notes: [ResponseNote],
         to request: URLRequest,
         with digest: DigestAuthProvider,
-        cookies: (any CookieJar)?
+        cookies: any CookieJar?
     ) async throws -> Transmission {
+        let (refusal, measured) = sent
         let challenges = AuthChallenge.all(in: refusal.value(forHeader: "WWW-Authenticate") ?? "")
         guard let challenge = DigestChallenge.first(in: challenges) else {
             let isOffered = challenges.contains { $0.isScheme("Digest") }
@@ -221,7 +223,7 @@ private nonisolated extension RequestSender {
     /// The same jar as the first send, so a cookie the refusal set goes with the answer.
     private func transmitAnswer(
         _ answer: URLRequest,
-        cookies: (any CookieJar)?,
+        cookies: any CookieJar?,
         notes: [ResponseNote]
     ) async throws -> Transmission {
         let clock = ContinuousClock()

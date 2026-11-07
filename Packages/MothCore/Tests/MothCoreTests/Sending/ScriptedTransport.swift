@@ -13,7 +13,7 @@ final nonisolated class ScriptedTransport: HTTPTransport {
     typealias Reply = @Sendable () async throws -> HTTPResponse
 
     private let sent = Mutex<[URLRequest]>([])
-    private let jars = Mutex<[(any CookieJar)?]>([])
+    private let jars = Mutex<[any CookieJar?]>([])
     private let replies: [Reply]
     private let arrival: AsyncStream<Int>.Continuation
     let arrivals: AsyncStream<Int>
@@ -31,12 +31,12 @@ final nonisolated class ScriptedTransport: HTTPTransport {
         sent.withLock(\.self)
     }
 
-    var cookieJars: [(any CookieJar)?] {
+    var cookieJars: [any CookieJar?] {
         jars.withLock(\.self)
     }
 
     @concurrent
-    func send(_ request: URLRequest, cookies: (any CookieJar)?) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies: any CookieJar?) async throws -> HTTPResponse {
         jars.withLock { $0.append(cookies) }
         let count = sent.withLock {
             $0.append(request)
