@@ -44,6 +44,29 @@ struct VariableResolverCredentialTests {
         #expect(resolved.unresolved == [UnresolvedVariable(name: "bearerToken", reason: .undefined)])
     }
 
+    @Test("An API key's name and value resolve, and go out resolved", arguments: [
+        (APIKeyLocation.header, "https://example.com", "abc" as String?),
+        (.query, "https://example.com?X-Tenant=abc", nil)
+    ])
+    func apiKeyResolves(location: APIKeyLocation, url: String, header: String?) async throws {
+        await store.save("{{keyValue}}", for: "token")
+
+        let resolved = try await resolve(
+            auth: .apiKey(APIKeyAuth(name: "X-{{keyName}}", value: token, location: location)),
+            environment: [.plain("keyName", "Tenant"), .plain("keyValue", "abc")]
+        )
+        let built = try await RequestBuilder().build(ResolvedRequest(
+            url: "https://example.com",
+            auth: resolved.auth,
+            credentials: resolved.credentials
+        ))
+
+        #expect(resolved.auth == .apiKey(APIKeyAuth(name: "X-Tenant", value: token, location: location)))
+        #expect(resolved.credentials == [token: "abc"])
+        #expect(built.urlRequest.url?.absoluteString == url)
+        #expect(built.urlRequest.value(forHTTPHeaderField: "X-Tenant") == header)
+    }
+
     @Test("A missing credential is reported by its reference, and has no value")
     func missingCredentialIsReported() async throws {
         let resolved = try await resolve(auth: .bearer(BearerAuth(token: token)))

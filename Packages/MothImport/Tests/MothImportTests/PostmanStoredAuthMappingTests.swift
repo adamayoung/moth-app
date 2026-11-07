@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import Foundation
 import MothCore
 import MothImport
 import Testing
@@ -87,7 +88,76 @@ struct PostmanStoredAuthMappingTests {
         #expect(apiKey.name == "X-Key")
         #expect(apiKey.location == expected)
         #expect(await Fixture.stored(apiKey.value, in: store) == "abc")
-        #expect(result.imported.unsupportedAuth[.apiKey] == 1)
+        #expect(result.imported.unsupportedAuth.isEmpty)
+    }
+
+    @Test("A real Postman export's API key goes out, replacing the header Postman wrote beside it")
+    func appliesAnExportedAPIKey() async throws {
+        let store = InMemorySecretStore()
+        let exported = try String(decoding: Fixture.data("postman-schemas/apikeyAuthTest.json"), as: UTF8.self)
+        // This export declares the `http` schema URL, which `PostmanSchema` doesn't accept.
+        let accepted = exported.replacing("http://schema", with: "https://schema")
+        let imported = try await Fixture.importing(contents: accepted, secretStore: store)
+        let collection = try #require(imported.collection)
+        let request = try #require(collection.requests.first)
+
+        let built = try await Self.built(request, in: collection, store: store)
+
+        #expect(imported.imported.unsupportedAuth.isEmpty)
+        #expect(built.urlRequest.url?.absoluteString == "https://postman-echo.com/get")
+        #expect(built.urlRequest.allHTTPHeaderFields == ["token": "wkjehbxoqnunc2k3"])
+        #expect(built.notices.isEmpty)
+    }
+
+    @Test("An imported query key with variables goes out, from a snippet because no licensed fixture has one")
+    func appliesAnImportedQueryKey() async throws {
+        let store = InMemorySecretStore()
+        let collection = try #require(await Fixture.importingSnippet(
+            items: #"""
+            [{
+                "name": "a",
+                "request": {
+                    "method": "GET",
+                    "url": "https://example.com/users",
+                    "auth": {
+                        "type": "apikey",
+                        "apikey": [
+                            { "key": "key", "value": "{{keyName}}", "type": "string" },
+                            { "key": "value", "value": "{{keyValue}}", "type": "string" },
+                            { "key": "in", "value": "query", "type": "string" }
+                        ]
+                    }
+                }
+            }]
+            """#,
+            extraKeys: #"""
+            "variable": [
+                { "key": "keyName", "value": "api_key" },
+                { "key": "keyValue", "value": "a b" }
+            ],
+            """#,
+            secretStore: store
+        ).collection)
+        let request = try #require(collection.requests.first)
+
+        let built = try await Self.built(request, in: collection, store: store)
+
+        #expect(built.urlRequest.url?.absoluteString == "https://example.com/users?api_key=a%20b")
+        #expect(built.notices.isEmpty)
+    }
+
+    private static func built(
+        _ request: Request,
+        in collection: RequestCollection,
+        store: some SecretStore
+    ) async throws -> BuiltRequest {
+        let resolved = try await VariableResolver(secretStore: store).resolve(
+            request,
+            collection: collection.variables,
+            environment: [],
+            globals: []
+        )
+        return try await RequestBuilder().build(resolved)
     }
 
     @Test("An API key with no location goes in a header, Postman's default")
