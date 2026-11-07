@@ -56,7 +56,7 @@ nonisolated struct URLTemplateText {
     func addressFillingPathVariables(from rows: [KeyValue]) -> String {
         let segments = authorityAndPath.enumerated().map { index, segment in
             guard index > 0 else {
-                return String(segment)
+                return Self.withUserinfoEscaped(segment)
             }
             guard let name = segment.pathVariableName, let row = rows.row(filling: name) else {
                 return segment.urlEscaped
@@ -64,6 +64,14 @@ nonisolated struct URLTemplateText {
             return row.value.urlDisplayEncoded
         }
         return scheme + segments.joined(separator: "/")
+    }
+
+    /// A host stays as written, because `URLComponents` gives it an IDNA form that percent-encoding wouldn't.
+    private static func withUserinfoEscaped(_ authority: Substring) -> String {
+        guard let separator = authority.lastIndex(of: "@") else {
+            return String(authority)
+        }
+        return authority[..<separator].urlEscaped + authority[separator...]
     }
 
     var withoutQuery: String {
@@ -137,7 +145,7 @@ private nonisolated extension StringProtocol where SubSequence == Substring {
     /// Encodes what `URLComponents` would, for a URL it can't parse, so an escape stays one and a stray `%` doesn't.
     var urlEscaped: String {
         mapOutsideVariables { text in
-            let escapes = text.replacing(/%(?![0-9A-Fa-f]{2})/, with: "%25")
+            let escapes = text.replacing(/%(?![0-9A-Fa-f]{2})/.matchingSemantics(.unicodeScalar), with: "%25")
             return escapes.addingPercentEncoding(withAllowedCharacters: String.urlCharacters) ?? String(escapes)
         }
     }
@@ -153,6 +161,10 @@ private nonisolated extension String {
 }
 
 public nonisolated extension StringProtocol where SubSequence == Substring {
+
+    var hasVariable: Bool {
+        !variableRanges.isEmpty
+    }
 
     var urlDisplayEncoded: String {
         mapOutsideVariables { String($0).percentEncoded }

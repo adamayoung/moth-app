@@ -119,6 +119,19 @@ final class GenerateCodeTests: MothTestCase {
     }
 
     @MainActor
+    func testEscapeClosesTheSheetFromTheCode() {
+        openListUsers()
+        let (screen, code) = screens()
+        screen.chooseFromRequestMenu(generateCode)
+        XCTAssertTrue(code.code.waitForExistence(timeout: 10))
+        code.code.click()
+
+        app.typeKey(.escape, modifierFlags: [])
+
+        XCTAssertTrue(code.waitForDismissal())
+    }
+
+    @MainActor
     func testFolderContextMenuOffersNoCode() {
         revealListUsers()
         let screen = screens().0

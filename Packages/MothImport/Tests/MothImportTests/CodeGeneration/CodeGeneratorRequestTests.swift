@@ -146,6 +146,39 @@ struct CodeGeneratorRequestTests {
         #expect(!code.swift.contains("forHTTPHeaderField"))
     }
 
+    @Test(
+        "A variable in a row doesn't excuse what filling it in can't fix",
+        arguments: [
+            ("X-Inject", "a\r\nEvil: {{token}}"),
+            ("{{name}}", "a\r\nEvil: b"),
+            ("not a token", "{{value}}"),
+            ("@{{path}}", "1"),
+            ("X-Key", "日本語{{"),
+            ("X-Key", "日本語")
+        ]
+    )
+    func variableDoesntExcuseARow(name: String, value: String) async throws {
+        let code = try await code(for: Request(
+            name: "Users",
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: name, value: value)]
+        ))
+
+        #expect(!code.curl.contains("--header"))
+        #expect(code.curl.hasPrefix("# "))
+    }
+
+    @Test("A non-breaking space is a value, so cURL doesn't send it as empty")
+    func nonBreakingSpaceIsAValue() async throws {
+        let code = try await code(for: Request(
+            name: "Users",
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: "X-Sep", value: "\u{A0}")]
+        ))
+
+        #expect(code.curl.contains("--header 'X-Sep: \u{A0}'"))
+    }
+
     @Test("A header with a variable left in it stays, because filling it in may make it valid")
     func headerWithAVariableLeftIn() async throws {
         let code = try await code(for: Request(

@@ -48,7 +48,8 @@ private nonisolated extension CodeHeader {
 
     /// `Name:` with a blank value tells cURL to remove the header, and only `Name;` sends it empty.
     var curlOption: String {
-        "--header \((value.allSatisfy(\.isWhitespace) ? "\(name);" : "\(name): \(value)").shellQuoted)"
+        let isBlank = value.allSatisfy { $0 == " " || $0 == "\t" }
+        return "--header \((isBlank ? "\(name);" : "\(name): \(value)").shellQuoted)"
     }
 
 }

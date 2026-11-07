@@ -84,6 +84,14 @@ struct CodeGeneratorAuthTests {
         #expect(code.curl == "curl --url 'https://example.com?a=1&key=<api-key>'")
     }
 
+    @Test("An API key name Send refuses is left out, with a comment", arguments: ["@/etc/passwd", "X\r\nEvil: 1"])
+    func apiKeyWithAnUnsendableName(name: String) async throws {
+        let code = try await code(auth: .apiKey(APIKeyAuth(name: name, value: SecretReference(), location: .header)))
+
+        let comment = "Headers that can\u{2019}t be sent are left out."
+        #expect(code.curl == "# \(comment)\ncurl --url 'https://example.com/users'")
+    }
+
     @Test("An API key with no name sends nothing, and says so, as it does on Send")
     func apiKeyWithNoName() async throws {
         let code = try await code(auth: .apiKey(APIKeyAuth(name: "", value: SecretReference(), location: .header)))

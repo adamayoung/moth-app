@@ -120,6 +120,20 @@ struct WrittenAddressTests {
         #expect(ResolvedRequest(url: "http://münchen.de/é").writtenAddress() == "http://münchen.de/%C3%A9")
     }
 
+    @Test("A % before a combining mark is stray, because the regex works on scalars")
+    func strayPercentBeforeACombiningMark() {
+        let request = ResolvedRequest(url: "http://example.com/a%\u{301}b")
+
+        #expect(request.writtenAddress() == "http://example.com/a%25%CC%81b")
+    }
+
+    @Test("Userinfo is encoded as Send encodes it, though the host stays as written")
+    func userinfo() {
+        let request = ResolvedRequest(url: "http://user name:100%@münchen.de/a")
+
+        #expect(request.writtenAddress() == "http://user%20name:100%25@münchen.de/a")
+    }
+
     @Test("A port left as a variable isn't a scheme")
     func portAsAVariable() {
         #expect(ResolvedRequest(url: "localhost:{{port}}/users").writtenAddress() == "http://localhost:{{port}}/users")
