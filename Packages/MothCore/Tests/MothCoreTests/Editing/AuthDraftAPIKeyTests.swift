@@ -32,7 +32,7 @@ struct AuthDraftAPIKeyTests {
         #expect(draft.apiKeyName == "X-Key")
         #expect(draft.apiKeyLocation == .query)
         #expect(draft.apiKeyValueReference == value)
-        #expect(draft.credentialReference == value)
+        #expect(draft.credentialReferences == [value])
     }
 
     @Test("A new key goes in a header, with no name")

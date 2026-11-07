@@ -11,9 +11,14 @@ public nonisolated struct RequestBuilder: Sendable {
     private static let methodsWithoutBodies: Set<String> = ["GET", "HEAD"]
 
     private let multipartBoundary: @Sendable () -> String
+    private let now: @Sendable () -> Date
 
-    public init(multipartBoundary: @escaping @Sendable () -> String = { "moth-\(UUID().uuidString)" }) {
+    public init(
+        multipartBoundary: @escaping @Sendable () -> String = { "moth-\(UUID().uuidString)" },
+        now: @escaping @Sendable () -> Date = { Date() }
+    ) {
         self.multipartBoundary = multipartBoundary
+        self.now = now
     }
 
     @concurrent
@@ -32,7 +37,7 @@ public nonisolated struct RequestBuilder: Sendable {
         omissions.merge(applyBody(of: request, to: &urlRequest))
         omissions.notices += emptiedKeyNotices(of: request, bodyWasLeftOff: omissions.leftOut.contains(.body))
 
-        let authProvider = request.authProvider
+        let authProvider = request.authProvider(signingAt: now())
         try await authProvider?.apply(to: &urlRequest)
 
         omissions.leftOut.formUnion(authProvider == nil ? [.auth] : request.rowsReplacedByAuth)

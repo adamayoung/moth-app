@@ -1,17 +1,6 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
-    "IMPORT_AUTH_AWS_SIGV4" : {
-      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
-      "localizations" : {
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AWS Signature"
-          }
-        }
-      }
-    },
     "IMPORT_AUTH_DIGEST" : {
       "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
       "localizations" : {
