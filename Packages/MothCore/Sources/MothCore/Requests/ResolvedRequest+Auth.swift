@@ -7,8 +7,8 @@ import Foundation
 
 nonisolated extension ResolvedRequest {
 
-    /// `nil` for a credential with no value too, which `unresolvedCredentials` has already reported. AWS Signature
-    /// stops the build instead, because an unsigned call to AWS would come back as a bare 403.
+    /// `nil` for a credential with no value too, which `unresolvedCredentials` has already reported. AWS Signature's
+    /// required ones stop the build instead, because an unsigned call to AWS would come back as a bare 403.
     func authProvider(signingAt date: Date) -> (any AuthProvider)? {
         switch auth {
         case .basic(let basic):
@@ -20,14 +20,7 @@ nonisolated extension ResolvedRequest {
                 APIKeyAuthProvider(name: apiKey.name, value: $0, location: apiKey.location)
             }
         case .awsSigV4(let sigV4):
-            AWSSigV4AuthProvider(
-                accessKey: credentials[sigV4.accessKeyID] ?? "",
-                secretKey: credentials[sigV4.secretAccessKey] ?? "",
-                sessionToken: sigV4.sessionToken.flatMap { credentials[$0] },
-                region: sigV4.region,
-                service: sigV4.service,
-                date: date
-            )
+            awsSigV4Provider(sigV4, signingAt: date)
         case .inherit, .none, .apiKey, .digest, .oauth2:
             nil
         }
@@ -66,14 +59,18 @@ nonisolated extension ResolvedRequest {
             return ["Authorization"]
         }
 
-        var names = ["Authorization", "X-Amz-Date"]
-        if sigV4.sessionToken.flatMap({ credentials[$0] })?.isEmpty == false {
-            names.append("X-Amz-Security-Token")
-        }
-        if sigV4.service == AWSSigV4Signer.s3 {
-            names.append("X-Amz-Content-Sha256")
-        }
-        return names
+        return awsSigV4Provider(sigV4, signingAt: .distantPast).headersSet
+    }
+
+    private func awsSigV4Provider(_ sigV4: AWSSigV4Auth, signingAt date: Date) -> AWSSigV4AuthProvider {
+        AWSSigV4AuthProvider(
+            accessKey: credentials[sigV4.accessKeyID] ?? "",
+            secretKey: credentials[sigV4.secretAccessKey] ?? "",
+            sessionToken: sigV4.sessionToken.flatMap { credentials[$0] },
+            region: sigV4.region,
+            service: sigV4.service,
+            date: date
+        )
     }
 
     private func rows(of headers: [KeyValue], named name: String) -> Set<RequestPart> {

@@ -16,11 +16,14 @@ nonisolated struct AWSSigV4Signer: Sendable {
         let region: String
         let service: String
 
+        var isS3: Bool {
+            service == "s3"
+        }
+
     }
 
-    static let s3 = "s3"
-
     private static let algorithm = "AWS4-HMAC-SHA256"
+    private static let unreservedBytes = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~".utf8)
 
     static func hash(_ data: Data) -> String {
         hexadecimal(SHA256.hash(data: data))
@@ -30,17 +33,17 @@ nonisolated struct AWSSigV4Signer: Sendable {
     let path: String
     let query: String?
     let headers: [String: String]
-    let payload: Data
+    let payloadHash: String
     let date: Date
     let credentials: Credentials
 
     var canonicalRequest: String {
-        [method, canonicalPath, canonicalQuery, canonicalHeaders, signedHeaders, Self.hash(payload)]
+        [method, canonicalPath, canonicalQuery, canonicalHeaders, signedHeaders, payloadHash]
             .joined(separator: "\n")
     }
 
     var stringToSign: String {
-        [Self.algorithm, timestamp, scope, Self.hash(Data(canonicalRequest.utf8))].joined(separator: "\n")
+        [Self.algorithm, timestamp, scope, Self.hash(wireBytes(of: canonicalRequest))].joined(separator: "\n")
     }
 
     var signature: String {
@@ -68,7 +71,7 @@ nonisolated struct AWSSigV4Signer: Sendable {
     }
 
     private var canonicalPath: String {
-        credentials.service == Self.s3 ? s3Path : normalizedPath
+        credentials.isS3 ? s3Path : normalizedPath
     }
 
     /// S3 keys are literal, so `a//b` and `a/../b` name real objects, and S3 encodes only once.
@@ -79,7 +82,7 @@ nonisolated struct AWSSigV4Signer: Sendable {
 
         return path
             .split(separator: "/", omittingEmptySubsequences: false)
-            .map { segment in (String(segment).removingPercentEncoding ?? String(segment)).percentEncoded }
+            .map { Self.reencoded($0) }
             .joined(separator: "/")
     }
 
@@ -104,7 +107,7 @@ nonisolated struct AWSSigV4Signer: Sendable {
             .split(separator: "&")
             .map { pair -> (name: String, value: String) in
                 let parts = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
-                return (Self.canonicalQueryText(parts[0]), Self.canonicalQueryText(parts.dropFirst().first ?? ""))
+                return (Self.reencodedQueryText(parts[0]), Self.reencodedQueryText(parts.dropFirst().first ?? ""))
             }
             .sorted { ($0.name, $0.value) < ($1.name, $1.value) }
             .map { "\($0.name)=\($0.value)" }
@@ -112,9 +115,36 @@ nonisolated struct AWSSigV4Signer: Sendable {
     }
 
     /// A server reads a literal `+` in a query as a space.
-    private static func canonicalQueryText(_ text: Substring) -> String {
-        let spaced = String(text).replacing("+", with: " ")
-        return (spaced.removingPercentEncoding ?? spaced).percentEncoded
+    private static func reencodedQueryText(_ text: Substring) -> String {
+        reencoded(String(text).replacing("+", with: " "))
+    }
+
+    /// Works on bytes, because an escape need not be UTF-8, and text decoding would lose `%E9`.
+    private static func reencoded(_ text: some StringProtocol) -> String {
+        var bytes: [UInt8] = []
+        var remainder = Substring(text).utf8
+
+        while let byte = remainder.popFirst() {
+            if byte == UInt8(ascii: "%"), let escaped = escapedByte(at: remainder) {
+                bytes.append(escaped)
+                remainder = remainder.dropFirst(2)
+            } else {
+                bytes.append(byte)
+            }
+        }
+
+        return bytes.map { unreservedBytes.contains($0) ? String(UnicodeScalar($0)) : String(format: "%%%02X", $0) }
+            .joined()
+    }
+
+    private static func escapedByte(at text: Substring.UTF8View) -> UInt8? {
+        let digits = String(decoding: text.prefix(2), as: UTF8.self)
+
+        guard digits.count == 2, digits.allSatisfy(\.isHexDigit) else {
+            return nil
+        }
+
+        return UInt8(digits, radix: 16)
     }
 
     private var signedRows: [(name: String, value: String)] {
@@ -125,12 +155,17 @@ nonisolated struct AWSSigV4Signer: Sendable {
 
     private var canonicalHeaders: String {
         signedRows
-            .map { "\($0.name):\($0.value.split(whereSeparator: \.isWhitespace).joined(separator: " "))\n" }
+            .map { "\($0.name):\($0.value.split { $0 == " " || $0 == "\t" }.joined(separator: " "))\n" }
             .joined()
     }
 
     private var signedHeaders: String {
         signedRows.map(\.name).joined(separator: ";")
+    }
+
+    /// URLSession writes a header value as Latin-1, and the server hashes the bytes it receives.
+    private func wireBytes(of text: String) -> Data {
+        text.data(using: .isoLatin1) ?? Data(text.utf8)
     }
 
     private static func authenticate(_ message: String, with key: SymmetricKey) -> Data {

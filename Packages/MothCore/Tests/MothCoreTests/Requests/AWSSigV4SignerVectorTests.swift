@@ -35,25 +35,25 @@ struct AWSSigV4SignerVectorTests {
 /// `/example space/` stands for a path already encoded once on the wire, and a `URL` couldn't hold it.
 nonisolated struct AWSSigV4Vector: Sendable, CustomTestStringConvertible {
 
-    private struct Context: Decodable {
+    private struct ContextCredentials: Decodable {
 
-        struct Credentials: Decodable {
+        let accessKeyID: String
+        let secretAccessKey: String
+        let token: String?
 
-            let accessKeyID: String
-            let secretAccessKey: String
-            let token: String?
+        private enum CodingKeys: String, CodingKey {
 
-            private enum CodingKeys: String, CodingKey {
-
-                case accessKeyID = "access_key_id"
-                case secretAccessKey = "secret_access_key"
-                case token
-
-            }
+            case accessKeyID = "access_key_id"
+            case secretAccessKey = "secret_access_key"
+            case token
 
         }
 
-        let credentials: Credentials
+    }
+
+    private struct Context: Decodable {
+
+        let credentials: ContextCredentials
         let normalize: Bool
         let region: String
         let service: String
@@ -122,7 +122,7 @@ nonisolated struct AWSSigV4Vector: Sendable, CustomTestStringConvertible {
             path: request.path,
             query: request.query,
             headers: headers,
-            payload: request.body,
+            payloadHash: AWSSigV4Signer.hash(request.body),
             date: context.timestamp,
             credentials: AWSSigV4Signer.Credentials(
                 accessKey: context.credentials.accessKeyID,

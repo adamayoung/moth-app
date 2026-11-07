@@ -86,10 +86,10 @@ struct AWSSigV4AuthProviderTests {
     @Test("Only s3 carries X-Amz-Content-Sha256")
     func contentHashIsS3Only() async throws {
         let plain = try await signed()
-        let s3 = try await signed(by: provider(service: "s3"))
+        let bucket = try await signed(by: provider(service: "s3"))
 
         #expect(plain.value(forHTTPHeaderField: "X-Amz-Content-Sha256") == nil)
-        #expect(s3.value(forHTTPHeaderField: "X-Amz-Content-Sha256") == Self.emptyPayloadHash)
+        #expect(bucket.value(forHTTPHeaderField: "X-Amz-Content-Sha256") == Self.emptyPayloadHash)
     }
 
     @Test("Headers the signature sets replace manual rows, in any case")
@@ -134,6 +134,21 @@ struct AWSSigV4AuthProviderTests {
 
         #expect(try signature(of: withPort) == signature(of: matchingHostHeader))
         #expect(try signature(of: withPort) != Self.vanillaSignature)
+    }
+
+    @Test("The signed host is the lowercase one URLSession sends")
+    func hostCase() async throws {
+        let request = try await signed("https://EXAMPLE.amazonaws.com/")
+
+        #expect(try signature(of: request) == Self.vanillaSignature)
+    }
+
+    @Test("An international host signs in the form URLSession sends")
+    func internationalHost() async throws {
+        let unicode = try await signed("https://bücher.example/")
+        let encoded = try await signed("https://xn--bcher-kva.example/")
+
+        #expect(try signature(of: unicode) == signature(of: encoded))
     }
 
     @Test("A literal + in a query signs as the space a server reads")

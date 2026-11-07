@@ -14,11 +14,8 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
 
     private static let defaultPorts = ["http": 80, "https": 443]
 
-    private let accessKey: String
-    private let secretKey: String
-    private let sessionToken: String?
-    private let region: String
-    private let service: String
+    private let credentials: AWSSigV4Signer.Credentials
+    private let sessionToken: String
     private let date: Date
 
     public init(
@@ -29,37 +26,48 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
         service: String,
         date: Date
     ) {
-        self.accessKey = accessKey
-        self.secretKey = secretKey
-        self.sessionToken = sessionToken
-        self.region = region
-        self.service = service
+        self.credentials = AWSSigV4Signer.Credentials(
+            accessKey: accessKey,
+            secretKey: secretKey,
+            region: region,
+            service: service
+        )
+        self.sessionToken = sessionToken ?? ""
         self.date = date
     }
 
-    public func apply(to request: inout URLRequest) async throws {
-        let token = sessionToken ?? ""
+    var headersSet: [String] {
+        ["Authorization", "X-Amz-Date"]
+            + (sessionToken.isEmpty ? [] : ["X-Amz-Security-Token"])
+            + (credentials.isS3 ? ["X-Amz-Content-Sha256"] : [])
+    }
 
-        guard ![accessKey, secretKey, region, service].contains(where: \.isEmpty) else {
+    public func apply(to request: inout URLRequest) async throws {
+        let fields = [credentials.accessKey, credentials.secretKey, credentials.region, credentials.service]
+
+        guard !fields.contains(where: \.isEmpty) else {
             throw RequestBuildError.incompleteAWSSignature
         }
-        guard [accessKey, region, service, token].allSatisfy(\.isSendableHeaderValue) else {
+        let headerText = [credentials.accessKey, credentials.region, credentials.service, sessionToken]
+        guard headerText.allSatisfy(\.isSendableHeaderValue) else {
             throw RequestBuildError.unsendableAWSSignature
         }
 
+        let payloadHash = AWSSigV4Signer.hash(request.httpBody ?? Data())
+
         request.setValue(date.formatted(.awsSigV4Timestamp), forHTTPHeaderField: "X-Amz-Date")
-        if !token.isEmpty {
-            request.setValue(token, forHTTPHeaderField: "X-Amz-Security-Token")
+        if !sessionToken.isEmpty {
+            request.setValue(sessionToken, forHTTPHeaderField: "X-Amz-Security-Token")
         }
-        if service == AWSSigV4Signer.s3 {
-            let payloadHash = AWSSigV4Signer.hash(request.httpBody ?? Data())
+        if credentials.isS3 {
             request.setValue(payloadHash, forHTTPHeaderField: "X-Amz-Content-Sha256")
         }
 
-        request.setValue(signer(of: request).authorization, forHTTPHeaderField: "Authorization")
+        let signer = signer(of: request, payloadHash: payloadHash)
+        request.setValue(signer.authorization, forHTTPHeaderField: "Authorization")
     }
 
-    private func signer(of request: URLRequest) -> AWSSigV4Signer {
+    private func signer(of request: URLRequest, payloadHash: String) -> AWSSigV4Signer {
         let components = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
 
         return AWSSigV4Signer(
@@ -67,14 +75,9 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
             path: components?.percentEncodedPath ?? "",
             query: components?.percentEncodedQuery,
             headers: signedHeaders(of: request, at: components),
-            payload: request.httpBody ?? Data(),
+            payloadHash: payloadHash,
             date: date,
-            credentials: AWSSigV4Signer.Credentials(
-                accessKey: accessKey,
-                secretKey: secretKey,
-                region: region,
-                service: service
-            )
+            credentials: credentials
         )
     }
 
@@ -89,8 +92,9 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
         return headers
     }
 
+    /// In the form URLSession sends: lowercase, and with an international name in Punycode.
     private static func host(of components: URLComponents?) -> String {
-        let host = components?.percentEncodedHost ?? ""
+        let host = components?.encodedHost?.lowercased() ?? ""
 
         guard let port = components?.port, port != defaultPorts[components?.scheme?.lowercased() ?? ""] else {
             return host

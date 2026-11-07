@@ -136,10 +136,11 @@ body. Digest answers a 401 challenge, so it also needs the transport to retry.
 
 `RequestBuilder` applies the provider last, so `AWSSigV4AuthProvider` signs the
 final URL, headers and body, with the time of that build. `AWSSigV4Signer` works on
-the wire form of a request, and AWS's published suite checks it. A credential with
-no value stops the build, unlike Basic and Bearer, because an unsigned call to AWS
-would come back as a bare 403. Headers URLSession reserves aren't signed, because it
-can rewrite them.
+the wire form of a request, and AWS's published suite checks it. A required
+credential with no value stops the build, unlike Basic and Bearer, because an
+unsigned call to AWS would come back as a bare 403. A session token with no value
+is left off and noted. Headers URLSession reserves aren't signed, because it can
+rewrite them.
 
 `.inherit` is replaced before resolution, by `RequestCollection.effectiveAuth(of:)`,
 because `VariableResolver` fetches secrets only for the auth it is given. The walk
