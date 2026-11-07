@@ -34,7 +34,6 @@ struct MainWindowView: View {
         clipboard: Clipboard
     ) {
         let writer = dataModel.writer
-        let sidebar = SidebarModel(writer: writer, secretStore: secretStore)
         let environments = EnvironmentsModel(
             writer: writer,
             secretStore: secretStore,
@@ -42,7 +41,6 @@ struct MainWindowView: View {
         )
         self.dataModel = dataModel
         self.isSyncedToICloud = isSyncedToICloud
-        self.sidebar = sidebar
         self.environments = environments
         let tabs = RequestTabsModel(
             store: tabStore,
@@ -61,6 +59,8 @@ struct MainWindowView: View {
             )
         )
         self.tabs = tabs
+        let sidebar = SidebarModel(writer: writer, secretStore: secretStore, openRequest: { tabs.open($0) })
+        self.sidebar = sidebar
         self.history = HistoryModel(
             writer: writer,
             transport: transport,

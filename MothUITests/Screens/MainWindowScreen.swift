@@ -208,6 +208,46 @@ struct MainWindowScreen {
         app.typeKey("w", modifierFlags: [.command, .shift])
     }
 
+    func sendKey() {
+        app.typeKey(.return, modifierFlags: .command)
+    }
+
+    func cancelSendKey() {
+        app.typeKey(".", modifierFlags: .command)
+    }
+
+    func newRequestKey() {
+        app.typeKey("t", modifierFlags: .command)
+    }
+
+    func editURLKey() {
+        app.typeKey("l", modifierFlags: .command)
+    }
+
+    func nextTabKey() {
+        app.typeKey(.tab, modifierFlags: .control)
+    }
+
+    func previousTabKey() {
+        app.typeKey(.tab, modifierFlags: [.control, .shift])
+    }
+
+    func nextTabBracketKey() {
+        app.typeKey("]", modifierFlags: [.command, .shift])
+    }
+
+    func previousTabBracketKey() {
+        app.typeKey("[", modifierFlags: [.command, .shift])
+    }
+
+    func waitForSelectedTab(_ label: String) -> Bool {
+        let selected = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "selected == true"),
+            object: requestTab(label)
+        )
+        return XCTWaiter.wait(for: [selected], timeout: 10) == .completed
+    }
+
     func waitForTabToClose(_ label: String) -> Bool {
         let gone = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == false"),

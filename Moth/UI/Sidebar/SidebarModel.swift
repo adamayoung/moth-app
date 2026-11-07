@@ -24,14 +24,16 @@ final class SidebarModel {
     private var hasReceivedTree = false
     private let writer: StoreWriter
     private let secretStore: any SecretStore
+    private let openRequest: (Request.ID) -> Void
 
-    init(writer: StoreWriter, secretStore: any SecretStore) {
+    init(writer: StoreWriter, secretStore: any SecretStore, openRequest: @escaping (Request.ID) -> Void = { _ in }) {
         self.writer = writer
         self.secretStore = secretStore
+        self.openRequest = openRequest
     }
 
-    /// Where File > New Folder and New Request put their item. A selected request's parent is the target, because a
-    /// new item takes the selection and a second New Request would otherwise be disabled.
+    /// Where File > New Folder and New Request put their item while a row is selected. A selected request's parent is
+    /// the target, because a new request takes the selection.
     var newItemContainer: TreeContainerID? {
         guard let selection else {
             return nil
@@ -42,8 +44,9 @@ final class SidebarModel {
         return tree.ancestors(of: selection).last.flatMap(TreeContainerID.init)
     }
 
-    /// Where File > Import cURL… puts its request, which unlike New Request has somewhere to go with nothing selected.
-    var importContainer: TreeContainerID? {
+    /// Where File > New Request and Import cURL… put a request, which unlike a folder has somewhere to go with nothing
+    /// selected.
+    var newRequestContainer: TreeContainerID? {
         newItemContainer ?? tree.roots.first.flatMap { TreeContainerID($0.id) }
     }
 
@@ -86,6 +89,7 @@ final class SidebarModel {
         let request = Request(name: String(localized: "DEFAULT_REQUEST_NAME"))
         if await perform({ [writer] in try await writer.createRequest(request, in: container) }) {
             reveal(.request(request.id), named: request.name, in: container)
+            openRequest(request.id)
         }
     }
 

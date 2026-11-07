@@ -131,6 +131,91 @@ final class RequestTabsModelTests {
         #expect(model.selectedTab?.name == "Top")
     }
 
+    @Test("The next tab is the one to the right, and the last wraps to the first")
+    func nextTabWraps() throws {
+        let model = try openedModel()
+        model.open(inFolder.id)
+        model.open(top.id)
+        model.open(last.id)
+        model.select(top.id)
+
+        model.selectNextTab()
+        #expect(model.selectedTab?.name == "Last")
+
+        model.selectNextTab()
+        #expect(model.selectedTab?.name == "In Folder")
+    }
+
+    @Test("The previous tab is the one to the left, and the first wraps to the last")
+    func previousTabWraps() throws {
+        let model = try openedModel()
+        model.open(inFolder.id)
+        model.open(top.id)
+        model.open(last.id)
+        model.select(top.id)
+
+        model.selectPreviousTab()
+        #expect(model.selectedTab?.name == "In Folder")
+
+        model.selectPreviousTab()
+        #expect(model.selectedTab?.name == "Last")
+    }
+
+    @Test("From a tab hidden until its row syncs, next goes to the first tab on show and previous to the last")
+    func hiddenSelectionMovesToAnEnd() throws {
+        let model = try openedModel()
+        model.open(inFolder.id)
+        model.open(last.id)
+        model.open(top.id)
+        let context = ModelContext(dataModel.container)
+        let requests = try context.fetch(FetchDescriptor<RequestModel>())
+        let treeWithoutTop = try CollectionTree(
+            collections: context.fetch(FetchDescriptor<CollectionModel>()),
+            folders: context.fetch(FetchDescriptor<FolderModel>()),
+            requests: requests.filter { $0.id != top.id }
+        )
+        model.collectionDidChange(CollectionSnapshot(tree: treeWithoutTop, requestIDs: Set(requests.map(\.id))))
+        #expect(model.selectedTab == nil)
+
+        model.selectNextTab()
+        #expect(model.selectedTab?.name == "In Folder")
+
+        model.select(top.id)
+        model.selectPreviousTab()
+        #expect(model.selectedTab?.name == "Last")
+    }
+
+    @Test("Moving between tabs needs two of them")
+    func cyclingNeedsTwoTabs() throws {
+        let model = try openedModel()
+        #expect(!model.canCycleTabs)
+
+        model.open(top.id)
+        #expect(!model.canCycleTabs)
+
+        model.open(last.id)
+        #expect(model.canCycleTabs)
+    }
+
+    @Test("Edit URL needs a tab whose request can be read, and asks only then")
+    func editURLNeedsAReadableTab() throws {
+        let model = try openedModel()
+        model.focusURL()
+        #expect(!model.canEditURL)
+        #expect(model.urlFocusRequests == 0)
+
+        model.open(top.id)
+        model.drafts.savedRequestDidChange(top)
+        model.focusURL()
+        #expect(model.canEditURL)
+        #expect(model.urlFocusRequests == 1)
+
+        model.drafts.savedRequestIsUnreadable(top.id)
+        model.focusURL()
+        #expect(!model.canEditURL)
+        #expect(model.urlFocusRequests == 1)
+    }
+
     @Test("A deleted request's tab closes, and the store forgets it")
     func deletedRequestClosesItsTab() async throws {
         let model = try openedModel()
