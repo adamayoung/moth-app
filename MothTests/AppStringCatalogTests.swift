@@ -283,6 +283,20 @@ extension AppStringCatalogTests {
     }
 
     @Test(
+        "The Request menu's keyboard commands come from the catalog with their en-GB value",
+        arguments: [
+            ("MENU_SEND", "Send"),
+            ("MENU_CANCEL_SEND", "Cancel"),
+            ("MENU_EDIT_URL", "Edit URL"),
+            ("MENU_NEXT_TAB", "Select Next Tab"),
+            ("MENU_PREVIOUS_TAB", "Select Previous Tab")
+        ]
+    )
+    func requestMenuHoldsEnglishValue(key: String, expected: String) throws {
+        try catalogHoldsEnglishValue(key: key, expected: expected)
+    }
+
+    @Test(
         "The note for undefined variables reads correctly in the singular and the plural",
         arguments: [
             (1, "1 variable isn\u{2019}t defined and was sent as written."),

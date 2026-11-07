@@ -73,13 +73,13 @@ final class SidebarEditingTests: MothTestCase {
     }
 
     @MainActor
-    func testFileMenuDisablesFolderAndRequestWithNothingSelected() {
+    func testFileMenuDisablesOnlyNewFolderWithNothingSelected() {
         let screen = seededScreen()
 
         screen.openFileMenu()
         XCTAssertTrue(screen.fileMenuItem("New Collection").isEnabled)
         XCTAssertFalse(screen.fileMenuItem("New Folder").isEnabled)
-        XCTAssertFalse(screen.fileMenuItem("New Request").isEnabled)
+        XCTAssertTrue(screen.fileMenuItem("New Request").isEnabled)
         screen.closeMenu()
 
         screen.select("Seeded Collection")

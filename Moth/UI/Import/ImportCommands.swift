@@ -36,7 +36,7 @@ struct ImportCommands: Commands {
             Button("MENU_IMPORT_CURL") {
                 context?.model.beginCurlImport()
             }
-            .disabled(context?.canImport != true || sidebar?.importContainer == nil)
+            .disabled(context?.canImport != true || sidebar?.newRequestContainer == nil)
         }
     }
 

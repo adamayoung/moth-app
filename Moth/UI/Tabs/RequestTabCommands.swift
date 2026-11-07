@@ -14,6 +14,28 @@ struct RequestTabCommandContext {
     let hasOpenTabs: Bool
     let selectedRequest: Request.ID?
     let savableRequest: Request.ID?
+    let send: SendCommand
+    let canEditURL: Bool
+    let canCycleTabs: Bool
+
+}
+
+extension RequestTabCommandContext {
+
+    /// Under a history entry the tabs stay live for Close Tab and moving between tabs, but nothing may act on a request
+    /// the person can't see.
+    init(tabs: RequestTabsModel, isShowing: Bool) {
+        let selected = tabs.selectedTab
+        self.init(
+            tabs: tabs,
+            hasOpenTabs: !tabs.openTabs.isEmpty,
+            selectedRequest: selected?.id,
+            savableRequest: selected.flatMap { tabs.drafts.canSave($0.id) ? $0.id : nil },
+            send: isShowing ? tabs.sendCommand : .unavailable,
+            canEditURL: isShowing && tabs.canEditURL,
+            canCycleTabs: tabs.canCycleTabs
+        )
+    }
 
 }
 

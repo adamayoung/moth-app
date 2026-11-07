@@ -119,7 +119,7 @@ struct SidebarModelTests {
         #expect(model.renaming == selection)
     }
 
-    @Test("With nothing selected, File > New has nowhere to put a new item")
+    @Test("With nothing selected, New Folder has nowhere to go")
     func nothingSelectedHasNoContainer() {
         #expect(model.newItemContainer == nil)
     }

@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import AppKit
 import MothCore
 import SwiftUI
 
@@ -12,7 +13,7 @@ struct SidebarCommandContext {
     let model: SidebarModel
     let environments: EnvironmentsModel
     let newItemContainer: TreeContainerID?
-    let importContainer: TreeContainerID?
+    let newRequestContainer: TreeContainerID?
 
 }
 
@@ -43,11 +44,12 @@ struct SidebarCommands: Commands {
             .disabled(context?.newItemContainer == nil)
 
             Button("MENU_NEW_REQUEST") {
-                if let context, let container = context.newItemContainer {
+                if let context, let container = context.newRequestContainer, NSApp.keyWindow == NSApp.mainWindow {
                     Task { await context.model.newRequest(in: container) }
                 }
             }
-            .disabled(context?.newItemContainer == nil)
+            .keyboardShortcut("t")
+            .disabled(context?.newRequestContainer == nil)
 
             Button("MENU_NEW_ENVIRONMENT") {
                 if let environments = context?.environments {
