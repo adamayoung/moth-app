@@ -76,7 +76,7 @@ struct StubHTTPTransportTests {
 
         #expect(response.status == status)
         #expect(response.value(forHeader: "Content-Type") == "application/json")
-        #expect(String(decoding: response.body, as: UTF8.self) == body)
+        #expect(String(bytes: response.body, encoding: .utf8) == body)
     }
 
     @Test("/refused fails to connect")

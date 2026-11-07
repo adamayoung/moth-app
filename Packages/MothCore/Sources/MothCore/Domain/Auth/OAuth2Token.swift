@@ -39,7 +39,7 @@ public nonisolated struct OAuth2Token: Sendable, Hashable, Codable {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let data = (try? encoder.encode(self)) ?? Data()
-        return String(decoding: data, as: UTF8.self)
+        return String(bytes: data, encoding: .utf8) ?? ""
     }
 
     public func state(at now: Date) -> State {

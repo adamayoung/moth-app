@@ -257,7 +257,7 @@ struct RequestSenderOAuth2Tests {
         )
 
         let entry = try #require(recorded.entry)
-        let encoded = try String(decoding: JSONEncoder().encode(entry.request), as: UTF8.self)
+        let encoded = try #require(String(bytes: JSONEncoder().encode(entry.request), encoding: .utf8))
         #expect(!encoded.contains("issued-tok"))
         #expect(!encoded.contains("s3cret"))
         #expect(!String(describing: entry).contains("issued-tok"))

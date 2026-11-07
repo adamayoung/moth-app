@@ -120,6 +120,7 @@ extension AuthEditor {
                         .controlSize(.small)
                 }
             }
+            .fixedSize()
             if let failure = accessToken.failure {
                 Text("AUTH_OAUTH2_TOKEN_FAILED")
                     .bold()
@@ -127,9 +128,11 @@ extension AuthEditor {
                 Text(verbatim: failure)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("auth.tokenFailureReason")
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var hasToken: Bool {

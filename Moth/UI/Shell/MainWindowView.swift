@@ -52,11 +52,7 @@ struct MainWindowView: View {
                 cookieJars: cookieJars,
                 activeEnvironment: activeEnvironment
             ),
-            code: RequestCodeModel(
-                dataModel: dataModel,
-                activeEnvironment: activeEnvironment,
-                clipboard: clipboard
-            ),
+            code: RequestCodeModel(dataModel: dataModel, activeEnvironment: activeEnvironment, clipboard: clipboard),
             accessTokens: AccessTokens(
                 dataModel: dataModel,
                 transport: transport,
