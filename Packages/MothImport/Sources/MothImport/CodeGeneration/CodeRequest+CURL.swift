@@ -46,9 +46,9 @@ nonisolated extension CodeRequest {
 
 private nonisolated extension CodeHeader {
 
-    /// `Name:` tells cURL to remove the header, and only `Name;` sends it empty.
+    /// `Name:` with a blank value tells cURL to remove the header, and only `Name;` sends it empty.
     var curlOption: String {
-        "--header \((value.isEmpty ? "\(name);" : "\(name): \(value)").shellQuoted)"
+        "--header \((value.allSatisfy(\.isWhitespace) ? "\(name);" : "\(name): \(value)").shellQuoted)"
     }
 
 }

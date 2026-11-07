@@ -124,16 +124,50 @@ struct CodeGeneratorRequestTests {
         #expect(code.swift.contains(#"request.addValue("", forHTTPHeaderField: "X-Empty")"#))
     }
 
-    @Test("A header name starting with @ is left out, because cURL would read it as a file and Send refuses it")
-    func headerNamedLikeAFile() async throws {
+    @Test(
+        "A header Send refuses is left out, with a comment",
+        arguments: [
+            ("@/etc/passwd", "cURL reads this name as a file"),
+            ("X-Inject", "a\r\nEvil: b"),
+            ("not a token", "1"),
+            ("X-Wide", "日本語")
+        ]
+    )
+    func unsendableHeader(name: String, value: String) async throws {
         let code = try await code(for: Request(
             name: "Users",
             urlTemplate: "https://example.com",
-            headers: [KeyValue(key: "@/etc/passwd", value: "x")]
+            headers: [KeyValue(key: name, value: value)]
         ))
 
-        #expect(code.curl == "curl --url 'https://example.com'")
-        #expect(!code.swift.contains("/etc/passwd"))
+        let comment = "Headers that can\u{2019}t be sent are left out."
+        #expect(code.curl == "# \(comment)\ncurl --url 'https://example.com'")
+        #expect(code.swift.hasPrefix("// \(comment)\nimport Foundation"))
+        #expect(!code.swift.contains("forHTTPHeaderField"))
+    }
+
+    @Test("A header with a variable left in it stays, because filling it in may make it valid")
+    func headerWithAVariableLeftIn() async throws {
+        let code = try await code(for: Request(
+            name: "Users",
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: "{{name}}", value: "1"), KeyValue(key: "X-Key", value: "日本語{{token}}")]
+        ))
+
+        #expect(code.curl.contains("--header '{{name}}: 1'"))
+        #expect(code.curl.contains("--header 'X-Key: 日本語{{token}}'"))
+        #expect(!code.curl.contains("#"))
+    }
+
+    @Test("A blank header value is sent as empty, because cURL drops the header otherwise")
+    func blankHeaderValue() async throws {
+        let code = try await code(for: Request(
+            name: "Users",
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: "X-Blank", value: "   ")]
+        ))
+
+        #expect(code.curl.contains("--header 'X-Blank;'"))
     }
 
     @Test("A URL with a space works in cURL, which refuses it as written")

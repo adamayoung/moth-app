@@ -67,7 +67,7 @@ public nonisolated struct RequestBuilder: Sendable {
                 continue
             }
 
-            guard header.key.isHTTPToken, header.value.isSendableHeaderValue else {
+            guard header.isSendableHeader else {
                 omissions.notices.append(.unsendableHeader(name: header.key))
                 omissions.leftOut.insert(.row(header.id))
                 continue

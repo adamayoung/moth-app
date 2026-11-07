@@ -29,7 +29,13 @@ nonisolated struct CodeRequest {
             body = CodeBody.Written(content: .none, contentType: nil)
         }
 
-        var headers = Self.manualHeaders(of: resolved).filter { !$0.hasName(auth.headerName) }
+        let rows = resolved.headers.filter { $0.isSent && !CodeHeader($0).hasName(auth.headerName) }
+        let writableRows = rows.filter(\.isWritableHeader)
+        if writableRows.count < rows.count {
+            notes.append(String(localized: "CODE_NOTE_HEADERS", bundle: .module))
+        }
+
+        var headers = Self.joiningCookies(of: writableRows)
         if let contentType = body.contentType, !headers.contains(where: \.isContentType) {
             headers.append(CodeHeader(name: "Content-Type", value: contentType))
         }
@@ -46,12 +52,11 @@ nonisolated struct CodeRequest {
     }
 
     /// `URLRequest` would join repeated cookies with a comma, which RFC 6265 reads as part of the first one's value.
-    /// A name starting with `@` is left out because cURL reads it as a file, and Send refuses the name.
-    private static func manualHeaders(of resolved: ResolvedRequest) -> [CodeHeader] {
+    private static func joiningCookies(of rows: [KeyValue]) -> [CodeHeader] {
         var headers: [CodeHeader] = []
 
-        for row in resolved.headers where row.isSent && !row.key.hasPrefix("@") {
-            let header = CodeHeader(name: row.key, value: row.value)
+        for row in rows {
+            let header = CodeHeader(row)
             if header.isCookie, let index = headers.firstIndex(where: \.isCookie) {
                 headers[index].value += "; \(row.value)"
             } else {
@@ -64,10 +69,28 @@ nonisolated struct CodeRequest {
 
 }
 
+private nonisolated extension KeyValue {
+
+    /// As Send decides, except that filling in a `{{variable}}` left in the row may make it valid.
+    var isWritableHeader: Bool {
+        isSendableHeader || key.contains("{{") || value.contains("{{")
+    }
+
+}
+
 nonisolated struct CodeHeader {
 
     let name: String
     var value: String
+
+    init(name: String, value: String) {
+        self.name = name
+        self.value = value
+    }
+
+    init(_ row: KeyValue) {
+        self.init(name: row.key, value: row.value)
+    }
 
     var isCookie: Bool {
         hasName("Cookie")

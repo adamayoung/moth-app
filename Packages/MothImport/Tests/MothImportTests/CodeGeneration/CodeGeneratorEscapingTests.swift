@@ -71,7 +71,7 @@ struct CodeGeneratorEscapingTests {
                 name: "Users",
                 method: HTTPMethod(rawValue: "PO'ST"),
                 urlTemplate: "-o/etc/passwd",
-                headers: [KeyValue(key: "X-It's", value: "line one\nline two")],
+                headers: [KeyValue(key: "X-It's", value: #"it's "here""#)],
                 body: .raw(content: #"it's "quoted" \(here)"#, contentType: "")
             ),
             scopes: VariableScopes()
@@ -79,10 +79,10 @@ struct CodeGeneratorEscapingTests {
 
         #expect(code.curl.contains(#"--url 'http://-o/etc/passwd'"#))
         #expect(code.curl.contains(#"--request 'PO'\''ST'"#))
-        #expect(code.curl.contains("--header 'X-It'\\''s: line one\nline two'"))
+        #expect(code.curl.contains(#"--header 'X-It'\''s: it'\''s "here"'"#))
         #expect(code.curl.contains(#"--data-raw 'it'\''s "quoted" \(here)'"#))
         #expect(code.swift.contains(#"request.httpMethod = "PO'ST""#))
-        #expect(code.swift.contains(#"request.addValue("line one\nline two", forHTTPHeaderField: "X-It's")"#))
+        #expect(code.swift.contains(#"request.addValue("it's \"here\"", forHTTPHeaderField: "X-It's")"#))
         #expect(code.swift.contains(#"Data("it's \"quoted\" \\(here)".utf8)"#))
     }
 

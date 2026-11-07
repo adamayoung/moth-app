@@ -622,8 +622,10 @@ It doesn't go through `RequestBuilder`, which refuses a URL with a variable left
 in it and drops what Send can't send yet. `CodeRequest` holds what both languages
 write, so they can't disagree, and `writtenAddress` builds the URL as text, with
 what a URL can't hold encoded outside `{{variables}}`. Like Send, it leaves out a
-body on GET or HEAD and an API key with no name, each with a comment, and a manual
-header or query parameter gives way to the auth that sets it. Every body kind is
+body on GET or HEAD, an API key with no name and a header that can't be sent, each
+with a comment, and a manual header or query parameter gives way to the auth that
+sets it. A header with a variable left in it stays, because filling it in may make
+it valid. Every body kind is
 written, with binary as a file reference. A request's settings are not. A form-data
 name holding `=` can't be written for cURL, which splits on the first `=`.
 

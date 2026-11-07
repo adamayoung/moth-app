@@ -55,7 +55,10 @@ nonisolated struct URLTemplateText {
 
     func addressFillingPathVariables(from rows: [KeyValue]) -> String {
         let segments = authorityAndPath.enumerated().map { index, segment in
-            guard index > 0, let name = segment.pathVariableName, let row = rows.row(filling: name) else {
+            guard index > 0 else {
+                return String(segment)
+            }
+            guard let name = segment.pathVariableName, let row = rows.row(filling: name) else {
                 return segment.urlEscaped
             }
             return row.value.urlDisplayEncoded
@@ -131,10 +134,11 @@ private nonisolated extension StringProtocol where SubSequence == Substring {
         }
     }
 
-    /// Encodes what `URLComponents` would, for a URL it can't parse. Keeps `%`, so an escape stays one.
+    /// Encodes what `URLComponents` would, for a URL it can't parse, so an escape stays one and a stray `%` doesn't.
     var urlEscaped: String {
         mapOutsideVariables { text in
-            text.addingPercentEncoding(withAllowedCharacters: String.urlCharacters) ?? String(text)
+            let escapes = text.replacing(/%(?![0-9A-Fa-f]{2})/, with: "%25")
+            return escapes.addingPercentEncoding(withAllowedCharacters: String.urlCharacters) ?? String(escapes)
         }
     }
 

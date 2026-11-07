@@ -45,6 +45,17 @@
         }
       }
     },
+    "CODE_NOTE_HEADERS" : {
+      "comment" : "A comment in generated code, for headers Moth can't send, such as a value with a line break.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Headers that can’t be sent are left out."
+          }
+        }
+      }
+    },
     "CODE_NOTE_OAUTH2" : {
       "comment" : "A comment in generated code, for a request that uses OAuth 2.0.",
       "localizations" : {

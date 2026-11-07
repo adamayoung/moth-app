@@ -108,6 +108,18 @@ struct WrittenAddressTests {
         #expect(request.writtenAddress() == "https://example.com/my%20files/{{name}}/caf%C3%A9/%C3%A9?q=a%20b#c%20d")
     }
 
+    @Test("A % that starts no escape is encoded, as Send encodes it")
+    func strayPercent() {
+        let request = ResolvedRequest(url: "http://example.com/?q=100%&a=1")
+
+        #expect(request.writtenAddress() == "http://example.com/?q=100%25&a=1")
+    }
+
+    @Test("A host stays as written, because a percent-encoded host isn't the IDNA form Send uses")
+    func hostStaysAsWritten() {
+        #expect(ResolvedRequest(url: "http://münchen.de/é").writtenAddress() == "http://münchen.de/%C3%A9")
+    }
+
     @Test("A port left as a variable isn't a scheme")
     func portAsAVariable() {
         #expect(ResolvedRequest(url: "localhost:{{port}}/users").writtenAddress() == "http://localhost:{{port}}/users")

@@ -9,6 +9,10 @@ public nonisolated extension KeyValue {
         isEnabled && !key.isEmpty
     }
 
+    var isSendableHeader: Bool {
+        key.isHTTPToken && value.isSendableHeaderValue
+    }
+
     var percentEncodedPair: String {
         "\(key.percentEncoded)=\(value.percentEncoded)"
     }
