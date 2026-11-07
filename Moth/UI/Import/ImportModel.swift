@@ -14,26 +14,37 @@ final class ImportModel {
 
     var isChoosingFile = false
     var report: ImportReport?
+    var isEnteringCurl = false
+    var curlText = ""
+    var curlProblem: CurlImportProblem?
     private(set) var isImporting = false
 
     private let source: ImportFileSource
     private let importer: PostmanImporter
+    private let curlImporter: CurlImporter
     private let sidebar: SidebarModel
     private let environments: EnvironmentsModel
     private let write: @Sendable (PostmanImportContent) async throws -> Void
+    private let createRequest: @Sendable (Request, TreeContainerID) async throws -> Void
+    private let openRequest: (Request.ID) -> Void
 
     init(
         source: ImportFileSource,
         secretStore: any SecretStore,
         sidebar: SidebarModel,
         environments: EnvironmentsModel,
-        write: @escaping @Sendable (PostmanImportContent) async throws -> Void
+        write: @escaping @Sendable (PostmanImportContent) async throws -> Void,
+        createRequest: @escaping @Sendable (Request, TreeContainerID) async throws -> Void,
+        openRequest: @escaping (Request.ID) -> Void
     ) {
         self.source = source
         self.importer = PostmanImporter(secretStore: secretStore)
+        self.curlImporter = CurlImporter(secretStore: secretStore)
         self.sidebar = sidebar
         self.environments = environments
         self.write = write
+        self.createRequest = createRequest
+        self.openRequest = openRequest
     }
 
     var canImport: Bool {
@@ -41,7 +52,60 @@ final class ImportModel {
     }
 
     private var isAnotherPresentationUp: Bool {
-        sidebar.presentedVariables != nil || sidebar.pendingDeletion != nil || environments.pendingDeletion != nil
+        isEnteringCurl || sidebar.presentedVariables != nil || sidebar.presentedAuthorization != nil
+            || sidebar.pendingDeletion != nil || environments.pendingDeletion != nil
+    }
+
+    var canImportCurl: Bool {
+        canImport && sidebar.importContainer != nil
+    }
+
+    var canSubmitCurl: Bool {
+        !isImporting && !curlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    func beginCurlImport() {
+        guard canImportCurl else {
+            return
+        }
+        curlText = ""
+        curlProblem = nil
+        isEnteringCurl = true
+    }
+
+    /// Refused once an import runs, because a request would still appear after the sheet had said it wouldn't.
+    func cancelCurlImport() {
+        if !isImporting {
+            isEnteringCurl = false
+            curlText = ""
+        }
+    }
+
+    /// A failure keeps the sheet, because closing it would lose the pasted text. Success clears the text, which can
+    /// hold a password.
+    func importCurl() async {
+        guard canSubmitCurl, let container = sidebar.importContainer else {
+            return
+        }
+        isImporting = true
+        defer { isImporting = false }
+        curlProblem = nil
+
+        do {
+            let result = try await curlImporter.importCommand(curlText) { [createRequest] request in
+                try await createRequest(request, container)
+            }
+            isEnteringCurl = false
+            curlText = ""
+            await sidebar.revealRequest(result.request.id, in: container)
+            openRequest(result.request.id)
+            report = ImportReport(result)
+        } catch CurlImportError.notACurlCommand {
+            curlProblem = .invalidCommand
+        } catch {
+            Logger.imports.error("A cURL import failed: \(String(describing: error), privacy: .private)")
+            curlProblem = .failed
+        }
     }
 
     func chooseFile() async {

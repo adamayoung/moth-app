@@ -57,7 +57,9 @@ struct ImportModelTests {
             secretStore: secretStore,
             sidebar: sidebar,
             environments: environments,
-            write: write ?? { try await writer.create($0) }
+            write: write ?? { try await writer.create($0) },
+            createRequest: { try await writer.createRequest($0, in: $1) },
+            openRequest: { _ in }
         )
     }
 

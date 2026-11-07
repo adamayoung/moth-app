@@ -22,6 +22,7 @@ extension FocusedValues {
 struct ImportCommands: Commands {
 
     @FocusedValue(\.importCommands) private var context
+    @FocusedValue(\.sidebarCommands) private var sidebar
 
     var body: some Commands {
         CommandGroup(after: .importExport) {
@@ -31,6 +32,11 @@ struct ImportCommands: Commands {
                 }
             }
             .disabled(context?.canImport != true)
+
+            Button("MENU_IMPORT_CURL") {
+                context?.model.beginCurlImport()
+            }
+            .disabled(context?.canImport != true || sidebar?.importContainer == nil)
         }
     }
 

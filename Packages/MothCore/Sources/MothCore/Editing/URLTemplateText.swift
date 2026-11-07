@@ -6,13 +6,13 @@
 import Foundation
 
 /// Splits by text, because `{{host}}/users` is no URL until it is resolved, and `URLComponents` refuses it.
-nonisolated struct URLTemplateText {
+public nonisolated struct URLTemplateText {
 
-    let address: String
-    let query: String?
+    public let address: String
+    public let query: String?
     let fragment: String?
 
-    init(_ text: String) {
+    public init(_ text: String) {
         let aroundFragment = text.trimmingCharacters(in: .whitespacesAndNewlines)
             .splitOutsideVariables(on: "#", maxSplits: 1)
         let aroundQuery = aroundFragment[0].splitOutsideVariables(on: "?", maxSplits: 1)
@@ -21,7 +21,7 @@ nonisolated struct URLTemplateText {
         self.fragment = aroundFragment.count > 1 ? String(aroundFragment[1]) : nil
     }
 
-    var queryPairs: [(key: String, value: String)] {
+    public var queryPairs: [(key: String, value: String)] {
         guard let query else {
             return []
         }
@@ -74,7 +74,7 @@ nonisolated struct URLTemplateText {
         return authority[..<separator].urlEscaped + authority[separator...]
     }
 
-    var withoutQuery: String {
+    public var withoutQuery: String {
         address + fragmentSuffix
     }
 

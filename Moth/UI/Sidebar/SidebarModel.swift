@@ -42,6 +42,11 @@ final class SidebarModel {
         return tree.ancestors(of: selection).last.flatMap(TreeContainerID.init)
     }
 
+    /// Where File > Import cURL… puts its request, which unlike New Request has somewhere to go with nothing selected.
+    var importContainer: TreeContainerID? {
+        newItemContainer ?? tree.roots.first.flatMap { TreeContainerID($0.id) }
+    }
+
     var collectionNames: Set<String> {
         Set(tree.roots.map(\.name))
     }
@@ -82,6 +87,12 @@ final class SidebarModel {
         if await perform({ [writer] in try await writer.createRequest(request, in: container) }) {
             reveal(.request(request.id), named: request.name, in: container)
         }
+    }
+
+    func revealRequest(_ id: Request.ID, in container: TreeContainerID) async {
+        await commitActiveRename()
+        expandAncestors(of: container)
+        selection = .request(id)
     }
 
     func beginRename(of id: TreeNodeID) async {
@@ -182,12 +193,16 @@ final class SidebarModel {
 
     private func reveal(_ id: TreeNodeID, named name: String, in container: TreeContainerID?) {
         if let container {
-            let parent = TreeNodeID(container)
-            expanded.formUnion(tree.ancestors(of: parent) + [parent])
+            expandAncestors(of: container)
         }
         selection = id
         renaming = id
         renameDraft = name
+    }
+
+    private func expandAncestors(of container: TreeContainerID) {
+        let parent = TreeNodeID(container)
+        expanded.formUnion(tree.ancestors(of: parent) + [parent])
     }
 
     /// A row that failed to change stays as it was on screen, so the sidebar shows the truth.

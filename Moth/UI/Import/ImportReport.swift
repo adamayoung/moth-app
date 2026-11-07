@@ -29,3 +29,15 @@ extension ImportReport {
     }
 
 }
+
+extension ImportReport {
+
+    /// Nil with nothing ignored, because the new tab says everything else.
+    init?(_ result: CurlImportResult) {
+        guard let ignored = result.ignoredSummary else {
+            return nil
+        }
+        self.init(message: result.importedSummary, skipped: ignored)
+    }
+
+}

@@ -419,6 +419,72 @@
         }
       }
     },
+    "CURL_IMPORT_CANCEL" : {
+      "comment" : "The button that closes the Import cURL sheet without importing.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "CURL_IMPORT_FAILED" : {
+      "comment" : "Shown in the Import cURL sheet when a secret or the new request could not be stored.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth couldn’t import this command. Nothing was added."
+          }
+        }
+      }
+    },
+    "CURL_IMPORT_IMPORT" : {
+      "comment" : "The button in the Import cURL sheet that creates the request.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        }
+      }
+    },
+    "CURL_IMPORT_INVALID" : {
+      "comment" : "Shown in the Import cURL sheet when the text is not a cURL command. The sheet stays open.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This isn’t a valid cURL command."
+          }
+        }
+      }
+    },
+    "CURL_IMPORT_TEXT_LABEL" : {
+      "comment" : "Accessibility label of the text area in the Import cURL sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cURL Command"
+          }
+        }
+      }
+    },
+    "CURL_IMPORT_TITLE" : {
+      "comment" : "Title of the sheet that takes a cURL command.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import cURL"
+          }
+        }
+      }
+    },
     "DEFAULT_COLLECTION_NAME" : {
       "comment" : "Name a new collection starts with.",
       "localizations" : {
@@ -712,6 +778,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Import…"
+          }
+        }
+      }
+    },
+    "MENU_IMPORT_CURL" : {
+      "comment" : "File menu command that turns a cURL command into a request.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import cURL…"
           }
         }
       }

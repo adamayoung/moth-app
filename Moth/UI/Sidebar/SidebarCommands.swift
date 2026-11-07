@@ -12,6 +12,7 @@ struct SidebarCommandContext {
     let model: SidebarModel
     let environments: EnvironmentsModel
     let newItemContainer: TreeContainerID?
+    let importContainer: TreeContainerID?
 
 }
 

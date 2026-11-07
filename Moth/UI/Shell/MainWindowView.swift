@@ -41,7 +41,7 @@ struct MainWindowView: View {
         self.isSyncedToICloud = isSyncedToICloud
         self.sidebar = sidebar
         self.environments = environments
-        self.tabs = RequestTabsModel(
+        let tabs = RequestTabsModel(
             store: tabStore,
             drafts: requestDrafts,
             responses: RequestResponses(
@@ -56,12 +56,15 @@ struct MainWindowView: View {
                 clipboard: clipboard
             )
         )
+        self.tabs = tabs
         self.imports = ImportModel(
             source: importFileSource,
             secretStore: secretStore,
             sidebar: sidebar,
             environments: environments,
-            write: { try await writer.create($0) }
+            write: { try await writer.create($0) },
+            createRequest: { try await writer.createRequest($0, in: $1) },
+            openRequest: { tabs.open($0) }
         )
     }
 
@@ -94,6 +97,9 @@ struct MainWindowView: View {
         }
         .fileImporter(isPresented: $imports.isChoosingFile, allowedContentTypes: [.json]) { result in
             Task { await imports.fileChosen(result) }
+        }
+        .sheet(isPresented: $imports.isEnteringCurl) {
+            CurlImportSheet(model: imports)
         }
         .sheet(item: $imports.report) { report in
             ImportResultSheet(report: report)
