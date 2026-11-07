@@ -41,7 +41,7 @@ struct CodeGeneratorEscapingTests {
             let data = output.fileHandleForReading.readDataToEndOfFile()
             shell.waitUntilExit()
 
-            #expect(String(decoding: data, as: UTF8.self) == value)
+            #expect(String(bytes: data, encoding: .utf8) == value)
         }
     #endif
 

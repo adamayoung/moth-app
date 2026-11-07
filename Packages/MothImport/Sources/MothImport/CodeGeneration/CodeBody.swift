@@ -82,7 +82,7 @@ nonisolated extension CodeBody.Written {
     private static func graphQLJSON(_ query: String, _ variables: String) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .withoutEscapingSlashes
-        let encodedQuery = try String(decoding: encoder.encode(query), as: UTF8.self)
+        let encodedQuery = try String(bytes: encoder.encode(query), encoding: .utf8) ?? ""
         let trimmedVariables = variables.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return trimmedVariables.isEmpty

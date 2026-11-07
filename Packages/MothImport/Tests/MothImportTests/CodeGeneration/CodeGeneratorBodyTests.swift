@@ -106,6 +106,8 @@ struct CodeGeneratorBodyTests {
             FormDataField(key: "name", value: .text("Ada")),
             FormDataField(key: "photo", value: .file(paths: ["/tmp/a.png"]), contentType: "image/png")
         ]))
+        let fileHead = #"body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"photo\"; "#
+            + #"filename=\"a.png\"\r\nContent-Type: image/png\r\n\r\n".utf8))"#
 
         #expect(code.swift == #"""
         import Foundation
@@ -115,7 +117,7 @@ struct CodeGeneratorBodyTests {
         let boundary = UUID().uuidString
         var body = Data()
         body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nAda\r\n".utf8))
-        body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"a.png\"\r\nContent-Type: image/png\r\n\r\n".utf8))
+        \#(fileHead)
         try body.append(Data(contentsOf: URL(filePath: "/tmp/a.png")))
         body.append(Data("\r\n".utf8))
         body.append(Data("--\(boundary)--\r\n".utf8))
