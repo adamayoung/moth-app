@@ -41,9 +41,9 @@ public nonisolated struct APIKeyAuthProvider: AuthProvider {
 
         let others = (components.percentEncodedQuery ?? "")
             .split(separator: "&")
-            .filter { $0.prefix { $0 != "=" }.removingPercentEncoding != name }
+            .filter { Self.decodedName(ofPair: $0) != name }
             .map(String.init)
-        components.percentEncodedQuery = (others + ["\(name.percentEncoded)=\(value.percentEncoded)"])
+        components.percentEncodedQuery = (others + [KeyValue(key: name, value: value).percentEncodedPair])
             .joined(separator: "&")
 
         guard let replaced = components.url else {
@@ -51,6 +51,11 @@ public nonisolated struct APIKeyAuthProvider: AuthProvider {
         }
 
         request.url = replaced
+    }
+
+    /// A `+` is a space to a server.
+    private static func decodedName(ofPair pair: Substring) -> String? {
+        pair.prefix { $0 != "=" }.replacing("+", with: " ").removingPercentEncoding
     }
 
 }

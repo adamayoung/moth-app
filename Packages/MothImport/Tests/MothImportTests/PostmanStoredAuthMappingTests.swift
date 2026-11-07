@@ -91,7 +91,7 @@ struct PostmanStoredAuthMappingTests {
         #expect(result.imported.unsupportedAuth.isEmpty)
     }
 
-    @Test("A real Postman export's API key goes out, replacing the header Postman wrote beside it")
+    @Test("Postman's own API key example goes out, with its schema URL made https, replacing the header beside it")
     func appliesAnExportedAPIKey() async throws {
         let store = InMemorySecretStore()
         let exported = try #require(

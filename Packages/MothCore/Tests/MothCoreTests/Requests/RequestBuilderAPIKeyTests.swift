@@ -63,7 +63,7 @@ struct RequestBuilderAPIKeyTests {
             name: "api key",
             value: "abc",
             location: .query,
-            url: "https://example.com/a?api%20key=typed&b=c=d&flag#top"
+            url: "https://example.com/a?api%20key=typed&api+key=plus&b=c=d&flag#top"
         )
 
         #expect(built.urlRequest.url?.absoluteString == "https://example.com/a?b=c=d&flag&api%20key=abc#top")
