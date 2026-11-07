@@ -257,8 +257,8 @@ and roll back as a Postman import's do.
 - With `-F`, a `Content-Type` header leaves the rows, because curl adds its boundary
   to that header and `RequestBuilder` can't.
 
-The destination matches New Request, and `SidebarModel.importContainer` falls back
-to the first collection with nothing selected. A store write that fails keeps the
+The destination is New Request's, `SidebarModel.newRequestContainer`, which falls
+back to the first collection with nothing selected. A store write that fails keeps the
 sheet open, so the pasted text isn't lost.
 
 ## Persistence
@@ -530,6 +530,12 @@ A seeded launch uses its own key, so a UI test never touches the user's tabs. Ea
 window loads the saved tabs and saves its own, so with two windows the last write
 wins.
 
+Request > Select Next Tab (⌃⇥) and Select Previous Tab (⌃⇧⇥) wrap at the ends and
+step over the tabs on show, so a tab waiting for its row is never selected. ⇧⌘]
+and ⇧⌘[ do the same from invisible buttons in the window, because a SwiftUI menu
+has no hidden item. File > New Request (⌘T) opens the new request in a tab, and with
+nothing selected it goes in the first collection.
+
 ## Secrets
 
 Secret variables, auth credentials and tokens live in the Keychain with
@@ -667,6 +673,12 @@ URL isn’t valid." A failure after that keeps its notes, because the request we
 so a relaunch returns to No Response. Cancel shows at once, and each send has a token,
 so a result that arrives afterwards lands nowhere. Closing a tab cancels its send and
 drops its response, and closing a window cancels.
+
+Request > Send (⌘↩) does what the Send button does, and reads Cancel (⌘.) while the
+tab's request is in flight. Request > Edit URL (⌘L) focuses the URL field and selects
+its text. Like File > Save, each does nothing while a sheet has the keyboard,
+because the focused value outlives the sheet. Both are disabled while a history
+entry covers the tabs, so neither acts on a request out of sight.
 
 ## History
 

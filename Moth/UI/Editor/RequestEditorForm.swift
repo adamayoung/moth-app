@@ -40,8 +40,11 @@ struct RequestEditorForm: View {
     let isSending: Bool
     let send: () -> Void
     let cancelSend: () -> Void
+    var urlFocusRequests = 0
 
     @FocusState private var focusedRow: KeyValue.ID?
+    @FocusState private var isURLFocused: Bool
+    @State private var urlSelection: TextSelection?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -70,9 +73,19 @@ struct RequestEditorForm: View {
             .fixedSize()
             .accessibilityIdentifier("requestEditor.method")
 
-            TextField("REQUEST_EDITOR_URL_LABEL", text: url)
+            TextField("REQUEST_EDITOR_URL_LABEL", text: url, selection: $urlSelection)
                 .textFieldStyle(.roundedBorder)
+                .focused($isURLFocused)
                 .accessibilityIdentifier("requestEditor.url")
+                .onChange(of: urlFocusRequests) {
+                    isURLFocused = true
+                    urlSelection = TextSelection(range: draft.url.startIndex ..< draft.url.endIndex)
+                }
+                .onChange(of: isURLFocused) { _, isFocused in
+                    if !isFocused {
+                        urlSelection = nil
+                    }
+                }
 
             if isSending {
                 Button("REQUEST_EDITOR_CANCEL_SEND", action: cancelSend)

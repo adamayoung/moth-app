@@ -881,6 +881,17 @@
         }
       }
     },
+    "MENU_CANCEL_SEND" : {
+      "comment" : "Request menu command that stops the current tab's request while it is sending.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
     "MENU_CLOSE" : {
       "comment" : "File menu command that closes the window, shown in place of Close Tab when no tab is open.",
       "localizations" : {
@@ -921,6 +932,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy as cURL"
+          }
+        }
+      }
+    },
+    "MENU_EDIT_URL" : {
+      "comment" : "Request menu command that moves focus to the current tab's URL field and selects its text.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit URL"
           }
         }
       }
@@ -1002,6 +1024,28 @@
         }
       }
     },
+    "MENU_NEXT_TAB" : {
+      "comment" : "Request menu command that moves to the next open request tab, wrapping from the last to the first.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Next Tab"
+          }
+        }
+      }
+    },
+    "MENU_PREVIOUS_TAB" : {
+      "comment" : "Request menu command that moves to the previous open request tab, wrapping from the first to the last.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Previous Tab"
+          }
+        }
+      }
+    },
     "MENU_REQUEST" : {
       "comment" : "Menu bar menu of commands for the request in the current tab.",
       "localizations" : {
@@ -1031,6 +1075,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save"
+          }
+        }
+      }
+    },
+    "MENU_SEND" : {
+      "comment" : "Request menu command that sends the current tab's request, as its Send button does.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
           }
         }
       }

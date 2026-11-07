@@ -11,6 +11,7 @@ import SwiftUI
 struct RequestDetailView: View {
 
     @Bindable var tabs: RequestTabsModel
+    var isShowing = true
 
     var body: some View {
         let selected = tabs.selectedTab
@@ -25,7 +26,8 @@ struct RequestDetailView: View {
                     edit: tabs.editDraft,
                     isSending: selected.map { tabs.responses.isSending($0.id) } ?? false,
                     send: { tabs.send($0) },
-                    cancelSend: tabs.cancelSend
+                    cancelSend: tabs.cancelSend,
+                    urlFocusRequests: tabs.urlFocusRequests
                 )
                 .frame(minHeight: 250)
                 ResponsePane(state: selected.flatMap { tabs.responses.state(for: $0.id) })
@@ -53,15 +55,7 @@ struct RequestDetailView: View {
         .alert("GENERATE_CODE_FAILED", isPresented: Bindable(tabs.code).hasFailed) {
             Button("GENERATE_CODE_FAILED_OK", role: .cancel) {}
         }
-        .focusedSceneValue(
-            \.requestTabCommands,
-            RequestTabCommandContext(
-                tabs: tabs,
-                hasOpenTabs: !tabs.openTabs.isEmpty,
-                selectedRequest: selected?.id,
-                savableRequest: selected.flatMap { tabs.drafts.canSave($0.id) ? $0.id : nil }
-            )
-        )
+        .focusedSceneValue(\.requestTabCommands, RequestTabCommandContext(tabs: tabs, isShowing: isShowing))
     }
 
     private var closeAlertTitle: String {

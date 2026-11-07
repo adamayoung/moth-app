@@ -57,7 +57,7 @@ final class ImportModel {
     }
 
     var canImportCurl: Bool {
-        canImport && sidebar.importContainer != nil
+        canImport && sidebar.newRequestContainer != nil
     }
 
     var canSubmitCurl: Bool {
@@ -84,7 +84,7 @@ final class ImportModel {
     /// A failure keeps the sheet, because closing it would lose the pasted text. Success clears the text, which can
     /// hold a password.
     func importCurl() async {
-        guard canSubmitCurl, let container = sidebar.importContainer else {
+        guard canSubmitCurl, let container = sidebar.newRequestContainer else {
             return
         }
         isImporting = true
