@@ -265,6 +265,35 @@ struct CurlImportMappingTests {
         #expect(try await CurlImportTesting.request(text).name == name)
     }
 
+    @Test("The shape a browser's Copy as cURL writes: ANSI-C quoting, -b and --data-raw, with nothing listed")
+    func browserCopyAsCurl() async throws {
+        let result = try await CurlImportTesting.importing(#"""
+        curl 'https://a.example/api/items?page=2' \
+          -H 'accept: */*' \
+          -H 'content-type: application/json' \
+          -b 'session=abc; theme=dark' \
+          -H 'priority: u=1, i' \
+          -H 'user-agent: Mozilla/5.0' \
+          --data-raw $'{"name":"it\'s","note":"a\\nb!"}'
+        """#)
+        let request = result.request
+
+        #expect(result.ignored.isEmpty)
+        #expect(request.name == "POST /api/items")
+        #expect(request.queryParameters.pairs == [Pair("page", "2")])
+        #expect(request.headers.pairs == [
+            Pair("accept", "*/*"),
+            Pair("content-type", "application/json"),
+            Pair("priority", "u=1, i"),
+            Pair("user-agent", "Mozilla/5.0"),
+            Pair("Cookie", "session=abc; theme=dark")
+        ])
+        #expect(request.body == .raw(
+            content: #"{"name":"it's","note":"a\nb!"}"#,
+            contentType: "application/json"
+        ))
+    }
+
     private func rows(of body: RequestBody) -> [Pair] {
         guard case .urlEncoded(let rows) = body else {
             return []
