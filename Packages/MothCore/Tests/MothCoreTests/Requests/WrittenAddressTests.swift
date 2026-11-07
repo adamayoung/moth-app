@@ -1,0 +1,142 @@
+//  WrittenAddressTests.swift
+//  MothCore
+//
+//  Copyright © 2026 Adam Young.
+
+import MothCore
+import Testing
+
+struct WrittenAddressTests {
+
+    @Test("A URL with no rows stays as written")
+    func plainURL() {
+        let request = ResolvedRequest(url: "https://example.com/users")
+
+        #expect(request.writtenAddress() == "https://example.com/users")
+    }
+
+    @Test("Query rows that are sent follow the template's own query and come before its fragment")
+    func queryRows() {
+        let request = ResolvedRequest(
+            url: "https://example.com/users?sort=name#top",
+            queryParameters: [
+                KeyValue(key: "page size", value: "a&b"),
+                KeyValue(key: "draft", value: "true", isEnabled: false),
+                KeyValue(key: "", value: "no key")
+            ]
+        )
+
+        #expect(request.writtenAddress() == "https://example.com/users?sort=name&page%20size=a%26b#top")
+    }
+
+    @Test("A variable left in a query row stays readable")
+    func variableInQueryRow() {
+        let request = ResolvedRequest(
+            url: "https://example.com",
+            queryParameters: [KeyValue(key: "key", value: "a {{token}}")]
+        )
+
+        #expect(request.writtenAddress() == "https://example.com?key=a%20{{token}}")
+    }
+
+    @Test("A path variable takes its row's value, and stays as written without a usable row")
+    func pathVariables() {
+        let request = ResolvedRequest(
+            url: "https://example.com/:team/:user/:empty/:missing",
+            pathParameters: [
+                KeyValue(key: "team", value: "a/b"),
+                KeyValue(key: "user", value: "42", isEnabled: false),
+                KeyValue(key: "empty", value: "")
+            ]
+        )
+
+        #expect(request.writtenAddress() == "https://example.com/a%2Fb/:user/:empty/:missing")
+    }
+
+    @Test("The segment after the scheme is the authority, so a port is never a path variable")
+    func portIsNotAPathVariable() {
+        let request = ResolvedRequest(
+            url: "http://:8080/:8080",
+            pathParameters: [KeyValue(key: "8080", value: "filled")]
+        )
+
+        #expect(request.writtenAddress() == "http://:8080/filled")
+    }
+
+    @Test(
+        "A URL with no scheme gains the one sending adds, unless a variable may hold it",
+        arguments: [
+            ("localhost:8080/users", "http://localhost:8080/users"),
+            ("example.com", "http://example.com"),
+            ("{{host}}/users", "{{host}}/users"),
+            ("", ""),
+            ("  https://example.com  ", "https://example.com")
+        ]
+    )
+    func scheme(written: String, expected: String) {
+        #expect(ResolvedRequest(url: written).writtenAddress() == expected)
+    }
+
+    @Test("A set query pair keeps its value as given, after the rows and before the fragment")
+    func setQuery() {
+        let request = ResolvedRequest(
+            url: "https://example.com#top",
+            queryParameters: [KeyValue(key: "page", value: "2")]
+        )
+
+        let address = request.writtenAddress(settingQuery: LiteralQueryPair(name: "api key", value: "<api-key>"))
+
+        #expect(address == "https://example.com?page=2&api%20key=<api-key>#top")
+    }
+
+    @Test("A set query pair replaces a row and a pair in the URL of its name, as an API key does on Send")
+    func setQueryReplaces() {
+        let request = ResolvedRequest(
+            url: "https://example.com?key=old&a=1",
+            queryParameters: [KeyValue(key: "key", value: "row"), KeyValue(key: "page", value: "2")]
+        )
+
+        let address = request.writtenAddress(settingQuery: LiteralQueryPair(name: "key", value: "<api-key>"))
+
+        #expect(address == "https://example.com?a=1&page=2&key=<api-key>")
+    }
+
+    @Test("What a URL can't hold is encoded as Send encodes it, outside variables, and an escape stays one")
+    func encodesWhatAURLCantHold() {
+        let request = ResolvedRequest(url: "https://example.com/my files/{{name}}/caf%C3%A9/é?q=a b#c d")
+
+        #expect(request.writtenAddress() == "https://example.com/my%20files/{{name}}/caf%C3%A9/%C3%A9?q=a%20b#c%20d")
+    }
+
+    @Test("A % that starts no escape is encoded, as Send encodes it")
+    func strayPercent() {
+        let request = ResolvedRequest(url: "http://example.com/?q=100%&a=1")
+
+        #expect(request.writtenAddress() == "http://example.com/?q=100%25&a=1")
+    }
+
+    @Test("A host stays as written, because a percent-encoded host isn't the IDNA form Send uses")
+    func hostStaysAsWritten() {
+        #expect(ResolvedRequest(url: "http://münchen.de/é").writtenAddress() == "http://münchen.de/%C3%A9")
+    }
+
+    @Test("A % before a combining mark is stray, because the regex works on scalars")
+    func strayPercentBeforeACombiningMark() {
+        let request = ResolvedRequest(url: "http://example.com/a%\u{301}b")
+
+        #expect(request.writtenAddress() == "http://example.com/a%25%CC%81b")
+    }
+
+    @Test("Userinfo is encoded as Send encodes it, though the host stays as written")
+    func userinfo() {
+        let request = ResolvedRequest(url: "http://user name:100%@münchen.de/a")
+
+        #expect(request.writtenAddress() == "http://user%20name:100%25@münchen.de/a")
+    }
+
+    @Test("A port left as a variable isn't a scheme")
+    func portAsAVariable() {
+        #expect(ResolvedRequest(url: "localhost:{{port}}/users").writtenAddress() == "http://localhost:{{port}}/users")
+    }
+
+}

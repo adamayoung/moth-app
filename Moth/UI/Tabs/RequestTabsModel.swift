@@ -23,12 +23,14 @@ final class RequestTabsModel {
     private let store: RequestTabStore
     let drafts: RequestDrafts
     let responses: RequestResponses
+    let code: RequestCodeModel
     var pendingClose: RequestTab?
 
-    init(store: RequestTabStore, drafts: RequestDrafts, responses: RequestResponses) {
+    init(store: RequestTabStore, drafts: RequestDrafts, responses: RequestResponses, code: RequestCodeModel) {
         self.store = store
         self.drafts = drafts
         self.responses = responses
+        self.code = code
         self.tabs = store.load()
     }
 
@@ -66,6 +68,20 @@ final class RequestTabsModel {
 
     func cancelSend(_ id: Request.ID) {
         responses.cancel(id)
+    }
+
+    func copyCURL(_ id: Request.ID) async {
+        await code.copyCURL(id, draft: editedDraft(of: id), tree: tree)
+    }
+
+    func generateCode(_ id: Request.ID) async {
+        await code.presentCode(for: id, draft: editedDraft(of: id), tree: tree)
+    }
+
+    /// Edits show in any window, because drafts are shared. A clean draft is `nil`, because a tab that isn't selected
+    /// misses deliveries and the store is newer.
+    private func editedDraft(of id: Request.ID) -> RequestDraft? {
+        drafts.isEdited(id) ? drafts.draft(for: id) : nil
     }
 
     func requestClose(_ id: Request.ID) {

@@ -20,7 +20,8 @@ struct InheritedAuthMessageTests {
         let tabs = RequestTabsModel(
             store: RequestTabStore(defaults: defaults, key: "Tabs"),
             drafts: .preview,
-            responses: .preview
+            responses: .preview,
+            code: .preview
         )
         let context = dataModel.mainContext
         let requests = try context.fetch(FetchDescriptor<RequestModel>())

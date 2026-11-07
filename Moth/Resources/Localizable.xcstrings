@@ -485,6 +485,94 @@
         }
       }
     },
+    "GENERATE_CODE_COPY" : {
+      "comment" : "Button in the Generate Code sheet that copies the code it shows.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
+    },
+    "GENERATE_CODE_DONE" : {
+      "comment" : "Button that closes the Generate Code sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "GENERATE_CODE_FAILED" : {
+      "comment" : "Alert title when a request can't be read, or its inherited auth can't be, so no code can be generated.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth couldn’t generate code for this request."
+          }
+        }
+      }
+    },
+    "GENERATE_CODE_FAILED_OK" : {
+      "comment" : "Button that dismisses the alert shown when code can't be generated.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "GENERATE_CODE_LANGUAGE" : {
+      "comment" : "Label of the language picker in the Generate Code sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        }
+      }
+    },
+    "GENERATE_CODE_LANGUAGE_CURL" : {
+      "comment" : "Language option in the Generate Code sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cURL"
+          }
+        }
+      }
+    },
+    "GENERATE_CODE_LANGUAGE_SWIFT" : {
+      "comment" : "Language option in the Generate Code sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swift URLSession"
+          }
+        }
+      }
+    },
+    "GENERATE_CODE_TITLE" : {
+      "comment" : "Heading of the sheet that shows a request as code.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate Code"
+          }
+        }
+      }
+    },
     "IMPORT_FAILED" : {
       "comment" : "Shown in the import result sheet when a file could not be read or stored.",
       "localizations" : {
@@ -595,6 +683,28 @@
         }
       }
     },
+    "MENU_COPY_AS_CURL" : {
+      "comment" : "Command in the Request menu and a request row's context menu: copies the request as a cURL command.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy as cURL"
+          }
+        }
+      }
+    },
+    "MENU_GENERATE_CODE" : {
+      "comment" : "Command in the Request menu and a request row's context menu: opens the Generate Code sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate Code…"
+          }
+        }
+      }
+    },
     "MENU_IMPORT" : {
       "comment" : "File menu command that imports a Postman file.",
       "localizations" : {
@@ -646,6 +756,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Request"
+          }
+        }
+      }
+    },
+    "MENU_REQUEST" : {
+      "comment" : "Menu bar menu of commands for the request in the current tab.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request"
           }
         }
       }

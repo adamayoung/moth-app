@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import AppKit
 import Foundation
 @testable import HTTPKit
 @testable import Moth
@@ -121,6 +122,21 @@ struct DependencyProviderTests {
         let dependencies = try provider(for: mode, environment: Self.importFileEnvironment).dependencies
 
         #expect(dependencies.importFileSource == .panel)
+    }
+
+    @Test(
+        "A UI test launch copies to its own pasteboard",
+        arguments: [AppLaunchMode.uiTesting, .uiTestingWithICloudSync, .uiTestingRestoringTabs]
+    )
+    func uiTestLaunchKeepsOffTheGeneralPasteboard(mode: AppLaunchMode) throws {
+        let clipboard = try dependencies(for: mode).clipboard
+
+        #expect(clipboard.pasteboard.name == NSPasteboard.Name("MothUITestClipboard"))
+    }
+
+    @Test("A demo launch copies to the General pasteboard, because a person is using it")
+    func demoLaunchUsesTheGeneralPasteboard() throws {
+        #expect(try dependencies(for: .demo).clipboard.pasteboard.name == .general)
     }
 
     @Test("A live store that will not open stops the graph being built")

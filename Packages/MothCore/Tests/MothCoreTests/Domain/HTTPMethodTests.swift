@@ -46,4 +46,13 @@ struct HTTPMethodTests {
         #expect(method.rawValue == "get")
     }
 
+    @Test("GET and HEAD send no body, in either case, and every other method does")
+    func sendsBody() {
+        #expect(!HTTPMethod.get.sendsBody)
+        #expect(!HTTPMethod.head.sendsBody)
+        #expect(!HTTPMethod(rawValue: "get").sendsBody)
+        #expect(HTTPMethod.post.sendsBody)
+        #expect(HTTPMethod(rawValue: "PROPFIND").sendsBody)
+    }
+
 }

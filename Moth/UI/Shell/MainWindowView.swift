@@ -27,7 +27,8 @@ struct MainWindowView: View {
         tabStore: RequestTabStore,
         requestDrafts: RequestDrafts,
         isSyncedToICloud: Bool,
-        importFileSource: ImportFileSource
+        importFileSource: ImportFileSource,
+        clipboard: Clipboard
     ) {
         let writer = dataModel.writer
         let sidebar = SidebarModel(writer: writer, secretStore: secretStore)
@@ -48,6 +49,11 @@ struct MainWindowView: View {
                 transport: transport,
                 secretStore: secretStore,
                 activeEnvironment: activeEnvironment
+            ),
+            code: RequestCodeModel(
+                dataModel: dataModel,
+                activeEnvironment: activeEnvironment,
+                clipboard: clipboard
             )
         )
         self.imports = ImportModel(
@@ -112,7 +118,8 @@ struct MainWindowView: View {
             tabStore: .preview,
             requestDrafts: RequestDrafts(writer: dataModel.writer, secretStore: secretStore),
             isSyncedToICloud: false,
-            importFileSource: .panel
+            importFileSource: .panel,
+            clipboard: .general
         )
         .frame(width: 1100, height: 720)
     }

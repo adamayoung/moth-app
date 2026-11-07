@@ -33,7 +33,7 @@ struct SidebarRow: View {
             .tag(node.id)
         } else {
             SidebarRowLabel(node: node, model: model, tabs: tabs) {
-                itemMenu
+                requestMenu
             }
             .tag(node.id)
         }
@@ -69,6 +69,20 @@ struct SidebarRow: View {
         }
         .disabled(node.auth == nil)
         Divider()
+        itemMenu
+    }
+
+    @ViewBuilder
+    private var requestMenu: some View {
+        if case .request(let id) = node.id {
+            Button("MENU_COPY_AS_CURL") {
+                Task { await tabs.copyCURL(id) }
+            }
+            Button("MENU_GENERATE_CODE") {
+                Task { await tabs.generateCode(id) }
+            }
+            Divider()
+        }
         itemMenu
     }
 
