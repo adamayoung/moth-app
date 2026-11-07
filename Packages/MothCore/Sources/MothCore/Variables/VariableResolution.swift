@@ -22,7 +22,10 @@ nonisolated struct VariableResolution {
 
     private var remainingExpansionBudget = Self.expansionBudget
 
+    var part = RequestPart.address
+
     private(set) var unresolved: [UnresolvedVariable] = []
+    private(set) var unresolvedParts: [String: Set<RequestPart>] = [:]
     private(set) var credentials: [SecretReference: String] = [:]
     private(set) var unresolvedCredentials: [SecretReference] = []
 
@@ -138,6 +141,8 @@ nonisolated struct VariableResolution {
     }
 
     private mutating func report(_ name: String, _ reason: UnresolvedReason) {
+        unresolvedParts[name, default: []].insert(part)
+
         guard !unresolved.contains(where: { $0.name == name }) else {
             return
         }

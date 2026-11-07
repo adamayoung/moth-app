@@ -40,7 +40,7 @@ public nonisolated struct RequestSender: Sendable {
             let built = try await RequestBuilder().build(resolved)
             urlRequest = built.urlRequest
             notes = ResponseNote.notes(
-                unresolved: resolved.unresolved,
+                unresolved: built.unresolved,
                 notices: built.notices.map { $0.namingRow(of: outgoing.request, resolvedAs: resolved) },
                 unresolvedCredentials: resolved.unresolvedCredentials
             )

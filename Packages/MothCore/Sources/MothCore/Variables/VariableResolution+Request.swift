@@ -9,6 +9,7 @@ nonisolated extension VariableResolution {
         var resolved = rows
 
         for index in resolved.indices where resolved[index].isEnabled {
+            part = .row(resolved[index].id)
             resolved[index].key = try await resolve(resolved[index].key)
             resolved[index].value = try await resolve(resolved[index].value)
         }
@@ -17,6 +18,8 @@ nonisolated extension VariableResolution {
     }
 
     mutating func resolve(_ body: RequestBody) async throws -> RequestBody {
+        part = .body
+
         switch body {
         case .none, .binary:
             return body
@@ -35,6 +38,8 @@ nonisolated extension VariableResolution {
 
     /// Stays an ``Auth``. `.inherit` passes through with no credentials, so a caller replaces it before resolving.
     mutating func resolve(_ auth: Auth) async throws -> Auth {
+        part = .auth
+
         switch auth {
         case .inherit, .none:
             return auth
@@ -74,6 +79,8 @@ nonisolated extension VariableResolution {
     }
 
     private mutating func resolve(_ field: FormDataField) async throws -> FormDataField {
+        part = .row(field.id)
+
         var resolved = field
         resolved.key = try await resolve(field.key)
 

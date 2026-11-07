@@ -10,10 +10,16 @@ public nonisolated struct BuiltRequest: Sendable, Hashable {
 
     public var urlRequest: URLRequest
     public var notices: [RequestBuildNotice]
+    public var unresolved: [UnresolvedVariable]
 
-    public init(urlRequest: URLRequest, notices: [RequestBuildNotice] = []) {
+    public init(
+        urlRequest: URLRequest,
+        notices: [RequestBuildNotice] = [],
+        unresolved: [UnresolvedVariable] = []
+    ) {
         self.urlRequest = urlRequest
         self.notices = notices
+        self.unresolved = unresolved
     }
 
 }

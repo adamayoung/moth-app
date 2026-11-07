@@ -19,6 +19,7 @@ public nonisolated struct ResolvedRequest: Sendable, Hashable {
     public var settings: RequestSettings
     public var unresolved: [UnresolvedVariable]
     public var unresolvedCredentials: [SecretReference]
+    var unresolvedParts: [String: Set<RequestPart>] = [:]
 
     public init(
         method: HTTPMethod = .get,
@@ -44,6 +45,12 @@ public nonisolated struct ResolvedRequest: Sendable, Hashable {
         self.settings = settings
         self.unresolved = unresolved
         self.unresolvedCredentials = unresolvedCredentials
+    }
+
+    func unresolved(outside leftOut: Set<RequestPart>) -> [UnresolvedVariable] {
+        unresolved.filter { variable in
+            unresolvedParts[variable.name].map { !$0.isSubset(of: leftOut) } ?? true
+        }
     }
 
 }

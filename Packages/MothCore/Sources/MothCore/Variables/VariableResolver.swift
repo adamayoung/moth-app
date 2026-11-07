@@ -32,7 +32,7 @@ public nonisolated struct VariableResolver: Sendable {
         let body = try await resolution.resolve(request.body)
         let auth = try await resolution.resolve(request.auth)
 
-        return ResolvedRequest(
+        var resolved = ResolvedRequest(
             method: request.method,
             url: url,
             queryParameters: queryParameters,
@@ -45,6 +45,9 @@ public nonisolated struct VariableResolver: Sendable {
             unresolved: resolution.unresolved,
             unresolvedCredentials: resolution.unresolvedCredentials
         )
+        resolved.unresolvedParts = resolution.unresolvedParts
+
+        return resolved
     }
 
 }
