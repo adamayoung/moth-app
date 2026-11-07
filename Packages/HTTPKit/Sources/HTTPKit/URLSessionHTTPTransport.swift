@@ -32,7 +32,8 @@ public struct URLSessionHTTPTransport: HTTPTransport {
             status: httpResponse.statusCode,
             headers: Self.headers(of: httpResponse),
             body: body,
-            metrics: recorder.metrics
+            metrics: recorder.metrics,
+            url: httpResponse.url
         )
     }
 

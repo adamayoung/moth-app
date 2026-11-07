@@ -6,8 +6,7 @@
 import XCTest
 
 /// Values mirror `SeedData` by hand: List Users inherits, with nothing above it that sets auth, Health has API key
-/// auth,
-/// Update User has Digest auth and Delete Admin, in Users > Admins, has OAuth2.
+/// auth, Update User has Digest auth and Delete Admin, in Users > Admins, has OAuth2.
 final class RequestAuthTests: MothTestCase {
 
     @MainActor

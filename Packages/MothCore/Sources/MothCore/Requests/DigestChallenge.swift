@@ -27,11 +27,10 @@ nonisolated enum DigestAlgorithm: String, CaseIterable, Sendable {
 
     func hash(_ text: String) -> String {
         let data = Data(text.utf8)
-        let digest: any Sequence<UInt8> = switch self {
-        case .md5, .md5Session: Insecure.MD5.hash(data: data)
-        case .sha256, .sha256Session: SHA256.hash(data: data)
+        return switch self {
+        case .md5, .md5Session: Insecure.MD5.hash(data: data).hexadecimal
+        case .sha256, .sha256Session: SHA256.hash(data: data).hexadecimal
         }
-        return digest.map { String(format: "%02x", $0) }.joined()
     }
 
 }
@@ -62,13 +61,9 @@ nonisolated struct DigestChallenge: Sendable, Hashable {
         self.algorithm = algorithm
     }
 
-    static func isOffered(in header: String) -> Bool {
-        AuthChallenge.all(in: header).contains { $0.isScheme("Digest") }
-    }
-
     /// Servers list challenges in their order of preference.
-    static func first(in header: String) -> DigestChallenge? {
-        AuthChallenge.all(in: header).lazy.compactMap(DigestChallenge.init).first
+    static func first(in challenges: [AuthChallenge]) -> DigestChallenge? {
+        challenges.lazy.compactMap(DigestChallenge.init).first
     }
 
     /// No qop is RFC 2069's form, which RFC 7616 retired.

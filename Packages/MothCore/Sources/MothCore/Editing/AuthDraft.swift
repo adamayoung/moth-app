@@ -176,8 +176,7 @@ public nonisolated struct AuthDraft: Sendable {
     }
 
     /// A password is always saved, because Basic and Digest can send a username alone. An empty token or API key value
-    /// is not,
-    /// because a credential with no value is reported rather than sent.
+    /// is not, because a credential with no value is reported rather than sent.
     public func credentialWrites() -> [CredentialWrite] {
         switch kind {
         case .basic, .digest:

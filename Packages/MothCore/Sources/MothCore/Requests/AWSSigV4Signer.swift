@@ -26,7 +26,7 @@ nonisolated struct AWSSigV4Signer: Sendable {
     private static let unreservedBytes = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~".utf8)
 
     static func hash(_ data: Data) -> String {
-        hexadecimal(SHA256.hash(data: data))
+        SHA256.hash(data: data).hexadecimal
     }
 
     let method: String
@@ -47,7 +47,7 @@ nonisolated struct AWSSigV4Signer: Sendable {
     }
 
     var signature: String {
-        Self.hexadecimal(Self.authenticate(stringToSign, with: signingKey))
+        Self.authenticate(stringToSign, with: signingKey).hexadecimal
     }
 
     var authorization: String {
@@ -168,10 +168,6 @@ nonisolated struct AWSSigV4Signer: Sendable {
 
     private static func authenticate(_ message: String, with key: SymmetricKey) -> Data {
         Data(HMAC<SHA256>.authenticationCode(for: Data(message.utf8), using: key))
-    }
-
-    private static func hexadecimal(_ bytes: some Sequence<UInt8>) -> String {
-        bytes.map { String(format: "%02x", $0) }.joined()
     }
 
 }

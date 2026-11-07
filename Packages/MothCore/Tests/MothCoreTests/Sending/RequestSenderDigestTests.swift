@@ -280,3 +280,53 @@ struct RequestSenderDigestTests {
     }
 
 }
+
+extension RequestSenderDigestTests {
+
+    @Test("A challenge from a same-origin redirect is answered at the URL that sent it")
+    func sameOriginRedirect() async throws {
+        let redirected = HTTPResponse(
+            status: 401,
+            headers: ["WWW-Authenticate": Self.challengeHeader],
+            body: Data(),
+            url: URL(string: "https://example.com/b?x=1")
+        )
+        let transport = ScriptedTransport(redirected, Self.accepted)
+
+        _ = try await send(
+            Request(name: "Digest", urlTemplate: "https://example.com/a", auth: Self.digest()),
+            through: transport
+        )
+
+        let answer = try #require(transport.requests.last)
+        #expect(transport.requests.count == 2)
+        #expect(answer.url?.absoluteString == "https://example.com/b?x=1")
+        #expect(try answer.value(forHTTPHeaderField: "Authorization") == expectedAnswer(to: answer))
+        #expect(answer.value(forHTTPHeaderField: "Authorization")?.contains(#"uri="/b?x=1""#) == true)
+    }
+
+    @Test(
+        "A challenge from a redirect to another origin is shown as it came, with nothing sent there",
+        arguments: ["https://other.example/a", "http://example.com/a", "https://example.com:8443/a"]
+    )
+    func crossOriginRedirect(address: String) async throws {
+        let redirected = HTTPResponse(
+            status: 401,
+            headers: ["WWW-Authenticate": Self.challengeHeader],
+            body: Data(),
+            url: URL(string: address)
+        )
+        let transport = ScriptedTransport(redirected, Self.accepted)
+
+        let result = try await send(
+            Request(name: "Digest", urlTemplate: "https://example.com/a", auth: Self.digest()),
+            through: transport
+        )
+
+        let response = try response(of: result)
+        #expect(transport.requests.count == 1)
+        #expect(response.status == 401)
+        #expect(response.notes.isEmpty)
+    }
+
+}

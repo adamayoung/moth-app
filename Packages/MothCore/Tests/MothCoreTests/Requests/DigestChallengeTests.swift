@@ -10,9 +10,10 @@ struct DigestChallengeTests {
 
     @Test("A Digest challenge after a Basic one in a header URLSession joined is found")
     func afterBasic() throws {
-        let challenge = try #require(DigestChallenge.first(
-            in: #"Basic realm="other", Digest realm="api", nonce="abc", qop="auth""#
-        ))
+        let challenge = try #require(
+            DigestChallenge.first(in: #"Basic realm="other", Digest realm="api", nonce="abc", qop="auth""#
+            )
+        )
 
         #expect(challenge.realm == "api")
         #expect(challenge.nonce == "abc")
@@ -22,9 +23,10 @@ struct DigestChallengeTests {
 
     @Test("A quoted value keeps its commas and escaped quotes")
     func quotedValues() throws {
-        let challenge = try #require(DigestChallenge.first(
-            in: #"Digest realm="a, \"b\"", nonce="n", qop="auth", opaque="o,p""#
-        ))
+        let challenge = try #require(
+            DigestChallenge.first(in: #"Digest realm="a, \"b\"", nonce="n", qop="auth", opaque="o,p""#
+            )
+        )
 
         #expect(challenge.realm == #"a, "b""#)
         #expect(challenge.opaque == "o,p")
@@ -32,9 +34,10 @@ struct DigestChallengeTests {
 
     @Test("Scheme, parameter names and the algorithm are read whatever their case")
     func caseInsensitive() throws {
-        let challenge = try #require(DigestChallenge.first(
-            in: #"DIGEST Realm="api", NONCE="n", QOP="AUTH", Algorithm=sha-256-SESS"#
-        ))
+        let challenge = try #require(
+            DigestChallenge.first(in: #"DIGEST Realm="api", NONCE="n", QOP="AUTH", Algorithm=sha-256-SESS"#
+            )
+        )
 
         #expect(challenge.algorithm == .sha256Session)
     }
@@ -60,13 +63,13 @@ struct DigestChallengeTests {
         ]
     )
     func unsupported(header: String) {
-        #expect(DigestChallenge.isOffered(in: header))
+        #expect(AuthChallenge.all(in: header).contains { $0.isScheme("Digest") })
         #expect(DigestChallenge.first(in: header) == nil)
     }
 
     @Test("A header with no Digest challenge offers none", arguments: [#"Basic realm="api""#, "Bearer", ""])
     func notOffered(header: String) {
-        #expect(!DigestChallenge.isOffered(in: header))
+        #expect(!AuthChallenge.all(in: header).contains { $0.isScheme("Digest") })
     }
 
 }

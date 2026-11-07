@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// The first send carries no credentials, and each answer uses a fresh nonce count, because no nonce is reused.
+/// The first send carries no credentials. `nc` is always 1, because no nonce is reused.
 public nonisolated struct DigestAuthProvider: AuthProvider {
 
     private static let nonceCount = "00000001"

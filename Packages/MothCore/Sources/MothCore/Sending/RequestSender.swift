@@ -109,7 +109,8 @@ private nonisolated extension RequestSender {
     }
 
     /// One answer, whatever the method: the server refused the first send for lack of credentials. No nonce is kept, so
-    /// every send starts again with none.
+    /// every send starts again with none. A challenge from another origin, after a redirect, isn't answered, so no
+    /// credential reaches a host the request didn't name.
     func answerDigestChallenge(
         in refusal: HTTPResponse,
         measured: Duration,
@@ -117,20 +118,49 @@ private nonisolated extension RequestSender {
         to request: URLRequest,
         with digest: DigestAuthProvider
     ) async throws -> SendResult {
-        let header = refusal.value(forHeader: "WWW-Authenticate") ?? ""
-        guard let challenge = DigestChallenge.first(in: header) else {
-            let note: [ResponseNote] = DigestChallenge.isOffered(in: header) ? [.digestChallengeUnsupported] : []
-            return .response(SentResponse(refusal, measured: measured, notes: notes + note))
+        let challenger = refusal.url ?? request.url
+        guard let challenger, challenger.hasSameOrigin(as: request.url) else {
+            return .response(SentResponse(refusal, measured: measured, notes: notes))
+        }
+
+        let challenges = AuthChallenge.all(in: refusal.value(forHeader: "WWW-Authenticate") ?? "")
+        guard let challenge = DigestChallenge.first(in: challenges) else {
+            let isOffered = challenges.contains { $0.isScheme("Digest") }
+            return .response(SentResponse(
+                refusal,
+                measured: measured,
+                notes: notes + (isOffered ? [.digestChallengeUnsupported] : [])
+            ))
         }
 
         try Task.checkCancellation()
         var answer = request
+        answer.url = challenger
         answer.setValue(
-            digest.authorization(answering: challenge, to: request, cnonce: cnonce()),
+            digest.authorization(answering: challenge, to: answer, cnonce: cnonce()),
             forHTTPHeaderField: "Authorization"
         )
         let (response, measured) = try await timedSend(answer)
         return .response(SentResponse(response, measured: measured, notes: notes + [.sentAgainForDigestChallenge]))
+    }
+
+}
+
+private nonisolated extension URL {
+
+    func hasSameOrigin(as other: URL?) -> Bool {
+        guard let other, let origin, let otherOrigin = other.origin else {
+            return false
+        }
+        return origin == otherOrigin
+    }
+
+    private var origin: String? {
+        guard let scheme = scheme?.lowercased(), let host = host()?.lowercased() else {
+            return nil
+        }
+        let defaultPort = ["http": 80, "https": 443][scheme]
+        return "\(scheme)://\(host):\(port ?? defaultPort ?? -1)"
     }
 
 }

@@ -611,6 +611,7 @@ to zero and `tls` holds the handshake. `firstByte` starts with the request, so i
 includes any upload. A phase that did not happen, such as on a reused connection,
 is `nil`.
 `bytesReceived` counts the final response's header and body bytes on the wire.
+`HTTPResponse.url` is the last URL, after any redirects.
 
 `metrics` is optional because URLSession does not say when it delivers them
 relative to `data(for:delegate:)` returning. They arrived first in every send
@@ -663,6 +664,9 @@ computed `Authorization` and sends it again, whatever the method, because the
 server refused for lack of credentials. No nonce is kept, so every send starts
 over. `AuthChallenge` reads the header URLSession joined with commas, and the
 first challenge with a known algorithm and `qop=auth` wins, in the server's order.
+The answer goes to the URL that sent the challenge, which a redirect can change,
+and a challenge from another origin isn't answered, so no credential reaches a host
+the request didn't name.
 MD5, SHA-256 and their `-sess` forms are known. The response shown is the final
 one, timed alone, with a note; a 401 whose Digest challenge can't be answered says
 so; any other 401, and a second one, are shown as they came.
