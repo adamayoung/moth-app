@@ -19,9 +19,16 @@ struct RequestDetailView: View {
             TabStripView(tabs: tabs)
             Divider()
             VSplitView {
-                RequestEditorPane(tab: selected, drafts: tabs.drafts, edit: tabs.editDraft)
-                    .frame(minHeight: 250)
-                ResponsePane()
+                RequestEditorPane(
+                    tab: selected,
+                    drafts: tabs.drafts,
+                    edit: tabs.editDraft,
+                    isSending: selected.map { tabs.responses.isSending($0.id) } ?? false,
+                    send: { tabs.send($0) },
+                    cancelSend: tabs.cancelSend
+                )
+                .frame(minHeight: 250)
+                ResponsePane(state: selected.flatMap { tabs.responses.state(for: $0.id) })
                     .frame(minHeight: 160)
             }
         }
@@ -57,6 +64,6 @@ struct RequestDetailView: View {
 }
 
 #Preview {
-    RequestDetailView(tabs: RequestTabsModel(store: .preview, drafts: RequestDrafts.preview))
+    RequestDetailView(tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview))
         .frame(width: 800, height: 600)
 }

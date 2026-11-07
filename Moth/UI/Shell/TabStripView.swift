@@ -70,12 +70,12 @@ private func openSeededRequests(from tree: CollectionTree, in tabs: RequestTabsM
 }
 
 #Preview("No Tabs") {
-    TabStripView(tabs: RequestTabsModel(store: .preview, drafts: RequestDrafts.preview))
+    TabStripView(tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview))
         .frame(width: 600)
 }
 
 #Preview("Open Tabs") {
-    let tabs = RequestTabsModel(store: .preview, drafts: RequestDrafts.preview)
+    let tabs = RequestTabsModel(store: .preview, drafts: .preview, responses: .preview)
     if let dataModel = try? DataModel.inMemory(seed: SeedData.workspace) {
         TabStripView(tabs: tabs)
             .frame(width: 600)

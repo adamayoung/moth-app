@@ -14,6 +14,7 @@ struct MacScene: Scene {
             MainWindowView(
                 dataModel: dependencies.dataModel,
                 secretStore: dependencies.secretStore,
+                transport: dependencies.transport,
                 activeEnvironment: dependencies.activeEnvironment,
                 tabStore: dependencies.requestTabStore,
                 requestDrafts: dependencies.requestDrafts,

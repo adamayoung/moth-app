@@ -22,8 +22,22 @@ struct RequestEditorScreen {
         pane.textFields["requestEditor.url"]
     }
 
+    var sendButton: XCUIElement {
+        pane.buttons["requestEditor.send"]
+    }
+
+    var cancelButton: XCUIElement {
+        pane.buttons["requestEditor.cancel"]
+    }
+
     func showSection(_ title: String) {
         pane.radioButtons[title].click()
+    }
+
+    func replaceURL(with url: String) {
+        urlField.click()
+        app.typeKey("a", modifierFlags: .command)
+        app.typeText(url)
     }
 
     func keyField(_ section: String, at row: Int) -> XCUIElement {

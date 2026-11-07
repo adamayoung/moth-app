@@ -32,6 +32,6 @@ let package = Package(
             resources: [.process("Resources")],
             swiftSettings: swiftSettings
         ),
-        .testTarget(name: "MothCoreTests", dependencies: ["MothCore"], swiftSettings: swiftSettings)
+        .testTarget(name: "MothCoreTests", dependencies: ["MothCore", "HTTPKit"], swiftSettings: swiftSettings)
     ]
 )

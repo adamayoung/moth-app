@@ -14,6 +14,7 @@ final class RequestTabsModel {
         didSet {
             if tabs != oldValue {
                 store.save(tabs)
+                responses.keep(Set(tabs.ids))
             }
         }
     }
@@ -21,11 +22,13 @@ final class RequestTabsModel {
     private var tree = CollectionTree.empty
     private let store: RequestTabStore
     let drafts: RequestDrafts
+    let responses: RequestResponses
     var pendingClose: RequestTab?
 
-    init(store: RequestTabStore, drafts: RequestDrafts) {
+    init(store: RequestTabStore, drafts: RequestDrafts, responses: RequestResponses) {
         self.store = store
         self.drafts = drafts
+        self.responses = responses
         self.tabs = store.load()
     }
 
@@ -54,6 +57,15 @@ final class RequestTabsModel {
         if tabs.selected == id {
             drafts.update(id, change)
         }
+    }
+
+    @discardableResult
+    func send(_ id: Request.ID) -> Task<Void, Never>? {
+        drafts.draft(for: id).map { responses.send(id, draft: $0, tree: tree) }
+    }
+
+    func cancelSend(_ id: Request.ID) {
+        responses.cancel(id)
     }
 
     func requestClose(_ id: Request.ID) {

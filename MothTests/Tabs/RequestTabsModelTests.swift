@@ -59,7 +59,7 @@ final class RequestTabsModelTests {
     /// A model with its first snapshot, as a window has once the queries have delivered.
     private func openedModel() throws -> RequestTabsModel {
         let drafts = RequestDrafts(writer: dataModel.writer, secretStore: InMemorySecretStore())
-        let model = RequestTabsModel(store: store, drafts: drafts)
+        let model = RequestTabsModel(store: store, drafts: drafts, responses: .preview)
         try model.collectionDidChange(savedSnapshot())
         return model
     }

@@ -142,7 +142,31 @@ struct AppStringCatalogTests {
             ("AUTHORIZATION_CANCEL", "Cancel"),
             ("AUTHORIZATION_SAVE", "Save"),
             ("AUTHORIZATION_SAVE_FAILED", "Moth couldn\u{2019}t save this. Close the sheet and try again."),
-            ("QUIT_ALERT_CANCEL", "Cancel")
+            ("QUIT_ALERT_CANCEL", "Cancel"),
+            ("REQUEST_EDITOR_SEND", "Send"),
+            ("REQUEST_EDITOR_CANCEL_SEND", "Cancel"),
+            ("RESPONSE_SENDING", "Sending\u{2026}"),
+            ("RESPONSE_CANCELLED", "Request Cancelled"),
+            ("RESPONSE_FAILED_CONNECT", "Couldn\u{2019}t Connect"),
+            ("RESPONSE_FAILED_TIMEOUT", "Request Timed Out"),
+            ("RESPONSE_FAILED_NOT_SENT", "Couldn\u{2019}t Send"),
+            ("RESPONSE_SECTIONS_LABEL", "Response Sections"),
+            ("RESPONSE_SECTION_BODY", "Body"),
+            ("RESPONSE_SECTION_HEADERS", "Headers"),
+            ("RESPONSE_SECTION_TIMING", "Timing"),
+            ("RESPONSE_BODY_TOO_LARGE", "Response is too large to format."),
+            ("RESPONSE_BODY_BINARY", "Binary response"),
+            ("RESPONSE_BODY_EMPTY", "Empty Response"),
+            ("RESPONSE_TIMING_DNS", "DNS"),
+            ("RESPONSE_TIMING_CONNECT", "Connect"),
+            ("RESPONSE_TIMING_TLS", "TLS"),
+            ("RESPONSE_TIMING_FIRST_BYTE", "First Byte"),
+            ("RESPONSE_TIMING_DOWNLOAD", "Download"),
+            ("RESPONSE_TIMING_TOTAL", "Total"),
+            ("RESPONSE_NOTE_UNDEFINED_VARIABLE_%@", "{{%@}} isn\u{2019}t defined, so it was sent as written."),
+            ("RESPONSE_NOTE_MISSING_CREDENTIAL", "Sent without auth, because its credential has no value."),
+            ("RESPONSE_NOTE_UNSUPPORTED_AUTH", "Sent without its unsupported auth."),
+            ("RESPONSE_NOTE_UNSUPPORTED_BODY", "Sent without its unsupported body.")
         ]
     )
     func catalogHoldsEnglishValue(key: String, expected: String) throws {
@@ -174,6 +198,17 @@ struct AppStringCatalogTests {
     )
     func quitMessageVariesByCount(count: Int, expected: String) throws {
         try expectPlural(key: "QUIT_ALERT_MESSAGE_%lld", count: count, expected: expected)
+    }
+
+    @Test(
+        "The note for undefined variables reads correctly in the singular and the plural",
+        arguments: [
+            (1, "1 variable isn\u{2019}t defined and was sent as written."),
+            (3, "3 variables aren\u{2019}t defined and were sent as written.")
+        ]
+    )
+    func undefinedVariablesVariesByCount(count: Int, expected: String) throws {
+        try expectPlural(key: "RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld", count: count, expected: expected)
     }
 
     private func expectPlural(key: String, count: Int, expected: String) throws {

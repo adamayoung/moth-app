@@ -17,7 +17,11 @@ struct InheritedAuthMessageTests {
     private func model(holding collection: RequestCollection) throws -> (DataModel, RequestTabsModel) {
         let dataModel = try DataModel.inMemory(seed: Workspace(collections: [collection]))
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
-        let tabs = RequestTabsModel(store: RequestTabStore(defaults: defaults, key: "Tabs"), drafts: .preview)
+        let tabs = RequestTabsModel(
+            store: RequestTabStore(defaults: defaults, key: "Tabs"),
+            drafts: .preview,
+            responses: .preview
+        )
         let context = dataModel.mainContext
         let requests = try context.fetch(FetchDescriptor<RequestModel>())
         try tabs.collectionDidChange(CollectionSnapshot(
