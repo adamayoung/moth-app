@@ -677,7 +677,8 @@ drops its response, and closing a window cancels.
 Request > Send (⌘↩) does what the Send button does, and reads Cancel (⌘.) while the
 tab's request is in flight. Request > Edit URL (⌘L) focuses the URL field and selects
 its text. Like File > Save, each does nothing while a sheet has the keyboard,
-because the focused value outlives the sheet.
+because the focused value outlives the sheet. Both are disabled while a history
+entry covers the tabs, so neither acts on a request out of sight.
 
 ## History
 

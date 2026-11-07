@@ -11,6 +11,7 @@ import SwiftUI
 struct RequestDetailView: View {
 
     @Bindable var tabs: RequestTabsModel
+    var isShowing = true
 
     var body: some View {
         let selected = tabs.selectedTab
@@ -39,9 +40,6 @@ struct RequestDetailView: View {
                     .id(selected.id)
             }
         }
-        .background {
-            AlternateTabShortcuts(tabs: tabs)
-        }
         .alert(closeAlertTitle, item: $tabs.pendingClose) { tab in
             Button("CLOSE_TAB_ALERT_SAVE") {
                 Task { await tabs.saveAndClose(tab.id) }
@@ -57,43 +55,11 @@ struct RequestDetailView: View {
         .alert("GENERATE_CODE_FAILED", isPresented: Bindable(tabs.code).hasFailed) {
             Button("GENERATE_CODE_FAILED_OK", role: .cancel) {}
         }
-        .focusedSceneValue(
-            \.requestTabCommands,
-            RequestTabCommandContext(
-                tabs: tabs,
-                hasOpenTabs: !tabs.openTabs.isEmpty,
-                selectedRequest: selected?.id,
-                savableRequest: selected.flatMap { tabs.drafts.canSave($0.id) ? $0.id : nil },
-                send: tabs.sendCommand,
-                canEditURL: tabs.canEditURL,
-                canCycleTabs: tabs.canCycleTabs
-            )
-        )
+        .focusedSceneValue(\.requestTabCommands, RequestTabCommandContext(tabs: tabs, isShowing: isShowing))
     }
 
     private var closeAlertTitle: String {
         String(localized: "CLOSE_TAB_ALERT_TITLE_\(tabs.pendingClose?.name ?? "")")
-    }
-
-}
-
-/// The second pair Safari has, which the Request menu can't list: SwiftUI has no hidden menu item. A sheet takes the
-/// window's key status, so neither fires behind one.
-private struct AlternateTabShortcuts: View {
-
-    let tabs: RequestTabsModel
-
-    var body: some View {
-        Group {
-            Button("MENU_NEXT_TAB", action: tabs.selectNextTab)
-                .keyboardShortcut("]", modifiers: [.command, .shift])
-            Button("MENU_PREVIOUS_TAB", action: tabs.selectPreviousTab)
-                .keyboardShortcut("[", modifiers: [.command, .shift])
-        }
-        .focusable(false)
-        .frame(width: 0, height: 0)
-        .opacity(0)
-        .accessibilityHidden(true)
     }
 
 }

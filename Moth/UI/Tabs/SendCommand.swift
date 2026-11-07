@@ -11,4 +11,12 @@ enum SendCommand: Equatable {
     case cancel(Request.ID)
     case unavailable
 
+    var sendableRequest: Request.ID? {
+        if case .send(let id) = self {
+            id
+        } else {
+            nil
+        }
+    }
+
 }

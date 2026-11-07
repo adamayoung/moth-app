@@ -183,4 +183,23 @@ struct RequestTabSendTests {
         }
     }
 
+    @Test("Covered by a history entry, the Request menu can neither send nor edit the URL, and still moves tabs")
+    func coveredTabsCannotSendOrEditTheURL() throws {
+        let (dataModel, tabs) = try tabs()
+        tabs.open(first.id)
+        tabs.open(second.id)
+
+        let showing = RequestTabCommandContext(tabs: tabs, isShowing: true)
+        let covered = RequestTabCommandContext(tabs: tabs, isShowing: false)
+
+        withExtendedLifetime(dataModel) {
+            #expect(showing.send == .send(second.id))
+            #expect(showing.canEditURL)
+            #expect(covered.send == .unavailable)
+            #expect(!covered.canEditURL)
+            #expect(covered.canCycleTabs)
+            #expect(covered.selectedRequest == second.id)
+        }
+    }
+
 }

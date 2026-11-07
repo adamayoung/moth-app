@@ -62,12 +62,12 @@ struct RequestCommands: Commands {
             .keyboardShortcut(".")
         } else {
             Button("MENU_SEND") {
-                if case .send(let id) = context?.send {
+                if let id = context?.send.sendableRequest {
                     withMainWindow { $0.send(id) }
                 }
             }
             .keyboardShortcut(.return)
-            .disabled(context?.send == .unavailable || context == nil)
+            .disabled(context?.send.sendableRequest == nil)
         }
     }
 

@@ -34,8 +34,10 @@ struct MenuShortcutReader {
         guard AXIsProcessTrusted() else {
             throw XCTSkip("The test runner is not trusted for Accessibility, so it cannot read key equivalents.")
         }
+        // The newest, because an installed Moth running beside the one under test shares its bundle identifier.
         let running = try XCTUnwrap(
-            NSRunningApplication.runningApplications(withBundleIdentifier: "uk.co.adam-young.Moth").first
+            NSRunningApplication.runningApplications(withBundleIdentifier: "uk.co.adam-young.Moth")
+                .max { ($0.launchDate ?? .distantPast) < ($1.launchDate ?? .distantPast) }
         )
         self.application = AXUIElementCreateApplication(running.processIdentifier)
     }

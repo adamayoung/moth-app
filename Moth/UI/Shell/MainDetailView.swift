@@ -17,7 +17,7 @@ struct MainDetailView: View {
         let entry = history.openEntry
 
         ZStack {
-            RequestDetailView(tabs: tabs)
+            RequestDetailView(tabs: tabs, isShowing: entry == nil)
                 .opacity(entry == nil ? 1 : 0)
                 .disabled(entry != nil)
                 .accessibilityHidden(entry != nil)
@@ -29,6 +29,9 @@ struct MainDetailView: View {
                 .id(entry)
                 .background(.background)
             }
+        }
+        .background {
+            AlternateTabShortcuts(tabs: tabs)
         }
         .onChange(of: sidebar.selection) { _, selection in
             if selection != nil {
