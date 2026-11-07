@@ -49,11 +49,11 @@ final class CookiesModel {
     }
 
     func deleteSelected() async {
-        guard let selection else {
+        guard let deleted = selection else {
             return
         }
-        await delete([selection])
-        self.selection = nil
+        selection = nil
+        await delete([deleted])
     }
 
     func deleteCookies(in domain: String) async {

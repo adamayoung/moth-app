@@ -77,6 +77,22 @@ struct CookiesModelTests {
         #expect(model.domains.flatMap(\.cookies).map(\.name) == ["sid", "theme"])
     }
 
+    @Test("A cookie selected while a delete runs stays selected")
+    func selectionDuringADeleteStays() async throws {
+        let model = try model()
+        await model.open()
+        let other = Self.cookie("theme", domain: "example.org").identity
+        model.selection = Self.cookie("csrf", domain: "api.example.com").identity
+
+        let deleting = Task { await model.deleteSelected() }
+        await Task.yield()
+        #expect(model.selection == nil)
+        model.selection = other
+        await deleting.value
+
+        #expect(model.selection == other)
+    }
+
     @Test("Deleting a domain removes its cookies and keeps the others")
     func deletesADomain() async throws {
         let model = try model()

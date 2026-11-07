@@ -31,8 +31,14 @@ public actor InMemoryCookieJar: CookieJar {
         list.sending(to: url, at: now())
     }
 
+    /// Dates each cookie by this jar's clock, which also decides expiry.
     public func receive(_ cookies: [Cookie]) {
-        list.receive(cookies, at: now())
+        let now = now()
+        list.receive(cookies.map { cookie in
+            var cookie = cookie
+            cookie.createdAt = now
+            return cookie
+        }, at: now)
     }
 
 }

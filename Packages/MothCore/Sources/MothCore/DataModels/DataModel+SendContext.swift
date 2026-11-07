@@ -16,9 +16,8 @@ public nonisolated struct SendContext: Sendable {
 
 public extension DataModel {
 
-    /// The workspace the app shows: the lowest `id`, which reconcile keeps when two Macs each made one.
     var workspaceID: UUID? {
-        try? mainContext.fetch(FetchDescriptor<WorkspaceModel>()).map(\.id).min()
+        try? mainContext.fetch(FetchDescriptor<WorkspaceModel>()).survivor?.id
     }
 
     /// Fetches each scope's rows, because a row's to-many arrays go stale on the main context.

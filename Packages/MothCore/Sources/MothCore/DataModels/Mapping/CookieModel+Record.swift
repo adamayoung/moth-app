@@ -35,17 +35,9 @@ nonisolated extension CookieModel {
 
     /// Compares first, because an equal-value assignment still rewrites the row.
     func update(from cookie: Cookie) {
-        guard record.cookie != Cookie(
-            name: cookie.name,
-            value: "",
-            domain: cookie.domain,
-            isHostOnly: cookie.isHostOnly,
-            path: cookie.path,
-            expiresAt: cookie.expiresAt,
-            isSecure: cookie.isSecure,
-            isHTTPOnly: cookie.isHTTPOnly,
-            createdAt: cookie.createdAt
-        ) else {
+        var metadata = cookie
+        metadata.value = ""
+        guard record.cookie != metadata else {
             return
         }
         name = cookie.name

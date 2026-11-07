@@ -9,10 +9,10 @@ import HTTPKit
 /// One workspace's cookies, kept in the local store with their values in a device-only Keychain item. Never logs:
 /// a cookie's value is a credential as often as not.
 ///
-/// Storing is best effort: a cookie whose value can't be saved stays in memory until quit, which is all an ad hoc
-/// build's in-memory secret store allows anyway.
+/// Memory changes at once, and the store and Keychain follow one change at a time, in order, because two sends
+/// finish in no set order. A change that fails is not retried: the jar reads the store again on its next use. A
+/// cookie whose value can't be saved stays in memory until quit, which is all an ad hoc build allows anyway.
 public actor WorkspaceCookieJar: CookieJar {
-
     public nonisolated let workspaceID: UUID
     private let writer: StoreWriter
     private let secretStore: any SecretStore
@@ -20,6 +20,7 @@ public actor WorkspaceCookieJar: CookieJar {
     private var list = CookieList()
     private var rowIDs: [Cookie.Identity: UUID] = [:]
     private var loading: Task<Void, Never>?
+    private var pending: Task<Void, Never>?
 
     init(
         workspaceID: UUID,
@@ -43,7 +44,7 @@ public actor WorkspaceCookieJar: CookieJar {
     public var all: [Cookie] {
         get async {
             await load()
-            await forget(list.removeExpired(at: now()))
+            try? await persist(removing: records(releasing: list.removeExpired(at: now())))
             return list.cookies
         }
     }
@@ -55,22 +56,24 @@ public actor WorkspaceCookieJar: CookieJar {
 
     public func receive(_ cookies: [Cookie]) async {
         await load()
-        let change = list.receive(cookies, at: now())
-        let saved = change.saved.map { cookie in
-            CookieRecord(id: rowID(for: cookie.identity), cookie: cookie)
+        let stamped = cookies.map { cookie in
+            var cookie = cookie
+            cookie.createdAt = now()
+            return cookie
         }
-        await forget(change.removed)
-        await store(saved)
+        let change = list.receive(stamped, at: now())
+        let saved = change.saved.map { CookieRecord(id: rowID(for: $0.identity), cookie: $0) }
+        try? await persist(saving: saved, removing: records(releasing: change.removed))
     }
 
     public func delete(_ identities: Set<Cookie.Identity>) async throws {
         await load()
-        try await remove(list.remove { identities.contains($0.identity) })
+        try await persist(removing: records(releasing: list.remove { identities.contains($0.identity) }))
     }
 
     public func deleteAll() async throws {
         await load()
-        try await remove(list.remove { _ in true })
+        try await persist(removing: records(releasing: list.remove { _ in true }))
     }
 
     private func rowID(for identity: Cookie.Identity) -> UUID {
@@ -82,70 +85,116 @@ public actor WorkspaceCookieJar: CookieJar {
         return id
     }
 
+    private func records(releasing cookies: [Cookie]) -> [CookieRecord] {
+        cookies.compactMap { cookie in
+            rowIDs.removeValue(forKey: cookie.identity).map { CookieRecord(id: $0, cookie: cookie) }
+        }
+    }
+
     private func load() async {
         if loading == nil {
-            loading = Task { await read() }
+            let previous = pending
+            loading = Task {
+                await previous?.value
+                await read()
+            }
         }
         await loading?.value
     }
 
-    /// A row whose value is missing is dropped, as after an ad hoc build's in-memory secrets are gone.
+    /// A row whose value is gone, as after an ad hoc build quits, is dropped, and so is a second row for one cookie.
+    /// A row whose value can't be read keeps its identifier, so setting that cookie again replaces it.
     private func read() async {
-        guard let records = try? await writer.cookieRecords(in: workspaceID) else {
+        rowIDs = [:]
+        list = CookieList()
+        guard let rows = try? await writer.cookieRecords(in: workspaceID) else {
+            loading = nil
             return
         }
         var found: [Cookie] = []
-        var missing: [UUID] = []
-        for record in records {
+        var dropped: [CookieRecord] = []
+        for record in rows {
+            let identity = record.cookie.identity
+            guard rowIDs[identity] == nil else {
+                dropped.append(record)
+                continue
+            }
             let stored: String?
             do {
                 stored = try await secretStore.value(for: record.valueIdentifier)
             } catch {
+                rowIDs[identity] = record.id
                 continue
             }
             guard let value = stored else {
-                missing.append(record.id)
+                dropped.append(record)
                 continue
             }
             var cookie = record.cookie
             cookie.value = value
             found.append(cookie)
-            rowIDs[cookie.identity] = record.id
+            rowIDs[identity] = record.id
         }
-        try? await writer.removeCookies(missing)
         list = CookieList(found)
-        await forget(list.removeExpired(at: now()))
+        try? await persist(removing: dropped + records(releasing: list.removeExpired(at: now())))
     }
 
-    private func store(_ records: [CookieRecord]) async {
-        var saved: [CookieRecord] = []
-        for record in records {
-            do {
-                try await secretStore.save(record.cookie.value, for: record.valueIdentifier)
-                saved.append(record)
-            } catch {
-                continue
-            }
-        }
-        try? await writer.saveCookies(saved, in: workspaceID)
-    }
-
-    private func forget(_ cookies: [Cookie]) async {
-        try? await remove(cookies)
-    }
-
-    /// The rows go first, because a row whose value is gone is dropped at the next load anyway.
-    private func remove(_ cookies: [Cookie]) async throws {
-        let records = cookies.compactMap { cookie in
-            rowIDs.removeValue(forKey: cookie.identity).map { CookieRecord(id: $0, cookie: cookie) }
-        }
-        guard !records.isEmpty else {
+    private func persist(saving: [CookieRecord] = [], removing: [CookieRecord] = []) async throws {
+        guard !saving.isEmpty || !removing.isEmpty else {
             return
         }
-        try await writer.removeCookies(records.map(\.id))
-        for record in records {
-            try await secretStore.removeValue(for: record.valueIdentifier)
+        let previous = pending
+        let change = CookieStoreChange(
+            workspaceID: workspaceID,
+            writer: writer,
+            secretStore: secretStore,
+            saving: saving,
+            removing: removing
+        )
+        let applying = Task {
+            await previous?.value
+            return await change.apply()
+        }
+        pending = Task { _ = await applying.value }
+        if case .failure(let error) = await applying.value {
+            loading = nil
+            throw error
         }
     }
+}
 
+/// Rows are written before values and removed after them, because a row whose value is missing is dropped at the next
+/// load, while a value with no row would stay in the Keychain for good.
+private nonisolated struct CookieStoreChange: Sendable {
+    let workspaceID: UUID
+    let writer: StoreWriter
+    let secretStore: any SecretStore
+    let saving: [CookieRecord]
+    let removing: [CookieRecord]
+
+    func apply() async -> Result<Void, any Error> {
+        var failure: any Error?
+        do {
+            try await writer.saveCookies(saving, in: workspaceID)
+            for record in saving {
+                do {
+                    try await secretStore.save(record.cookie.value, for: record.valueIdentifier)
+                } catch {
+                    failure = failure ?? error
+                }
+            }
+        } catch {
+            failure = error
+        }
+        let removed = await CookieValues.remove(removing, from: secretStore)
+        do {
+            try await writer.removeCookies(removed.ids)
+        } catch {
+            failure = failure ?? error
+        }
+        if let error = failure ?? removed.failure {
+            return .failure(error)
+        }
+        return .success(())
+    }
 }

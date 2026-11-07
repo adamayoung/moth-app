@@ -69,12 +69,26 @@ public final class StoreWriter {
         }
     }
 
+    /// For the local store's own rows, which have no part in a workspace merge.
+    func writeLocal<Result>(_ batch: (ModelContext) throws -> Result) throws -> Result {
+        do {
+            let result = try batch(context)
+            if context.hasChanges {
+                try context.save()
+            }
+            return result
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
     func read<Result>(_ body: (ModelContext) throws -> Result) rethrows -> Result {
         try body(context)
     }
 
     static func implicitWorkspace(in context: ModelContext) throws -> WorkspaceModel {
-        if let workspace = try context.fetch(FetchDescriptor<WorkspaceModel>()).min(by: { $0.id < $1.id }) {
+        if let workspace = try context.fetch(FetchDescriptor<WorkspaceModel>()).survivor {
             return workspace
         }
 
@@ -85,7 +99,7 @@ public final class StoreWriter {
 
     /// Every Mac makes the same choice without talking to the others, because the lowest `id` is the same on each.
     private func reconcile() throws {
-        let workspaces = try context.fetch(FetchDescriptor<WorkspaceModel>()).sorted { $0.id < $1.id }
+        let workspaces = try context.fetch(FetchDescriptor<WorkspaceModel>()).sorted(by: WorkspaceModel.survives)
         guard let survivor = workspaces.first else {
             return
         }

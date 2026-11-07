@@ -78,6 +78,11 @@ struct CookieParsingTests {
         #expect(cookies.map(\.name) == ["a"])
     }
 
+    @Test("A Secure cookie from plain HTTP is refused, so an insecure origin can't set one for HTTPS")
+    func secureOverHTTPIsRefused() throws {
+        #expect(try received("sid=planted; Secure", from: "http://example.com/").isEmpty)
+    }
+
     @Test("A Domain the host isn't in is refused", arguments: ["other.com", ".com", "com", "ample.com"])
     func foreignDomainIsRefused(domain: String) throws {
         #expect(try received("a=1; Domain=\(domain)", from: "http://www.example.com/").isEmpty)

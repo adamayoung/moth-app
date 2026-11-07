@@ -43,9 +43,12 @@ public final class CookieJars {
     }
 
     /// Run after the launch reconcile, which deletes a merged-away workspace and so its cookies.
+    /// A row stays for each value that won't go, so the next launch tries again.
     public func removeCookiesOfDeletedWorkspaces() async throws {
-        for identifier in try await writer.removeCookiesOfDeletedWorkspaces() {
-            try await secretStore.removeValue(for: identifier)
+        let removal = try await CookieValues.remove(writer.cookieRecordsOfDeletedWorkspaces(), from: secretStore)
+        try await writer.removeCookies(removal.ids)
+        if let failure = removal.failure {
+            throw failure
         }
     }
 

@@ -6,6 +6,7 @@
 import Foundation
 import SwiftData
 
+/// Cookie rows are the local store's own, with no part in a workspace merge, so their writes skip the reconcile.
 extension StoreWriter {
 
     func cookieRecords(in workspaceID: UUID) throws -> [CookieRecord] {
@@ -14,12 +15,21 @@ extension StoreWriter {
         }
     }
 
-    /// Writes the metadata only: the caller has already saved each value under its record's `valueIdentifier`.
+    func cookieRecordsOfDeletedWorkspaces() throws -> [CookieRecord] {
+        try read { context in
+            let workspaces = try Set(context.fetch(FetchDescriptor<WorkspaceModel>()).map(\.id))
+            return try context.fetch(FetchDescriptor<CookieModel>())
+                .filter { !workspaces.contains($0.workspaceID) }
+                .map(\.record)
+        }
+    }
+
+    /// Writes the metadata only: the caller saves each value under its record's `valueIdentifier`.
     func saveCookies(_ records: [CookieRecord], in workspaceID: UUID) throws {
         guard !records.isEmpty else {
             return
         }
-        try write { context in
+        try writeLocal { context in
             let existing = try context.fetch(CookieModel.withIDs(records.map(\.id)))
             let rows = Dictionary(existing.map { ($0.id, $0) }) { first, _ in first }
             for record in records {
@@ -36,20 +46,8 @@ extension StoreWriter {
         guard !ids.isEmpty else {
             return
         }
-        try write { context in
+        try writeLocal { context in
             try context.fetch(CookieModel.withIDs(ids)).forEach(context.delete)
-        }
-    }
-
-    /// Returns the removed rows' value identifiers, for the caller to remove from the Keychain.
-    func removeCookiesOfDeletedWorkspaces() throws -> [String] {
-        try write { context in
-            let workspaces = try Set(context.fetch(FetchDescriptor<WorkspaceModel>()).map(\.id))
-            let orphans = try context.fetch(FetchDescriptor<CookieModel>()).filter {
-                !workspaces.contains($0.workspaceID)
-            }
-            orphans.forEach(context.delete)
-            return orphans.map(\.valueIdentifier)
         }
     }
 
