@@ -21,7 +21,7 @@ struct FixtureFolderTests {
         let sources = try Fixture.text("SOURCES.md")
         let fixtures = try fixturePaths()
 
-        #expect(fixtures.count == 17)
+        #expect(fixtures.count == 18)
         for fixture in fixtures {
             #expect(sources.contains(fixture), "SOURCES.md doesn't name \(fixture)")
         }
@@ -30,6 +30,7 @@ struct FixtureFolderTests {
         #expect(sources.contains("Copyright 2015 Postdot Technologies Pvt. Ltd."))
         #expect(sources.contains("Copyright 2017 Postdot Technologies Pvt. Ltd."))
         #expect(sources.contains("Copyright 2025 Postman, Inc."))
+        #expect(sources.contains("Copyright (c) 2021 Amazon Web Services, Inc. or its affiliates."))
     }
 
     private func fixturePaths() throws -> [String] {

@@ -100,7 +100,7 @@ struct ResponseNoteTests {
     }
 
     @Test("An unsupported auth is noted", arguments: [
-        UnsupportedAuthKind.digest, .oauth2, .awsSigV4
+        UnsupportedAuthKind.digest, .oauth2
     ])
     func unsupportedAuth(kind: UnsupportedAuthKind) {
         #expect(ResponseNote.notes(unresolved: [], notices: [.unsupportedAuth(kind)]) == [.unsupportedAuth])

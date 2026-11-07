@@ -8,6 +8,10 @@ import PostmanKit
 
 nonisolated extension PostmanMapper {
 
+    /// What Postman signs with for a blank field. An export leaves a blank `service` out, so the row needs a value.
+    private static let postmanDefaultRegion = "us-east-1"
+    private static let postmanDefaultService = "execute-api"
+
     mutating func auth(_ postman: PostmanAuth?, whenUnset unset: Auth) -> Auth {
         guard let postman else {
             return unset
@@ -23,7 +27,7 @@ nonisolated extension PostmanMapper {
         case .apikey:
             return apiKey(postman)
         case .awsv4:
-            return storedButUnsupported(.awsSigV4, sigV4(postman))
+            return sigV4(postman)
         case .digest:
             return storedButUnsupported(.digest, digest(postman))
         case .oauth2:
@@ -73,8 +77,8 @@ nonisolated extension PostmanMapper {
             accessKeyID: secret(postman.text("accessKey")),
             secretAccessKey: secret(postman.text("secretKey")),
             sessionToken: optionalSecret(postman.text("sessionToken")),
-            region: postman.text("region") ?? "",
-            service: postman.text("service") ?? ""
+            region: postman.nonEmptyText("region") ?? Self.postmanDefaultRegion,
+            service: postman.nonEmptyText("service") ?? Self.postmanDefaultService
         ))
     }
 
@@ -113,6 +117,10 @@ private nonisolated extension PostmanAuth {
         keys.lazy.compactMap { key in
             parameters.first { $0.key == key }?.value?.text
         }.first
+    }
+
+    func nonEmptyText(_ key: String) -> String? {
+        text(key).flatMap { $0.isEmpty ? nil : $0 }
     }
 
 }

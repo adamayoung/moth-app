@@ -30,13 +30,6 @@ struct RequestDraftsCredentialTests: RequestDraftsTesting {
 
     private let token = SecretReference(identifier: "token")
 
-    /// Every stored field of the row as text, so a credential can't hide in one a test forgot to name.
-    private func storedText(of row: RequestModel) -> String {
-        let fields = [row.queryParametersData, row.pathParametersData, row.headersData, row.bodyData, row.authData]
-        return fields.compactMap(\.self).compactMap { String(bytes: $0, encoding: .utf8) }.joined()
-            + row.name + row.urlTemplate
-    }
-
     @Test("A typed token reaches the secret store under its reference, and no row holds it")
     func tokenReachesTheSecretStore() async throws {
         let secretStore = RecordingSecretStore()

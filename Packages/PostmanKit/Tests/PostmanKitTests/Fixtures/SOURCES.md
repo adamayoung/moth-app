@@ -1,9 +1,10 @@
 # Fixture Sources
 
 Every `.json` file here is an unchanged copy of a file from one of Postman's
-Apache-2.0 repositories. [LICENSE](LICENSE) holds the licence text, which is the
-same in each repository apart from its copyright line. Moth's own MIT licence
-doesn't apply to these files.
+Apache-2.0 repositories, or from the AWS sample in the last section, which has a
+licence of its own. [LICENSE](LICENSE) holds the Apache-2.0 text, which is the
+same in each Postman repository apart from its copyright line. Moth's own MIT
+licence doesn't apply to these files.
 
 An **app export** carries the Postman app's own marks: `_exporter_id`, or
 `_postman_exported_using`. **Postman-authored** means Postman wrote the file for
@@ -76,3 +77,14 @@ Every file is Postman-authored, from `examples/`.
 | Fixture | Upstream path | Kind |
 | --- | --- | --- |
 | `postman-schemas/apikeyAuthTest.json` | `examples/draft-04/v2.1.0/apikeyAuthTest.json` | Postman-authored. Declares the `http` form of the schema URL, so `PostmanCollection` rejects it as it is |
+
+## aws-iam-identity-center-extensions
+
+`Copyright (c) 2021 Amazon Web Services, Inc. or its affiliates.`, MIT, in
+[`aws-iam-identity-center-extensions/LICENSE`](aws-iam-identity-center-extensions/LICENSE),
+commit
+[`aa597cb`](https://github.com/aws-samples/aws-iam-identity-center-extensions/tree/aa597cbc92d5506a5ac7a77f86a33cf75cc2dc3d).
+
+| Fixture | Upstream path | Kind |
+| --- | --- | --- |
+| `aws-iam-identity-center-extensions/aws-sso-extensions-for-enterprise.postman_collection.json` | `docs/samples/postman-collection/aws-sso-extensions-for-enterprise.postman_collection.json` | App export with AWS Signature on every request, which leaves out `service` because it was blank |
