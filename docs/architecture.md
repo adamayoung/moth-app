@@ -143,7 +143,9 @@ for a new one first, with the client credentials in a Basic header, each
 form-encoded as section 2.3.1 says. A token with no expiry is used until it is
 cleared, and a 401 doesn't renew one. A failed token request stops the send with
 "Couldn't Get Access Token" and the server's `error` and `error_description`. The
-token request carries no cookies and goes to no History. Two sends that both need
+token request carries no cookies and goes to no History. It takes the request's
+timeout, Follow Redirects and Verify TLS Certificate, because a token endpoint
+often shares the API's host. Two sends that both need
 a token both ask for one, and the last stored wins. Any other grant sends no auth
 and is noted, as an unsupported kind is.
 

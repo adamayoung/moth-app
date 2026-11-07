@@ -57,9 +57,11 @@ public nonisolated struct OAuth2Tokens: Sendable {
             clientSecret: oauth2.clientSecret.flatMap { resolved.credentials[$0] } ?? "",
             scope: oauth2.scope
         )
+        let settings = resolved.settings
         let response = try await transport.send(
-            tokenRequest.urlRequest(timeout: resolved.settings.timeout),
-            cookies: nil
+            tokenRequest.urlRequest(timeout: settings.timeout),
+            cookies: nil,
+            policy: SendPolicy(followsRedirects: settings.followsRedirects, verifiesTLS: settings.verifiesTLS)
         )
         let token = try OAuth2TokenRequest.token(from: response, receivedAt: now())
         if let reference = oauth2.accessToken {

@@ -207,6 +207,20 @@ struct RequestSenderOAuth2Tests {
         )
     }
 
+    @Test("The token request follows the request's redirect and TLS settings, as a server sharing its host needs")
+    func tokenRequestFollowsSettings() async throws {
+        let transport = ScriptedTransport(Self.issued, Self.accepted)
+        var request = Self.request()
+        request.settings = RequestSettings(followsRedirects: false, verifiesTLS: false)
+
+        _ = await sender(transport).send(OutgoingRequest(request: request), scopes: VariableScopes())
+
+        let tokenPolicy = try #require(transport.policies.first)
+        #expect(!tokenPolicy.followsRedirects)
+        #expect(!tokenPolicy.verifiesTLS)
+        #expect(transport.cookieJars.first.map { $0 == nil } == true)
+    }
+
     @Test("Two requests inheriting one auth share its token")
     func inheritedAuthSharesAToken() async {
         let first = Request(name: "First", urlTemplate: "https://api.example.com/a")
