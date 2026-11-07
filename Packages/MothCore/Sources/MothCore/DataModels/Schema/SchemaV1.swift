@@ -190,4 +190,3 @@ public typealias FolderModel = SchemaV1.FolderModel
 public typealias RequestModel = SchemaV1.RequestModel
 public typealias EnvironmentModel = SchemaV1.EnvironmentModel
 public typealias VariableModel = SchemaV1.VariableModel
-public typealias HistoryEntryModel = SchemaV1.HistoryEntryModel

@@ -143,10 +143,16 @@ nonisolated enum DomainFixtures {
             duration: .seconds(1) + .nanoseconds(250),
             response: HistoryResponse(
                 status: 201,
+                reasonPhrase: "Created",
                 headers: [KeyValue(key: "Content-Type", value: "text/plain")],
+                timing: [
+                    PhaseTiming(phase: .dns, duration: .milliseconds(12)),
+                    PhaseTiming(phase: .firstByte, duration: .milliseconds(90))
+                ],
+                size: 7,
                 body: Data("created".utf8)
             ),
-            failure: "The connection was lost."
+            failure: SendFailure(kind: .couldNotConnect, description: "The connection was lost.")
         )
     }
 

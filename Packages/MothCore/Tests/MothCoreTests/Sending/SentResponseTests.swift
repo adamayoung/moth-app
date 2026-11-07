@@ -115,4 +115,31 @@ struct SentResponseTests {
         #expect(sent.notes == [.unsupportedAuth])
     }
 
+    @Test("A recorded response shows as it did when it was sent")
+    func recordedResponse() {
+        let live = SentResponse(
+            response(
+                headers: ["X-B": "2", "Content-Type": "text/plain"],
+                size: 3,
+                metrics: HTTPMetrics(totalTime: .milliseconds(142), dns: .milliseconds(12))
+            ),
+            measured: .zero
+        )
+        let recorded = HistoryResponse(
+            status: live.status,
+            reasonPhrase: live.reasonPhrase,
+            headers: [KeyValue(key: "X-B", value: "2"), KeyValue(key: "Content-Type", value: "text/plain")],
+            timing: live.timing,
+            size: 3,
+            body: Data("AAA".utf8)
+        )
+
+        let shown = SentResponse(recorded, duration: .milliseconds(142))
+
+        #expect(shown.statusLine(locale: locale) == live.statusLine(locale: locale))
+        #expect(shown.headers == live.headers)
+        #expect(shown.timing == live.timing)
+        #expect(shown.content == live.content)
+    }
+
 }

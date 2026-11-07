@@ -18,6 +18,7 @@ struct MainWindowView: View {
     @State private var environments: EnvironmentsModel
     @State private var tabs: RequestTabsModel
     @State private var imports: ImportModel
+    @State private var history: HistoryModel
     @State private var cookies: CookiesModel
 
     init(
@@ -60,6 +61,13 @@ struct MainWindowView: View {
             )
         )
         self.tabs = tabs
+        self.history = HistoryModel(
+            writer: writer,
+            transport: transport,
+            secretStore: secretStore,
+            cookieJar: { dataModel.workspaceID.map(cookieJars.jar(for:)) },
+            openTab: { tabs.open($0) }
+        )
         self.cookies = CookiesModel(dataModel: dataModel, cookieJars: cookieJars)
         self.imports = ImportModel(
             source: importFileSource,
@@ -74,15 +82,21 @@ struct MainWindowView: View {
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(model: sidebar, environments: environments, tabs: tabs, isSyncedToICloud: isSyncedToICloud)
-                .safeAreaBar(edge: .bottom, spacing: 0) {
-                    if imports.isImporting {
-                        ImportProgressFooter()
-                    }
+            SidebarView(
+                model: sidebar,
+                environments: environments,
+                tabs: tabs,
+                history: history,
+                isSyncedToICloud: isSyncedToICloud
+            )
+            .safeAreaBar(edge: .bottom, spacing: 0) {
+                if imports.isImporting {
+                    ImportProgressFooter()
                 }
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
+            }
+            .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
-            RequestDetailView(tabs: tabs)
+            MainDetailView(history: history, tabs: tabs, sidebar: sidebar)
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

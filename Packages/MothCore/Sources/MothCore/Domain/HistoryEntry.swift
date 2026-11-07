@@ -5,15 +5,18 @@
 
 import Foundation
 
-/// `request` is the unresolved request, so a secret in it stays a reference. A response is stored as received.
+/// `request` is the snapshot sent, with secret variables left as `{{name}}` and auth holding references, so no secret
+/// is stored. Its `variables` hold every variable in scope at the send, so Send Again resolves secrets as they are now.
 public nonisolated struct HistoryEntry: Identifiable, Sendable, Hashable {
+
+    public static let maskedValue = "••••••••"
 
     public let id: UUID
     public var request: Request
     public var sentAt: Date
     public var duration: Duration
     public var response: HistoryResponse?
-    public var failure: String?
+    public var failure: SendFailure?
 
     public init(
         id: UUID = UUID(),
@@ -21,7 +24,7 @@ public nonisolated struct HistoryEntry: Identifiable, Sendable, Hashable {
         sentAt: Date,
         duration: Duration,
         response: HistoryResponse? = nil,
-        failure: String? = nil
+        failure: SendFailure? = nil
     ) {
         self.id = id
         self.request = request
@@ -35,13 +38,30 @@ public nonisolated struct HistoryEntry: Identifiable, Sendable, Hashable {
 
 public nonisolated struct HistoryResponse: Sendable, Hashable {
 
-    public var status: Int
-    public var headers: [KeyValue]
-    public var body: Data
+    /// In bytes, as the status line counts them.
+    public static let bodyLimit = 5_000_000
 
-    public init(status: Int, headers: [KeyValue] = [], body: Data = Data()) {
+    public var status: Int
+    public var reasonPhrase: String?
+    public var headers: [KeyValue]
+    public var timing: [PhaseTiming]
+    public var size: Int
+    /// `nil` when the body was larger than ``bodyLimit``.
+    public var body: Data?
+
+    public init(
+        status: Int,
+        reasonPhrase: String? = nil,
+        headers: [KeyValue] = [],
+        timing: [PhaseTiming] = [],
+        size: Int = 0,
+        body: Data? = Data()
+    ) {
         self.status = status
+        self.reasonPhrase = reasonPhrase
         self.headers = headers
+        self.timing = timing
+        self.size = size
         self.body = body
     }
 

@@ -7,6 +7,7 @@ import Foundation
 import HTTPKit
 import MothCore
 import Observation
+import OSLog
 
 /// One window's latest responses, keyed by request and held only in memory, so a relaunch returns to No Response.
 @Observable
@@ -19,7 +20,8 @@ final class RequestResponses {
 
     }
 
-    typealias Send = @MainActor (Request.ID, RequestDraft, CollectionTree) async -> SendResult
+    typealias Send = @MainActor (Request.ID, RequestDraft, CollectionTree) async -> RecordedSend
+    typealias Record = @MainActor (HistoryEntry) async -> Void
 
     private struct InFlight {
 
@@ -31,9 +33,11 @@ final class RequestResponses {
     private var states: [Request.ID: State] = [:]
     @ObservationIgnored private var inFlight: [Request.ID: InFlight] = [:]
     private let perform: Send
+    private let record: Record
 
-    init(send: @escaping Send) {
+    init(send: @escaping Send, record: @escaping Record = { _ in }) {
         self.perform = send
+        self.record = record
     }
 
     convenience init(
@@ -44,14 +48,21 @@ final class RequestResponses {
         activeEnvironment: ActiveEnvironment
     ) {
         let sender = RequestSender(transport: transport, secretStore: secretStore)
+        let writer = dataModel.writer
         self.init { id, draft, tree in
             do {
                 let context = try dataModel.sendContext(for: id, in: tree, environment: activeEnvironment.id)
                 let outgoing = try draft.outgoing(from: context.request, in: tree)
                 let jar = context.workspaceID.map(cookieJars.jar(for:))
-                return await sender.send(outgoing, scopes: context.scopes, cookies: jar)
+                return await sender.sendRecording(outgoing, scopes: context.scopes, cookies: jar)
             } catch {
-                return .failed(SendFailure(notSent: error), notes: [])
+                return RecordedSend(result: .failed(SendFailure(notSent: error), notes: []), entry: nil)
+            }
+        } record: { entry in
+            do {
+                try await writer.addHistoryEntry(entry)
+            } catch {
+                Logger.response.error("Couldn’t record a send in History: \(error)")
             }
         }
     }
@@ -81,8 +92,11 @@ final class RequestResponses {
         }
         let token = UUID()
         let task = Task { [weak self, perform] in
-            let result = await perform(id, draft, tree)
-            self?.finish(id, token: token, with: result)
+            let recorded = await perform(id, draft, tree)
+            guard let self, finish(id, token: token, with: recorded.result), let entry = recorded.entry else {
+                return
+            }
+            await record(entry)
         }
         inFlight[id] = InFlight(token: token, task: task)
         states[id] = .sending
@@ -109,12 +123,14 @@ final class RequestResponses {
         }
     }
 
-    private func finish(_ id: Request.ID, token: UUID, with result: SendResult) {
+    /// False for a send that was cancelled, or replaced, before its result arrived.
+    private func finish(_ id: Request.ID, token: UUID, with result: SendResult) -> Bool {
         guard inFlight[id]?.token == token else {
-            return
+            return false
         }
         inFlight[id] = nil
         states[id] = .finished(result)
+        return true
     }
 
 }

@@ -782,6 +782,171 @@
         }
       }
     },
+    "HISTORY_BODY_NOT_KEPT" : {
+      "comment" : "History entry's body section when the response body was over 5 MB and wasn't stored.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Body not kept"
+          }
+        }
+      }
+    },
+    "HISTORY_CLEAR" : {
+      "comment" : "Context menu item on the sidebar's History section that removes every entry.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History…"
+          }
+        }
+      }
+    },
+    "HISTORY_CLEAR_ALERT_MESSAGE" : {
+      "comment" : "Message of the alert that confirms Clear History.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This removes every request in History on this Mac."
+          }
+        }
+      }
+    },
+    "HISTORY_CLEAR_ALERT_TITLE" : {
+      "comment" : "Title of the alert that confirms Clear History.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History?"
+          }
+        }
+      }
+    },
+    "HISTORY_CLEAR_CANCEL" : {
+      "comment" : "Button that dismisses the Clear History alert without clearing.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "HISTORY_CLEAR_CONFIRM" : {
+      "comment" : "Destructive button in the alert that removes every History entry.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History"
+          }
+        }
+      }
+    },
+    "HISTORY_ENTRY_GONE" : {
+      "comment" : "Shown in place of a History entry that has been removed.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This entry is no longer in History."
+          }
+        }
+      }
+    },
+    "HISTORY_ENTRY_LABEL" : {
+      "comment" : "Accessibility label of the read-only view of a sent request and its response.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History Entry"
+          }
+        }
+      }
+    },
+    "HISTORY_OPEN_REQUEST" : {
+      "comment" : "Button in a History entry that opens the request it was sent from.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Request"
+          }
+        }
+      }
+    },
+    "HISTORY_REQUEST_AUTH" : {
+      "comment" : "Label beside the kind of auth a History entry's request was sent with.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auth"
+          }
+        }
+      }
+    },
+    "HISTORY_REQUEST_BODY" : {
+      "comment" : "Heading over the body a History entry's request was sent with.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Body"
+          }
+        }
+      }
+    },
+    "HISTORY_REQUEST_HEADERS" : {
+      "comment" : "Heading over the headers a History entry's request was sent with.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Headers"
+          }
+        }
+      }
+    },
+    "HISTORY_ROW_FAILED" : {
+      "comment" : "History row's status for a send that got no response.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed"
+          }
+        }
+      }
+    },
+    "HISTORY_SECRET_UNAVAILABLE" : {
+      "comment" : "Send Again couldn't read a secret the History entry needs, so nothing was sent.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secret unavailable"
+          }
+        }
+      }
+    },
+    "HISTORY_SEND_AGAIN" : {
+      "comment" : "Button in a History entry that sends its request again.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send Again"
+          }
+        }
+      }
+    },
     "IMPORT_FAILED" : {
       "comment" : "Shown in the import result sheet when a file could not be read or stored.",
       "localizations" : {

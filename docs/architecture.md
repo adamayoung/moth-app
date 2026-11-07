@@ -135,8 +135,9 @@ be `async throws`: OAuth2 refreshes tokens, and SigV4 has to sign the final
 body. Digest answers a 401 challenge, so it also needs the transport to retry.
 
 `RequestBuilder` applies the provider last, so `AWSSigV4AuthProvider` signs the
-final URL, headers and body, with the time of that build. `AWSSigV4Signer` works on
-the wire form of a request, and AWS's published suite checks it. A required
+final URL, headers and body, with the time the send started, which History records
+too. `AWSSigV4Signer` works on the wire form of a request, and AWS's published
+suite checks it. A required
 credential with no value stops the build, unlike Basic and Bearer, because an
 unsigned call to AWS would come back as a bare 403. A session token with no value
 is left off and noted. Headers URLSession reserves aren't signed, because it can
@@ -274,12 +275,6 @@ The container holds two `ModelConfiguration`s:
 
 A model belongs to exactly one store. `HistoryEntry` refers to its request, and
 `CookieModel` to its workspace, by identifier, not by `@Relationship`.
-
-`CurrentSchema` names the newest version, which `DataModel` and
-`StoreConfigurations` open. SchemaV2 adds `CookieModel` and changes nothing else.
-SwiftData's automatic lightweight migration opens a SchemaV1 store, so the plan has
-no stage: a stage refuses every store, because each holds only its configuration's
-models, a subset of the version.
 
 `DataModel` owns both stores, and `StoreConfigurations` builds them. A container
 identifier selects `.private`, and no identifier selects `.none`. Each store has
@@ -447,6 +442,14 @@ plan. A schema version on `main` is frozen. CloudKit adds a stricter limit:
 once promoted to production, a schema is additive only, so a model type cannot
 be deleted and an existing attribute cannot be changed. Promote the development
 schema before release.
+
+`CurrentSchema` names the version this build opens. `SchemaV2` changes only the
+local store: it adds `HistoryEntryModel`'s summary, response and timing
+attributes. `SchemaV3` adds `CookieModel` to the local store and changes nothing
+else. The plan lists every version with no stage, because a staged migration can't
+identify a store that holds only some of a version's models, and each store holds
+only its configuration's. SwiftData's automatic lightweight migration adds each
+version's changes.
 
 ### Stores From Another Schema
 
@@ -698,6 +701,37 @@ URL isn’t valid." A failure after that keeps its notes, because the request we
 so a relaunch returns to No Response. Cancel shows at once, and each send has a token,
 so a result that arrives afterwards lands nowhere. Closing a tab cancels its send and
 drops its response, and closing a window cancels.
+
+## History
+
+`RequestSender.sendRecording` returns a send's result with a `HistoryEntry`, and
+`RequestResponses` writes it only while its send still holds its token, so a
+cancelled send leaves none. A send that failed, or couldn't be built, is recorded
+with its failure. The sender builds the entry, because only it holds the raw body.
+A body over 5 MB keeps its size and no bytes.
+
+The entry's request is a snapshot of what was sent. A second resolution, against a
+secret store that answers nothing, leaves each secret variable as `{{name}}`. It
+replays the `{{$guid}}`, `{{$timestamp}}` and `{{$randomInt}}` values the send
+drew, in order, so the snapshot holds them. A dynamic variable inside a secret's own
+value draws one that the snapshot doesn't, which shifts every later value of that
+kind in the record, and Send Again resends the record. The snapshot keeps every
+variable in scope, so a secret's value can still name the others. Auth keeps
+references, and rows named `Authorization` or `Proxy-Authorization`, and the rows
+`rowsReplacedByAuth` names, are masked, so no secret reaches the local store.
+
+Send Again resolves the snapshot against its own variables and the Keychain. A
+secret or credential with no value, or a masked row that no auth provider replaces,
+as under Digest today, sends nothing and shows "Secret unavailable". Otherwise it
+sends and records as Send does.
+
+History belongs to this Mac's one implicit workspace, and its rows carry no
+workspace id, because reconcile can replace the workspace row with a synced one of
+lower id. `StoreWriter` keeps the newest 500 entries in the save that adds one. A
+sidebar row fetches only the `method`, `url`, `statusCode` and `sentAt` columns, so
+it reads no blob, and an open entry is read off the main actor. An open entry covers
+the tabs in the detail column. They stay live, so ⌘W and the tab commands still act
+on the selected tab, and selecting a sidebar row or a tab closes the entry.
 
 ## Code Generation
 

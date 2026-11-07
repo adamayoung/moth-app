@@ -43,12 +43,6 @@ public final class StoreWriter {
         }
     }
 
-    public func addHistoryEntry(_ entry: HistoryEntry) throws {
-        try write { context in
-            try context.insert(HistoryEntryModel(entry))
-        }
-    }
-
     public func reconcileWorkspaces() throws {
         try write { _ in }
     }

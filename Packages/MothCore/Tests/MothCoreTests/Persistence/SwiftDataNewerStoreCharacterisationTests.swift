@@ -108,6 +108,18 @@ private nonisolated enum PlannedFixtureMigrationPlan: SchemaMigrationPlan {
 
 }
 
+private nonisolated enum StagelessPlan: SchemaMigrationPlan {
+
+    static var schemas: [any VersionedSchema.Type] {
+        [SchemaV1.self]
+    }
+
+    static var stages: [MigrationStage] {
+        []
+    }
+
+}
+
 struct SwiftDataNewerStoreCharacterisationTests {
 
     @Test("Characterises SwiftData: with no stages in the plan, a newer store opens and loses the newer column")
@@ -118,11 +130,11 @@ struct SwiftDataNewerStoreCharacterisationTests {
         try Self.writeNewerStore(in: directory)
         #expect(try Self.values(of: Self.columnsQuery, at: store).contains(Self.newerColumn))
 
-        let configurations = StoreConfigurations(location: .directory(directory), containerIdentifier: nil)
+        let local = Schema(SchemaV1.localModels, version: SchemaV1.versionIdentifier)
         _ = try ModelContainer(
-            for: Schema(versionedSchema: CurrentSchema.self),
-            migrationPlan: MothMigrationPlan.self,
-            configurations: configurations.all
+            for: Schema(versionedSchema: SchemaV1.self),
+            migrationPlan: StagelessPlan.self,
+            configurations: CharacterisationStore.onDiskConfiguration(named: "Local", schema: local, in: directory)
         )
 
         #expect(try Self.values(of: Self.rowCountQuery, at: store) == ["1"])
