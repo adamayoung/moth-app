@@ -31,7 +31,7 @@ struct PostmanImportResultTests {
         let result = try await Fixture.importing("postman-collection-transformer/v2.1.0/helpers.json")
 
         #expect(result.imported.requests == 5)
-        #expect(result.imported.unsupportedAuth == [.digest: 1, .oauth2: 1])
+        #expect(result.imported.unsupportedAuth == [.oauth2: 1])
         #expect(result.skipped.auth == [.oauth1: 1])
         #expect(result.skipped.scripts == 2)
         #expect(result.secrets.count == 7)

@@ -213,7 +213,14 @@ struct RequestSenderTests {
             name: "Health",
             urlTemplate: "https://example.com",
             body: .binary(filePath: "/tmp/health.bin"),
-            auth: .digest(DigestAuth(username: "ada", password: SecretReference(identifier: "key")))
+            auth: .oauth2(OAuth2Auth(
+                grantType: .clientCredentials,
+                authorizationURL: "",
+                accessTokenURL: "https://example.com/token",
+                callbackURL: "",
+                clientID: "moth",
+                scope: ""
+            ))
         )
 
         let result = await send(request)

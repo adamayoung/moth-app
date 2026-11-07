@@ -89,17 +89,6 @@
         }
       }
     },
-    "IMPORT_AUTH_DIGEST" : {
-      "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
-      "localizations" : {
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Digest"
-          }
-        }
-      }
-    },
     "IMPORT_AUTH_EDGEGRID" : {
       "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
       "localizations" : {

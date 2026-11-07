@@ -90,6 +90,26 @@ struct RequestDraftsCredentialTests: RequestDraftsTesting {
         #expect(!storedText(of: row).contains("s3cret-password"))
     }
 
+    @Test("A typed Digest password reaches the secret store under its reference, and no row holds it")
+    func digestPasswordReachesTheSecretStore() async throws {
+        let secretStore = RecordingSecretStore()
+        let request = Request(name: "Request")
+        let (dataModel, drafts) = try stored(request, secretStore: secretStore)
+        drafts.update(request.id) { draft in
+            draft.auth.kind = .digest
+            draft.auth.username = "ada"
+            draft.auth.setCredential("s3cret-digest", for: draft.auth.passwordReference)
+        }
+        let reference = try #require(drafts.draft(for: request.id)?.auth.passwordReference)
+
+        #expect(await drafts.save(request.id))
+
+        #expect(secretStore.values == [reference.identifier: "s3cret-digest"])
+        let row = try savedRequest(request.id, in: dataModel)
+        #expect(try row.asDomain().auth == .digest(DigestAuth(username: "ada", password: reference)))
+        #expect(!storedText(of: row).contains("s3cret-digest"))
+    }
+
     @Test("The value is stored before the row that refers to it")
     func valueComesFirst() async {
         let secretStore = RecordingSecretStore()

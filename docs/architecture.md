@@ -132,7 +132,8 @@ import stores a credential as written and that is often `{{token}}`.
 
 An auth provider is a protocol that mutates a `URLRequest`. Its requirement must
 be `async throws`: OAuth2 refreshes tokens, and SigV4 has to sign the final
-body. Digest answers a 401 challenge, so it also needs the transport to retry.
+body. Digest's provider only removes an `Authorization` header, because Digest
+answers a 401 challenge, and [sending](#sending-a-request) does that.
 
 `RequestBuilder` applies the provider last, so `AWSSigV4AuthProvider` signs the
 final URL, headers and body, with the time the send started, which History records
@@ -204,8 +205,7 @@ Moth keeps what it can store and counts the rest:
 - A credential goes to the secret store as written. An empty one saves nothing, so
   it is reported as missing. Basic and Digest always save a password, because they
   can send a username alone.
-- Digest and OAuth2 are stored by kind and counted as unsupported until they have
-  a provider.
+- OAuth2 is stored by kind and counted as unsupported until it has a provider.
 - AWS takes Postman's own defaults for a blank region or service, `us-east-1` and
   `execute-api`, so an export that worked there signs here with no edit. An export
   leaves a blank `service` out altogether.
@@ -385,7 +385,7 @@ A failed Save keeps the draft and leaves its tab open.
 `BodyDraft` and `AuthDraft` keep each kind's fields while a draft is open, so
 trying another kind loses nothing, and only the chosen kind is saved. What the
 editor can't change yet stays as it came and shows Not Supported Yet: a binary or
-GraphQL body, a form-data file row, and Digest and OAuth2 auth. Such a body or
+GraphQL body, a form-data file row, and OAuth2 auth. Such a body or
 auth keeps an entry of its own in the picker, and a Save writes the same
 bytes. Choosing another kind and saving replaces it.
 
@@ -396,7 +396,9 @@ stored. It writes the value, then the row, then removes what the row released, a
 a row that can't be written takes the new value with it. `AuthDraft` mints its new
 references up front, so a Save tried again writes the same item. Clearing a Token
 leaves the new reference with no value, because a header can't send an empty token.
-An empty Password is saved, because Basic can send a username alone. `AWSSigV4Draft`
+An empty Password is saved, because Basic can send a username alone. Digest uses
+Basic's Username and Password and its rule, so switching between the two keeps what
+was typed. `AWSSigV4Draft`
 keeps these rules for its three credentials. The Access Key is one of them, in the
 Keychain like the others, though its field shows the text. Clearing the optional
 Session Token leaves the row with no reference, so its old item is released.
@@ -623,6 +625,7 @@ to zero and `tls` holds the handshake. `firstByte` starts with the request, so i
 includes any upload. A phase that did not happen, such as on a reused connection,
 is `nil`.
 `bytesReceived` counts the final response's header and body bytes on the wire.
+`HTTPResponse.url` is the last URL, after any redirects.
 
 `metrics` is optional because URLSession does not say when it delivers them
 relative to `data(for:delegate:)` returning. They arrived first in every send
@@ -669,6 +672,21 @@ can't be built was not sent, so it carries no "sent as written" note.
 That includes `{{host}}` in the host with no active environment, which reads "This
 URL isn’t valid." A failure after that keeps its notes, because the request went out.
 
+Digest sends with no credentials first. A 401 with a `WWW-Authenticate: Digest`
+challenge is answered once: `RequestSender` copies the request it sent, sets the
+computed `Authorization` and sends it again, whatever the method, because the
+server refused for lack of credentials. No nonce is kept, so every send starts
+over. `AuthChallenge` reads the header URLSession joined with commas, and the
+first challenge with a known algorithm and `qop=auth` wins, in the server's order.
+The answer goes to the URL that sent the challenge, which a redirect can change.
+After a redirect, a request with a body isn't answered, because URLSession may have
+made it a GET, and nor is a challenge from another origin, so no credential reaches a
+host the request didn't name; the 401 says so. An answer that fails keeps its note
+and is timed alone.
+MD5, SHA-256 and their `-sess` forms are known. The response shown is the final
+one, timed alone, with a note; a 401 whose Digest challenge can't be answered says
+so; any other 401, and a second one, are shown as they came.
+
 `RequestResponses` holds the latest response for each tab of one window, in memory,
 so a relaunch returns to No Response. Cancel shows at once, and each send has a token,
 so a result that arrives afterwards lands nowhere. Closing a tab cancels its send and
@@ -700,7 +718,7 @@ references, and rows named `Authorization` or `Proxy-Authorization`, and the row
 
 Send Again resolves the snapshot against its own variables and the Keychain. A
 secret or credential with no value, or a masked row that no auth provider replaces,
-as under Digest today, sends nothing and shows "Secret unavailable". Otherwise it
+as under OAuth2 today, sends nothing and shows "Secret unavailable". Otherwise it
 sends and records as Send does.
 
 History belongs to this Mac's one implicit workspace, and its rows carry no

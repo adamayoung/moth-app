@@ -48,6 +48,9 @@ extension ResponseNote {
         case .unsupportedFile(let key): String(localized: "RESPONSE_NOTE_UNSUPPORTED_FILE_\(key)")
         case .unsupportedFiles(let count): String(localized: "RESPONSE_NOTE_UNSUPPORTED_FILES_\(count)")
         case .formDataBoundaryReplaced: String(localized: "RESPONSE_NOTE_FORM_DATA_BOUNDARY_REPLACED")
+        case .sentAgainForDigestChallenge: String(localized: "RESPONSE_NOTE_DIGEST_SENT_AGAIN")
+        case .digestChallengeUnsupported: String(localized: "RESPONSE_NOTE_DIGEST_CHALLENGE_UNSUPPORTED")
+        case .digestChallengeAfterRedirect: String(localized: "RESPONSE_NOTE_DIGEST_CHALLENGE_AFTER_REDIRECT")
         }
     }
 

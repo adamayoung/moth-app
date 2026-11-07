@@ -44,7 +44,9 @@ hand. A demo launch uses the General pasteboard.
 `StubHTTPTransport` answers every send on a seeded launch and routes by the URL's
 path, so a test reaches each case by typing a URL, and `{{host}}/wait` proves the
 active environment too. `/wait` stays in flight until it is cancelled, `/refused`
-fails to connect and `/timeout` times out. Any other path returns 200 with one JSON
+fails to connect and `/timeout` times out. `/digest` answers 401 with a SHA-256
+Digest challenge until a request carries `Authorization`. Any other path, and
+`/digest` with `Authorization`, returns 200 with one JSON
 body and fixed metrics: 142 ms in all, with no TLS phase.
 
 `SeedData.workspace` holds one collection, "Seeded Collection", and two
@@ -55,8 +57,9 @@ collection holds a variable, `apiVersion`, a folder, "Users", then a request,
 a delete alert can count four or one. "List Users" has `limit=10`, a disabled
 `offset=0`, and two headers, one disabled. "Update User" has `:id` set to 42. So
 that the editor has what it can't change yet to show, "Create User" has form-data
-with a text row and a file row, "Update User" a GraphQL body and Digest auth, and
-"Health" a binary body. "Health" also has API key auth. There are no globals. Its identifiers are fixed. UI-test and demo launches load it, and the test host's
+with a text row and a file row, "Update User" a GraphQL body, "Delete Admin" OAuth2
+auth, and "Health" a binary body. "Update User" also has Digest auth, and "Health"
+API key auth. There are no globals. Its identifiers are fixed. UI-test and demo launches load it, and the test host's
 store stays empty. A launch starts with every row collapsed.
 
 The UI test bundle cannot import the app target, so a value it shares with the
