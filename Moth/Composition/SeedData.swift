@@ -70,7 +70,11 @@ enum SeedData {
                         method: .patch,
                         urlTemplate: "{{host}}/users/:id",
                         pathParameters: [KeyValue(id: identifier(25), key: "id", value: "42")],
-                        body: .graphQL(query: "{ user { id } }", variables: "")
+                        body: .graphQL(query: "{ user { id } }", variables: ""),
+                        auth: .digest(DigestAuth(
+                            username: "ada",
+                            password: SecretReference(identifier: "seeded-digest-password")
+                        ))
                     ))
                 ),
                 CollectionItem(sortOrder: 3, node: .folder(admins))

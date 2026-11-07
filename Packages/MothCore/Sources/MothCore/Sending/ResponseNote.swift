@@ -85,7 +85,8 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
         if notices.contains(where: \.isUnsupportedAuth) {
             return .unsupportedAuth
         }
-        return unresolvedCredentials.isEmpty ? nil : .missingCredential
+        let hasMissingCredential = !unresolvedCredentials.isEmpty || notices.contains(.apiKeyWithoutName)
+        return hasMissingCredential ? .missingCredential : nil
     }
 
     private static func headerNote(for notices: [RequestBuildNotice]) -> ResponseNote? {

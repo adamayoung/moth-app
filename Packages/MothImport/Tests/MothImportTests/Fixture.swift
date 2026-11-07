@@ -33,6 +33,17 @@ enum Fixture {
         )
     }
 
+    static func importing(
+        contents: String,
+        secretStore: any SecretStore
+    ) async throws -> PostmanImportResult {
+        try await PostmanImporter(secretStore: secretStore).importFile(
+            Data(contents.utf8),
+            existingCollectionNames: [],
+            existingEnvironmentNames: []
+        )
+    }
+
     static func collection(_ path: String) async throws -> RequestCollection {
         try #require(await importing(path).collection)
     }

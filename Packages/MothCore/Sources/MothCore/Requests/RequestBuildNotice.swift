@@ -17,12 +17,12 @@ public nonisolated enum RequestBuildNotice: Sendable, Hashable {
     case pathVariableWithoutValue(name: String)
     case unnamedPathVariableWithoutValue
     case inheritNotReplaced
+    case apiKeyWithoutName
 
 }
 
 public nonisolated enum UnsupportedAuthKind: Sendable, Hashable {
 
-    case apiKey
     case digest
     case oauth2
     case awsSigV4

@@ -10,6 +10,7 @@ public nonisolated enum RequestBuildError: LocalizedError, Equatable {
     case invalidURL
     case invalidMethod
     case invalidBearerToken
+    case invalidAPIKey
 
     public var errorDescription: String? {
         switch self {
@@ -19,6 +20,8 @@ public nonisolated enum RequestBuildError: LocalizedError, Equatable {
             String(localized: "REQUEST_BUILD_INVALID_METHOD", bundle: .module)
         case .invalidBearerToken:
             String(localized: "REQUEST_BUILD_INVALID_BEARER_TOKEN", bundle: .module)
+        case .invalidAPIKey:
+            String(localized: "REQUEST_BUILD_INVALID_API_KEY", bundle: .module)
         }
     }
 

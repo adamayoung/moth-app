@@ -55,8 +55,8 @@ collection holds a variable, `apiVersion`, a folder, "Users", then a request,
 a delete alert can count four or one. "List Users" has `limit=10`, a disabled
 `offset=0`, and two headers, one disabled. "Update User" has `:id` set to 42. So
 that the editor has what it can't change yet to show, "Create User" has form-data
-with a text row and a file row, "Update User" a GraphQL body, and "Health" a binary
-body and API key auth. There are no globals. Its identifiers are fixed. UI-test and demo launches load it, and the test host's
+with a text row and a file row, "Update User" a GraphQL body and Digest auth, and
+"Health" a binary body. "Health" also has API key auth. There are no globals. Its identifiers are fixed. UI-test and demo launches load it, and the test host's
 store stays empty. A launch starts with every row collapsed.
 
 The UI test bundle cannot import the app target, so a value it shares with the
