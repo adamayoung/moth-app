@@ -69,6 +69,30 @@ struct CodeGeneratorAuthTests {
         #expect(code.swift.contains(#"URL(string: "https://example.com/users?api%20key=<api-key>")!"#))
     }
 
+    @Test("An API key in the query replaces a manual row and a pair in the URL of its name, as it does on Send")
+    func apiKeyInQueryReplaces() async throws {
+        let code = try await CodeGenerator().code(
+            for: Request(
+                name: "Users",
+                urlTemplate: "https://example.com?key=typed&a=1",
+                queryParameters: [KeyValue(key: "key", value: "row")],
+                auth: .apiKey(APIKeyAuth(name: "key", value: SecretReference(), location: .query))
+            ),
+            scopes: VariableScopes()
+        )
+
+        #expect(code.curl == "curl --url 'https://example.com?a=1&key=<api-key>'")
+    }
+
+    @Test("An API key with no name sends nothing, and says so, as it does on Send")
+    func apiKeyWithNoName() async throws {
+        let code = try await code(auth: .apiKey(APIKeyAuth(name: "", value: SecretReference(), location: .header)))
+
+        let comment = "The API key is left out, because it has no name."
+        #expect(code.curl == "# \(comment)\ncurl --url 'https://example.com/users'")
+        #expect(code.swift.hasPrefix("// \(comment)\nimport Foundation"))
+    }
+
     @Test("A manual row gives way to the auth that sets the same header, as it does on Send")
     func manualRowGivesWay() async throws {
         let headers = [

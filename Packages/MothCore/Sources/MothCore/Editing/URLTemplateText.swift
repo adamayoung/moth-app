@@ -55,11 +55,8 @@ nonisolated struct URLTemplateText {
 
     func addressFillingPathVariables(from rows: [KeyValue]) -> String {
         let segments = authorityAndPath.enumerated().map { index, segment in
-            guard
-                index > 0, let name = segment.pathVariableName,
-                let row = rows.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
-            else {
-                return String(segment)
+            guard index > 0, let name = segment.pathVariableName, let row = rows.row(filling: name) else {
+                return segment.urlEscaped
             }
             return row.value.urlDisplayEncoded
         }
@@ -74,13 +71,17 @@ nonisolated struct URLTemplateText {
         address + Self.querySuffix(Self.displayPairs(of: rows)) + fragmentSuffix
     }
 
-    func queryAndFragment(appending rows: [KeyValue], then literalPair: String?) -> String {
-        let pairs = [query].compactMap(\.self) + Self.displayPairs(of: rows) + [literalPair].compactMap(\.self)
-        return Self.querySuffix(pairs.filter { !$0.isEmpty }) + fragmentSuffix
+    func queryAndFragment(appending rows: [KeyValue], setting pair: LiteralQueryPair?) -> String {
+        let written = (query?.splitOutsideVariables(on: "&") ?? [])
+            .filter { $0.splitOutsideVariables(on: "=", maxSplits: 1)[0].decodedQueryText != pair?.name }
+            .map(\.urlEscaped)
+        let set = pair.map { ["\($0.name.urlDisplayEncoded)=\($0.value)"] } ?? []
+        let pairs = written + Self.displayPairs(of: rows.filter { $0.key != pair?.name }) + set
+        return Self.querySuffix(pairs.filter { !$0.isEmpty }) + (fragment.map { "#\($0.urlEscaped)" } ?? "")
     }
 
     private static func displayPairs(of rows: [KeyValue]) -> [String] {
-        rows.filter(\.isSent).map { "\($0.key.urlDisplayEncoded)=\($0.value.urlDisplayEncoded)" }
+        rows.filter(\.isSent).map(\.displayEncodedPair)
     }
 
     private static func querySuffix(_ pairs: [String]) -> String {
@@ -129,6 +130,21 @@ private nonisolated extension StringProtocol where SubSequence == Substring {
             text.replacing("+", with: " ").removingPercentEncoding ?? String(text)
         }
     }
+
+    /// Encodes what `URLComponents` would, for a URL it can't parse. Keeps `%`, so an escape stays one.
+    var urlEscaped: String {
+        mapOutsideVariables { text in
+            text.addingPercentEncoding(withAllowedCharacters: String.urlCharacters) ?? String(text)
+        }
+    }
+
+}
+
+private nonisolated extension String {
+
+    static let urlCharacters = CharacterSet(
+        charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%"
+    )
 
 }
 

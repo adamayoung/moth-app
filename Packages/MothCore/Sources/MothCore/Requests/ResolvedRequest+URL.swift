@@ -57,9 +57,7 @@ nonisolated extension ResolvedRequest {
                     return String(segment)
                 }
 
-                guard
-                    let row = pathParameters.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
-                else {
+                guard let row = pathParameters.row(filling: name) else {
                     if !namesWithoutValues.contains(name) {
                         namesWithoutValues.append(name)
                     }

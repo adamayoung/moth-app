@@ -50,7 +50,8 @@ final class RequestTabCloseTests {
         let tabs = RequestTabsModel(
             store: RequestTabStore(defaults: defaults, key: "Tabs"),
             drafts: drafts,
-            responses: .preview
+            responses: .preview,
+            code: .preview
         )
         try tabs.collectionDidChange(snapshot())
         tabs.open(request.id)

@@ -118,7 +118,7 @@ private func seededSidebar(isSyncedToICloud: Bool) -> some View {
         SidebarView(
             model: model,
             environments: environments,
-            tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview),
+            tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview, code: .preview),
             isSyncedToICloud: isSyncedToICloud
         )
         .background { EnvironmentsObserver(model: environments) }

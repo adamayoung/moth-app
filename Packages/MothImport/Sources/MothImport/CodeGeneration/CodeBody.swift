@@ -63,7 +63,7 @@ nonisolated extension CodeBody.Written {
         case .raw(let content, let contentType):
             self.init(content: .text(content), contentType: contentType.isEmpty ? nil : contentType)
         case .urlEncoded(let rows):
-            let pairs = rows.filter(\.isSent).map { "\($0.key.urlDisplayEncoded)=\($0.value.urlDisplayEncoded)" }
+            let pairs = rows.filter(\.isSent).map(\.displayEncodedPair)
             self.init(
                 content: pairs.isEmpty ? .none : .text(pairs.joined(separator: "&")),
                 contentType: pairs.isEmpty ? nil : "application/x-www-form-urlencoded"

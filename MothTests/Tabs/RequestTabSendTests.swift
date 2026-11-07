@@ -33,7 +33,8 @@ struct RequestTabSendTests {
             responses: RequestResponses { id, _, _ in
                 sent(id)
                 return .cancelled
-            }
+            },
+            code: .preview
         )
         let context = dataModel.mainContext
         let requests: [RequestModel] = try context.fetch(.init())
@@ -75,7 +76,8 @@ struct RequestTabSendTests {
             responses: RequestResponses { _, draft, _ in
                 sentDraft = draft
                 return .cancelled
-            }
+            },
+            code: .preview
         )
 
         await tabs.send(first.id)?.value

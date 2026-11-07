@@ -26,12 +26,7 @@ final class RequestTabsModel {
     let code: RequestCodeModel
     var pendingClose: RequestTab?
 
-    init(
-        store: RequestTabStore,
-        drafts: RequestDrafts,
-        responses: RequestResponses,
-        code: RequestCodeModel = .preview
-    ) {
+    init(store: RequestTabStore, drafts: RequestDrafts, responses: RequestResponses, code: RequestCodeModel) {
         self.store = store
         self.drafts = drafts
         self.responses = responses
@@ -83,10 +78,10 @@ final class RequestTabsModel {
         await code.presentCode(for: id, draft: editedDraft(of: id), tree: tree)
     }
 
-    /// `nil` for a clean draft, which a tab that isn't selected leaves behind the store, and for one that outlived its
-    /// tab.
+    /// Edits show in any window, because drafts are shared. A clean draft is `nil`, because a tab that isn't selected
+    /// misses deliveries and the store is newer.
     private func editedDraft(of id: Request.ID) -> RequestDraft? {
-        tabs.ids.contains(id) && drafts.isEdited(id) ? drafts.draft(for: id) : nil
+        drafts.isEdited(id) ? drafts.draft(for: id) : nil
     }
 
     func requestClose(_ id: Request.ID) {

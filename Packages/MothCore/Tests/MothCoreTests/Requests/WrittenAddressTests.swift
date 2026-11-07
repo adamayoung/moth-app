@@ -77,14 +77,40 @@ struct WrittenAddressTests {
         #expect(ResolvedRequest(url: written).writtenAddress() == expected)
     }
 
-    @Test("An added query pair stays as given, after the rows and before the fragment")
-    func addedQuery() {
+    @Test("A set query pair keeps its value as given, after the rows and before the fragment")
+    func setQuery() {
         let request = ResolvedRequest(
             url: "https://example.com#top",
             queryParameters: [KeyValue(key: "page", value: "2")]
         )
 
-        #expect(request.writtenAddress(addingQuery: "key=<api-key>") == "https://example.com?page=2&key=<api-key>#top")
+        let address = request.writtenAddress(settingQuery: LiteralQueryPair(name: "api key", value: "<api-key>"))
+
+        #expect(address == "https://example.com?page=2&api%20key=<api-key>#top")
+    }
+
+    @Test("A set query pair replaces a row and a pair in the URL of its name, as an API key does on Send")
+    func setQueryReplaces() {
+        let request = ResolvedRequest(
+            url: "https://example.com?key=old&a=1",
+            queryParameters: [KeyValue(key: "key", value: "row"), KeyValue(key: "page", value: "2")]
+        )
+
+        let address = request.writtenAddress(settingQuery: LiteralQueryPair(name: "key", value: "<api-key>"))
+
+        #expect(address == "https://example.com?a=1&page=2&key=<api-key>")
+    }
+
+    @Test("What a URL can't hold is encoded as Send encodes it, outside variables, and an escape stays one")
+    func encodesWhatAURLCantHold() {
+        let request = ResolvedRequest(url: "https://example.com/my files/{{name}}/caf%C3%A9/é?q=a b#c d")
+
+        #expect(request.writtenAddress() == "https://example.com/my%20files/{{name}}/caf%C3%A9/%C3%A9?q=a%20b#c%20d")
+    }
+
+    @Test("A port left as a variable isn't a scheme")
+    func portAsAVariable() {
+        #expect(ResolvedRequest(url: "localhost:{{port}}/users").writtenAddress() == "http://localhost:{{port}}/users")
     }
 
 }

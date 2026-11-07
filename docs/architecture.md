@@ -606,11 +606,11 @@ drops its response, and closing a window cancels.
 ## Code Generation
 
 Copy as cURL and Generate Code… take a request out of Moth. A request's context
-menu has both, and so does the Request menu, for the current tab. An open tab's
-edited draft is what they use, as Send does, and otherwise the row. A clean draft
-is not used, because a tab that isn't selected misses deliveries, and neither is
-a draft that outlived its tab. `.inherit` is replaced as it is for Send, and a
-container whose auth can't be read shows an alert rather than generating no auth.
+menu has both, and so does the Request menu, for the current tab. An edited draft
+is what they use, as Send does, from any window, because drafts are shared.
+Otherwise they use the row, because a tab that isn't selected misses deliveries.
+`.inherit` is replaced as it is for Send, and a container whose auth can't be read
+shows an alert rather than generating no auth.
 
 `CodeGenerator` takes no `SecretStore`, so what it writes can't hold a secret. It
 gives `VariableResolver` a store that answers nothing, so a secret variable stays
@@ -620,10 +620,12 @@ A secret typed into a plain header or body is plain text, and appears as written
 
 It doesn't go through `RequestBuilder`, which refuses a URL with a variable left
 in it and drops what Send can't send yet. `CodeRequest` holds what both languages
-write, so they can't disagree, and `writtenAddress` builds the URL as text. Like
-Send, it leaves out a body on GET or HEAD, with a comment, and a manual header
-gives way to the auth that sets it. Every body kind is written, with binary as a
-file reference. A request's settings are not.
+write, so they can't disagree, and `writtenAddress` builds the URL as text, with
+what a URL can't hold encoded outside `{{variables}}`. Like Send, it leaves out a
+body on GET or HEAD and an API key with no name, each with a comment, and a manual
+header or query parameter gives way to the auth that sets it. Every body kind is
+written, with binary as a file reference. A request's settings are not. A form-data
+name holding `=` can't be written for cURL, which splits on the first `=`.
 
 cURL quoting works on Unicode scalars, because `'` and a combining mark after it
 are one `Character`, which a replacement by `Character` would leave open. Options

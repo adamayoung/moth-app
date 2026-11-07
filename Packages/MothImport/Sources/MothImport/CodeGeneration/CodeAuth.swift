@@ -10,7 +10,7 @@ nonisolated struct CodeAuth {
 
     private(set) var header: CodeHeader?
     private(set) var basicCredentials: String?
-    private(set) var queryPair: String?
+    private(set) var queryPair: LiteralQueryPair?
     private(set) var note: String?
 
     init(_ auth: Auth) {
@@ -21,10 +21,12 @@ nonisolated struct CodeAuth {
             self.basicCredentials = "\(basic.username):<password>"
         case .bearer:
             self.header = CodeHeader(name: "Authorization", value: "Bearer <token>")
+        case .apiKey(let apiKey) where apiKey.name.isEmpty:
+            self.note = String(localized: "CODE_NOTE_API_KEY_NAME", bundle: .module)
         case .apiKey(let apiKey):
             switch apiKey.location {
             case .header: self.header = CodeHeader(name: apiKey.name, value: "<api-key>")
-            case .query: self.queryPair = "\(apiKey.name.urlDisplayEncoded)=<api-key>"
+            case .query: self.queryPair = LiteralQueryPair(name: apiKey.name, value: "<api-key>")
             }
         case .digest:
             self.note = String(localized: "CODE_NOTE_DIGEST", bundle: .module)

@@ -38,7 +38,7 @@ nonisolated struct CodeRequest {
         }
 
         self.method = resolved.method
-        self.address = resolved.writtenAddress(addingQuery: auth.queryPair)
+        self.address = resolved.writtenAddress(settingQuery: auth.queryPair)
         self.headers = headers
         self.basicCredentials = auth.basicCredentials
         self.body = body.content
@@ -46,10 +46,11 @@ nonisolated struct CodeRequest {
     }
 
     /// `URLRequest` would join repeated cookies with a comma, which RFC 6265 reads as part of the first one's value.
+    /// A name starting with `@` is left out because cURL reads it as a file, and Send refuses the name.
     private static func manualHeaders(of resolved: ResolvedRequest) -> [CodeHeader] {
         var headers: [CodeHeader] = []
 
-        for row in resolved.headers where row.isSent {
+        for row in resolved.headers where row.isSent && !row.key.hasPrefix("@") {
             let header = CodeHeader(name: row.key, value: row.value)
             if header.isCookie, let index = headers.firstIndex(where: \.isCookie) {
                 headers[index].value += "; \(row.value)"

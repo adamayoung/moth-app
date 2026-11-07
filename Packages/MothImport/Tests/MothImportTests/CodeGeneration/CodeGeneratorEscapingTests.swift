@@ -95,7 +95,7 @@ struct CodeGeneratorEscapingTests {
             ])
         )
 
-        #expect(code.curl.contains(#"'https://example.com/'\''; whoami; '\'''"#))
+        #expect(code.curl.contains(#"'https://example.com/'\'';%20whoami;%20'\'''"#))
     }
 
     @Test("A form-data name and a Content-Type stay on their own header line in Swift")

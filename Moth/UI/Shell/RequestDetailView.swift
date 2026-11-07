@@ -71,6 +71,6 @@ struct RequestDetailView: View {
 }
 
 #Preview {
-    RequestDetailView(tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview))
+    RequestDetailView(tabs: RequestTabsModel(store: .preview, drafts: .preview, responses: .preview, code: .preview))
         .frame(width: 800, height: 600)
 }

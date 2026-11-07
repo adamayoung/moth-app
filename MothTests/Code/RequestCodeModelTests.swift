@@ -102,13 +102,13 @@ final class RequestCodeModelTests {
         #expect(copied?.contains("'https://edited.test/draft'") == true)
     }
 
-    @Test("A draft that outlived its tab is not used")
-    func ignoresADraftWithNoTab() async {
+    @Test("Unsaved edits are used when another window holds the tab, because drafts are shared between windows")
+    func usesADraftFromAnotherWindow() async {
         editDraft()
 
         await tabs.copyCURL(request.id)
 
-        #expect(copied?.contains("'https://staging.test/users'") == true)
+        #expect(copied?.contains("'https://edited.test/draft'") == true)
     }
 
     @Test("A tab with no edits uses what is stored, because a tab that isn't selected misses deliveries")

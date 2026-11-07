@@ -3,16 +3,35 @@
 //
 //  Copyright © 2026 Adam Young.
 
+/// `value` goes in as given, so a placeholder stays readable.
+public nonisolated struct LiteralQueryPair: Sendable, Hashable {
+
+    public let name: String
+    public let value: String
+
+    public init(name: String, value: String) {
+        self.name = name
+        self.value = value
+    }
+
+}
+
 public nonisolated extension ResolvedRequest {
 
     /// The URL as text to read and fill in, because a `{{variable}}` left in it makes it no URL for
-    /// `sendableAddress()`. `addingQuery` goes in as given, so a placeholder stays readable.
-    func writtenAddress(addingQuery literalPair: String? = nil) -> String {
+    /// `sendableAddress()`.
+    func writtenAddress(settingQuery pair: LiteralQueryPair? = nil) -> String {
         let text = URLTemplateText(url)
-        let address = text.addressFillingPathVariables(from: pathParameters)
-        let tail = text.queryAndFragment(appending: queryParameters, then: literalPair)
-        let mayHoldItsScheme = address.isEmpty || address.hasPrefix("{{")
-        return (mayHoldItsScheme ? address : Self.withScheme(address)) + tail
+        return Self.withWrittenScheme(text.addressFillingPathVariables(from: pathParameters))
+            + text.queryAndFragment(appending: queryParameters, setting: pair)
+    }
+
+    /// A leading variable may hold the scheme, and `name:{{port}}` is a host, not a scheme with no digits after it.
+    private static func withWrittenScheme(_ address: String) -> String {
+        if address.isEmpty || address.hasPrefix("{{") {
+            return address
+        }
+        return address.prefixMatch(of: /[A-Za-z][A-Za-z0-9+.\-]*:\{\{/) == nil ? withScheme(address) : "http://\(address)"
     }
 
 }

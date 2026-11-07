@@ -124,6 +124,25 @@ struct CodeGeneratorRequestTests {
         #expect(code.swift.contains(#"request.addValue("", forHTTPHeaderField: "X-Empty")"#))
     }
 
+    @Test("A header name starting with @ is left out, because cURL would read it as a file and Send refuses it")
+    func headerNamedLikeAFile() async throws {
+        let code = try await code(for: Request(
+            name: "Users",
+            urlTemplate: "https://example.com",
+            headers: [KeyValue(key: "@/etc/passwd", value: "x")]
+        ))
+
+        #expect(code.curl == "curl --url 'https://example.com'")
+        #expect(!code.swift.contains("/etc/passwd"))
+    }
+
+    @Test("A URL with a space works in cURL, which refuses it as written")
+    func urlWithASpace() async throws {
+        let code = try await code(for: Request(name: "Users", urlTemplate: "https://example.com/my files"))
+
+        #expect(code.curl == "curl --url 'https://example.com/my%20files'")
+    }
+
     @Test("An empty URL renders as written, because this is text to fill in")
     func emptyURL() async throws {
         let code = try await code(for: Request(name: "Health"))

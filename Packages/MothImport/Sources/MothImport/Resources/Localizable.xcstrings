@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "CODE_NOTE_API_KEY_NAME" : {
+      "comment" : "A comment in generated code, for a request whose API key auth has no name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The API key is left out, because it has no name."
+          }
+        }
+      }
+    },
     "CODE_NOTE_AWS" : {
       "comment" : "A comment in generated code, for a request that signs with AWS Signature auth.",
       "localizations" : {
