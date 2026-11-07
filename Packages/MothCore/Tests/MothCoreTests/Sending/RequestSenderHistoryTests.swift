@@ -276,7 +276,7 @@ struct RequestSenderHistoryTests {
     func sendAgainWithAMaskedRowUnderOAuth2() async throws {
         try await secretStore.save("secret", for: "client-secret")
         let oauth2 = Auth.oauth2(OAuth2Auth(
-            grantType: .clientCredentials,
+            grantType: .implicit,
             authorizationURL: "",
             accessTokenURL: "https://example.com/token",
             callbackURL: "",

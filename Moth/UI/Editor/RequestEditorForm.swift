@@ -43,6 +43,7 @@ struct RequestEditorForm: View {
     let send: () -> Void
     let cancelSend: () -> Void
     var urlFocusRequests = 0
+    var accessToken = AccessTokenControls()
 
     @FocusState private var focusedRow: KeyValue.ID?
     @FocusState private var isURLFocused: Bool
@@ -196,10 +197,10 @@ struct RequestEditorForm: View {
                     draft: draft.auth,
                     inherited: inheritedAuth,
                     credential: credential,
-                    load: loadCredential
-                ) { change in
-                    update { change(&$0.auth) }
-                }
+                    load: loadCredential,
+                    update: { change in update { change(&$0.auth) } },
+                    accessToken: accessToken
+                )
             }
         case .settings:
             SettingsEditor(settings: draft.settings) { change in

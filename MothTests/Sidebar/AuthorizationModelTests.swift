@@ -150,6 +150,25 @@ struct AuthorizationModelTests {
         #expect(!model.saveFailed)
     }
 
+    @Test("An OAuth 2.0 auth with no token reference closes without writing, though the sheet mints one")
+    func oauth2WithoutTokenReferenceWritesNothing() async {
+        let secretStore = RecordingSecretStore()
+        let oauth2 = Auth.oauth2(OAuth2Auth(
+            grantType: .clientCredentials,
+            authorizationURL: "",
+            accessTokenURL: "https://example.com/token",
+            callbackURL: "",
+            clientID: "moth",
+            scope: ""
+        ))
+        let model = model(of: .folder(UUID()), holding: oauth2, secretStore: secretStore)
+
+        #expect(await model.save())
+
+        #expect(secretStore.values.isEmpty)
+        #expect(!model.saveFailed)
+    }
+
     @Test("A value the store refuses keeps the sheet open, and leaves the row as it was")
     func refusedValueFails() async throws {
         let model = model(of: .folder(folder.id), holding: .inherit, secretStore: RefusingSecretStore())

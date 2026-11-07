@@ -44,7 +44,7 @@ enum SeedData {
                         name: "Delete Admin",
                         method: .delete,
                         auth: .oauth2(OAuth2Auth(
-                            grantType: .clientCredentials,
+                            grantType: .implicit,
                             authorizationURL: "",
                             accessTokenURL: "https://example.com/token",
                             callbackURL: "",

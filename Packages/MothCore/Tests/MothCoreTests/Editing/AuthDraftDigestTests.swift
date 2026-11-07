@@ -26,7 +26,7 @@ struct AuthDraftDigestTests {
 
     @Test("Digest is offered, before AWS Signature")
     func offered() {
-        #expect(AuthDraft(.none).kinds == [.inherit, .none, .basic, .bearer, .apiKey, .digest, .awsSigV4])
+        #expect(AuthDraft(.none).kinds == [.inherit, .none, .basic, .bearer, .apiKey, .digest, .oauth2, .awsSigV4])
     }
 
     @Test("A stored Digest fills its fields, and has nothing to save")

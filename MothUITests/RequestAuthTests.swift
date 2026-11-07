@@ -6,7 +6,8 @@
 import XCTest
 
 /// Values mirror `SeedData` by hand: List Users inherits, with nothing above it that sets auth, Health has API key
-/// auth, Update User has Digest auth and Delete Admin, in Users > Admins, has OAuth2.
+/// auth, Update User has Digest auth and Delete Admin, in Users > Admins, has OAuth 2.0 with the Implicit grant. The
+/// `/token` paths are `StubHTTPTransport`'s token endpoints.
 final class RequestAuthTests: MothTestCase {
 
     @MainActor
@@ -38,10 +39,13 @@ final class RequestAuthTests: MothTestCase {
         XCTAssertEqual(fields.kindPicker.value as? String, "Inherit")
 
         fields.openKinds()
-        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "API Key", "Digest Auth", "AWS Signature"] {
+        let titles = [
+            "Inherit", "No Auth", "Basic Auth", "Bearer Token", "API Key", "Digest Auth", "OAuth 2.0", "AWS Signature"
+        ]
+        for title in titles {
             XCTAssertTrue(fields.kindMenuItem(title).waitForExistence(timeout: 10), title)
         }
-        XCTAssertEqual(fields.kindPicker.menuItems.count, 7)
+        XCTAssertEqual(fields.kindPicker.menuItems.count, 8)
         app.typeKey(.escape, modifierFlags: [])
     }
 
@@ -140,13 +144,94 @@ final class RequestAuthTests: MothTestCase {
     }
 
     @MainActor
-    func testAnAuthMothCantEditShowsNotSupported() {
+    func testAnImportedGrantMothCantRunShowsNotSupported() {
         let (screen, _, fields) = openAuth(of: "Delete Admin", in: ["Users", "Admins"])
 
         XCTAssertEqual(fields.kindPicker.value as? String, "OAuth 2.0")
+        XCTAssertTrue(fields.grantTypePicker.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.grantTypePicker.value as? String, "Implicit")
         XCTAssertTrue(fields.notSupportedText.waitForExistence(timeout: 10))
         XCTAssertEqual(fields.notSupportedText.value as? String, "Not Supported Yet")
+        XCTAssertFalse(fields.tokenURLField.exists)
         XCTAssertFalse(screen.editedDot(on: "Delete Admin").exists)
+
+        fields.grantTypePicker.click()
+        XCTAssertTrue(fields.grantTypePicker.menuItems["Client Credentials"].waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.grantTypePicker.menuItems["Implicit"].exists)
+        fields.grantTypePicker.menuItems["Client Credentials"].click()
+
+        XCTAssertTrue(fields.tokenURLField.waitForExistence(timeout: 10))
+        XCTAssertFalse(fields.notSupportedText.exists)
+    }
+
+    @MainActor
+    func testOAuth2ShowsItsFields() {
+        let (_, _, fields) = openAuth(of: "List Users")
+
+        fields.chooseKind("OAuth 2.0")
+
+        XCTAssertTrue(fields.grantTypePicker.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.grantTypePicker.value as? String, "Client Credentials")
+        XCTAssertTrue(fields.tokenURLField.exists)
+        XCTAssertTrue(fields.clientIDField.exists)
+        XCTAssertTrue(fields.secureClientSecretField.exists)
+        XCTAssertTrue(fields.scopeField.exists)
+        XCTAssertTrue(fields.getNewTokenButton.exists)
+        XCTAssertTrue(RequestEditorScreen(app: app).waitForValue("No Token", of: fields.tokenStateText))
+        XCTAssertFalse(fields.clearTokenButton.isEnabled)
+        XCTAssertFalse(fields.notSupportedText.exists)
+    }
+
+    @MainActor
+    private func getToken(from path: String) -> AuthFieldsScreen {
+        let (_, _, fields) = openAuth(of: "List Users")
+        fields.chooseKind("OAuth 2.0")
+        XCTAssertTrue(fields.tokenURLField.waitForExistence(timeout: 10))
+        fields.tokenURLField.click()
+        app.typeText("https://example.com\(path)")
+        fields.clientIDField.click()
+        app.typeText("moth")
+        fields.getNewTokenButton.click()
+        return fields
+    }
+
+    @MainActor
+    func testGetNewAccessTokenShowsWhenItExpiresAndClearTokenRemovesIt() {
+        let fields = getToken(from: "/token")
+
+        XCTAssertTrue(fields.waitForTokenState(beginningWith: "Expires in"))
+        XCTAssertTrue(fields.clearTokenButton.isEnabled)
+
+        fields.clearTokenButton.click()
+
+        XCTAssertTrue(RequestEditorScreen(app: app).waitForValue("No Token", of: fields.tokenStateText))
+    }
+
+    @MainActor
+    func testATokenPastItsExpiryShowsTokenExpired() {
+        let fields = getToken(from: "/token/expired")
+
+        XCTAssertTrue(RequestEditorScreen(app: app).waitForValue("Token Expired", of: fields.tokenStateText))
+    }
+
+    @MainActor
+    func testATokenWithNoExpiryShowsItDoesNotExpire() {
+        let fields = getToken(from: "/token/forever")
+
+        XCTAssertTrue(RequestEditorScreen(app: app).waitForValue("Doesn\u{2019}t Expire", of: fields.tokenStateText))
+    }
+
+    @MainActor
+    func testARefusedTokenRequestShowsTheServersError() {
+        let fields = getToken(from: "/token/refused")
+
+        XCTAssertTrue(fields.tokenFailureText.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.tokenFailureText.value as? String, "Couldn\u{2019}t Get Access Token")
+        XCTAssertEqual(
+            fields.tokenFailureReasonText.value as? String,
+            "invalid_client: Client authentication failed."
+        )
+        XCTAssertEqual(fields.tokenStateText.value as? String, "No Token")
     }
 
     @MainActor

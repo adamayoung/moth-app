@@ -26,11 +26,28 @@ public extension DataModel {
         }
         return try SendContext(
             request: row.asDomain(),
-            scopes: VariableScopes(
-                collection: variables(in: tree.collectionID(of: .request(id)).map(VariableScope.collection)),
-                environment: variables(in: environment.map(VariableScope.environment)),
-                globals: variables(in: .globals)
-            )
+            scopes: variableScopes(collection: tree.collectionID(of: .request(id)), environment: environment)
+        )
+    }
+
+    /// The scopes a folder's or collection's auth resolves in, for a token the sheet gets before any request sends.
+    func variableScopes(
+        for container: TreeContainerID,
+        in tree: CollectionTree,
+        environment: UUID?
+    ) throws -> VariableScopes {
+        let collectionID: UUID? = switch container {
+        case .collection(let id): id
+        case .folder: tree.collectionID(of: TreeNodeID(container))
+        }
+        return try variableScopes(collection: collectionID, environment: environment)
+    }
+
+    private func variableScopes(collection: UUID?, environment: UUID?) throws -> VariableScopes {
+        try VariableScopes(
+            collection: variables(in: collection.map(VariableScope.collection)),
+            environment: variables(in: environment.map(VariableScope.environment)),
+            globals: variables(in: .globals)
         )
     }
 

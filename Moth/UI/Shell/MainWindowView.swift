@@ -52,10 +52,12 @@ struct MainWindowView: View {
                 cookieJars: cookieJars,
                 activeEnvironment: activeEnvironment
             ),
-            code: RequestCodeModel(
+            code: RequestCodeModel(dataModel: dataModel, activeEnvironment: activeEnvironment, clipboard: clipboard),
+            accessTokens: AccessTokens(
                 dataModel: dataModel,
-                activeEnvironment: activeEnvironment,
-                clipboard: clipboard
+                transport: transport,
+                secretStore: secretStore,
+                activeEnvironment: activeEnvironment
             )
         )
         self.tabs = tabs

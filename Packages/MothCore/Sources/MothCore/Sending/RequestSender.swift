@@ -55,6 +55,7 @@ public nonisolated struct RequestSender: Sendable {
         scopes: VariableScopes,
         cookies: any CookieJar? = nil
     ) async -> RecordedSend {
+        let outgoing = outgoing.withTokenReference
         let sentAt = now()
         let dynamicValues = DynamicValueLog()
         let sent = await send(
@@ -113,7 +114,15 @@ public nonisolated struct RequestSender: Sendable {
         let digest: DigestAuthProvider?
         let delivery: Delivery
         do {
-            let resolved = try await resolve(outgoing, scopes: scopes, dynamicVariables: dynamicVariables)
+            let resolved = try await authorised(
+                outgoing.resolved(
+                    with: secretStore,
+                    scopes: scopes,
+                    dynamicVariables: dynamicVariables
+                ),
+                tokens: OAuth2Tokens(transport: transport, secretStore: secretStore, now: now),
+                at: sentAt
+            )
             let built = try await RequestBuilder(now: { sentAt }).build(resolved)
             urlRequest = built.urlRequest
             digest = resolved.digestProvider
@@ -125,24 +134,12 @@ public nonisolated struct RequestSender: Sendable {
             )
         } catch is CancellationError {
             return Transmission(result: .cancelled)
+        } catch let tokenFailure as AccessTokenFailure {
+            return Transmission(result: .failed(tokenFailure.failure, notes: tokenFailure.notes))
         } catch {
             return Transmission(result: .failed(SendFailure(notSent: error), notes: []))
         }
         return await transmit(urlRequest, delivery: delivery, notes: notes, digest: digest)
-    }
-
-    private func resolve(
-        _ outgoing: OutgoingRequest,
-        scopes: VariableScopes,
-        dynamicVariables: DynamicVariables
-    ) async throws -> ResolvedRequest {
-        let credentials = TypedCredentialStore(typed: outgoing.typedCredentials, stored: secretStore)
-        return try await VariableResolver(secretStore: credentials, dynamicVariables: dynamicVariables).resolve(
-            outgoing.request,
-            collection: scopes.collection,
-            environment: scopes.environment,
-            globals: scopes.globals
-        )
     }
 
     private func transmit(
@@ -353,34 +350,6 @@ private nonisolated extension RequestBuildNotice {
 
         let isShownInTheURL = URLTemplateText(request.urlTemplate).pathVariableNames.contains(name)
         return isShownInTheURL ? self : .unnamedPathVariableWithoutValue
-    }
-
-}
-
-/// Answers what the editor holds first, so an unsaved credential sends without reaching the Keychain.
-private nonisolated struct TypedCredentialStore: SecretStore {
-
-    private let typed: [String: String]
-    private let stored: any SecretStore
-
-    init(typed: [CredentialWrite], stored: any SecretStore) {
-        self.typed = Dictionary(typed.map { ($0.reference.identifier, $0.value) }) { _, last in last }
-        self.stored = stored
-    }
-
-    func save(_ value: String, for identifier: String) async throws {
-        try await stored.save(value, for: identifier)
-    }
-
-    func value(for identifier: String) async throws -> String? {
-        if let value = typed[identifier] {
-            return value
-        }
-        return try await stored.value(for: identifier)
-    }
-
-    func removeValue(for identifier: String) async throws {
-        try await stored.removeValue(for: identifier)
     }
 
 }

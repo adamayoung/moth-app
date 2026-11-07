@@ -27,7 +27,8 @@ struct RequestDetailView: View {
                     isSending: selected.map { tabs.responses.isSending($0.id) } ?? false,
                     send: { tabs.send($0) },
                     cancelSend: tabs.cancelSend,
-                    urlFocusRequests: tabs.urlFocusRequests
+                    urlFocusRequests: tabs.urlFocusRequests,
+                    accessToken: tabs.accessTokenControls
                 )
                 .frame(minHeight: 250)
                 ResponsePane(state: selected.flatMap { tabs.responses.state(for: $0.id) })

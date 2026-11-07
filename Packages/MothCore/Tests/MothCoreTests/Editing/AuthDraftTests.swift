@@ -12,19 +12,16 @@ struct AuthDraftTests {
     private nonisolated static let password = SecretReference(identifier: "password")
     private nonisolated static let token = SecretReference(identifier: "token")
 
-    private nonisolated static let unsupported: [Auth] = [oauth2(SecretReference(identifier: "client-secret"))]
-
-    private nonisolated static func oauth2(_ clientSecret: SecretReference) -> Auth {
-        .oauth2(OAuth2Auth(
-            grantType: .clientCredentials,
-            authorizationURL: "",
-            accessTokenURL: "https://example.com/token",
-            callbackURL: "",
-            clientID: "client",
-            clientSecret: clientSecret,
-            scope: ""
-        ))
-    }
+    private nonisolated static let oauth2 = Auth.oauth2(OAuth2Auth(
+        grantType: .clientCredentials,
+        authorizationURL: "",
+        accessTokenURL: "https://example.com/token",
+        callbackURL: "",
+        clientID: "client",
+        clientSecret: SecretReference(identifier: "client-secret"),
+        scope: "",
+        accessToken: SecretReference(identifier: "access-token")
+    ))
 
     private let basic = Auth.basic(BasicAuth(username: "ada", password: Self.password))
     private let bearer = Auth.bearer(BearerAuth(token: Self.token))
@@ -35,21 +32,15 @@ struct AuthDraftTests {
         .basic(BasicAuth(username: "ada", password: password)),
         .bearer(BearerAuth(token: token)),
         .apiKey(APIKeyAuth(name: "X-Key", value: token, location: .query)),
-        .digest(DigestAuth(username: "ada", password: password))
-    ] + unsupported)
+        .digest(DigestAuth(username: "ada", password: password)),
+        oauth2
+    ])
     func roundTrips(auth: Auth) {
         #expect(AuthDraft(auth).requestAuth == auth)
     }
 
-    @Test("The kinds are the editable ones, plus a stored kind the editor can't change")
-    func kinds() throws {
-        #expect(AuthDraft(.none).kinds == AuthKind.editable)
-        let oauth2 = try #require(Self.unsupported.first)
-        #expect(AuthDraft(oauth2).kinds == AuthKind.editable + [.oauth2])
-    }
-
-    @Test("Choosing another kind and back keeps an auth the editor can't change", arguments: unsupported)
-    func unsupportedAuthSurvivesASwitch(auth: Auth) {
+    @Test("Choosing another kind and back keeps an OAuth 2.0 auth", arguments: [oauth2])
+    func oauth2SurvivesASwitch(auth: Auth) {
         var draft = AuthDraft(auth)
         let kept = draft.kind
 
@@ -169,8 +160,9 @@ struct AuthDraftTests {
         Auth.basic(BasicAuth(username: "ada", password: password)),
         .bearer(BearerAuth(token: token)),
         .inherit,
-        .none
-    ] + unsupported)
+        .none,
+        oauth2
+    ])
     func untouchedCredentialWritesNothing(auth: Auth) {
         #expect(AuthDraft(auth).credentialWrites().isEmpty)
     }
@@ -238,29 +230,6 @@ struct AuthDraftTests {
 
         #expect(draft.requestAuth == bearer)
         #expect(draft.typedCredential(for: draft.tokenReference) == nil)
-    }
-
-    @Test("Rebasing an auth the editor can't change takes the row's, so choosing it again can't undo a sync")
-    func rebasingMovesAnUnsupportedAuth() {
-        let older = Self.oauth2(Self.token)
-        let newer = Self.oauth2(Self.password)
-        var draft = AuthDraft(older)
-        draft.kind = .bearer
-
-        draft.rebaseCredentials(onto: AuthDraft(newer))
-        draft.kind = .oauth2
-
-        #expect(draft.requestAuth == newer)
-    }
-
-    @Test("Rebasing onto a row with no such auth stops offering it")
-    func rebasingDropsAnUnsupportedAuthTheRowLost() {
-        var draft = AuthDraft(Self.oauth2(Self.token))
-
-        draft.rebaseCredentials(onto: AuthDraft(.none))
-
-        #expect(draft.kinds == AuthKind.editable)
-        #expect(draft.requestAuth == .none)
     }
 
     @Test("Rebasing an edited auth takes the row's references, and keeps its kind and username")

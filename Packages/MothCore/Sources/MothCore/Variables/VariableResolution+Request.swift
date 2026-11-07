@@ -101,7 +101,7 @@ nonisolated extension VariableResolution {
         resolved.clientID = try await resolve(oauth2.clientID)
         resolved.scope = try await resolve(oauth2.scope)
         resolved.username = try await resolve(oauth2.username)
-        try await resolveCredentials(oauth2.clientSecret, oauth2.password, oauth2.accessToken, oauth2.refreshToken)
+        try await resolveCredentials(oauth2.clientSecret, oauth2.password)
 
         return resolved
     }

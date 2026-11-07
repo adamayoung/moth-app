@@ -14,7 +14,7 @@ public nonisolated enum AuthKind: Sendable, Hashable {
     case oauth2
     case awsSigV4
 
-    public static let editable: [AuthKind] = [.inherit, .none, .basic, .bearer, .apiKey, .digest, .awsSigV4]
+    public static let editable: [AuthKind] = [.inherit, .none, .basic, .bearer, .apiKey, .digest, .oauth2, .awsSigV4]
 
     init(_ auth: Auth) {
         switch auth {
@@ -54,6 +54,7 @@ public nonisolated struct AuthDraft: Sendable {
     public var apiKeyName = ""
     public var apiKeyLocation = APIKeyLocation.header
     public var awsSigV4 = AWSSigV4Draft()
+    public var oauth2 = OAuth2Draft()
     private var storedPassword: SecretReference?
     private var storedToken: SecretReference?
     private var storedAPIKeyValue: SecretReference?
@@ -63,7 +64,6 @@ public nonisolated struct AuthDraft: Sendable {
     private var typedPassword: String?
     private var typedToken: String?
     private var typedAPIKeyValue: String?
-    private var unsupportedAuth: Auth?
 
     public init(_ auth: Auth) {
         self.kind = AuthKind(auth)
@@ -84,8 +84,8 @@ public nonisolated struct AuthDraft: Sendable {
             self.apiKeyName = apiKey.name
             self.apiKeyLocation = apiKey.location
             self.storedAPIKeyValue = apiKey.value
-        case .oauth2:
-            self.unsupportedAuth = auth
+        case .oauth2(let oauth2):
+            self.oauth2 = OAuth2Draft(oauth2)
         }
     }
 
@@ -102,13 +102,12 @@ public nonisolated struct AuthDraft: Sendable {
                 value: typedAPIKeyValue == nil ? apiKeyValueReference : newAPIKeyValue,
                 location: apiKeyLocation
             ))
-        case .oauth2: unsupportedAuth ?? .none
+        case .oauth2: .oauth2(oauth2.auth)
         }
     }
 
-    /// An auth the editor can't change keeps its own entry, so choosing another kind can be undone before Save.
     public var kinds: [AuthKind] {
-        AuthKind.editable + (unsupportedAuth.map { [AuthKind($0)] } ?? [])
+        AuthKind.editable
     }
 
     public var passwordReference: SecretReference {
@@ -133,7 +132,8 @@ public nonisolated struct AuthDraft: Sendable {
         case .bearer: [tokenReference]
         case .apiKey: [apiKeyValueReference]
         case .awsSigV4: awsSigV4.references
-        case .inherit, .none, .oauth2: []
+        case .oauth2: [oauth2.clientSecretReference]
+        case .inherit, .none: []
         }
     }
 
@@ -145,7 +145,7 @@ public nonisolated struct AuthDraft: Sendable {
         } else if reference == apiKeyValueReference {
             typedAPIKeyValue
         } else {
-            awsSigV4.typedCredential(for: reference)
+            awsSigV4.typedCredential(for: reference) ?? oauth2.typedCredential(for: reference)
         }
     }
 
@@ -158,6 +158,7 @@ public nonisolated struct AuthDraft: Sendable {
             typedAPIKeyValue = text
         } else {
             awsSigV4.setCredential(text, for: reference)
+            oauth2.setCredential(text, for: reference)
         }
     }
 
@@ -173,6 +174,7 @@ public nonisolated struct AuthDraft: Sendable {
             self.typedAPIKeyValue = nil
         }
         awsSigV4.discardCredentials(where: isStored)
+        oauth2.discardCredentials(where: isStored)
     }
 
     /// A password is always saved, because Basic and Digest can send a username alone. An empty token or API key value
@@ -201,7 +203,9 @@ public nonisolated struct AuthDraft: Sendable {
             }
         case .awsSigV4:
             awsSigV4.writes
-        case .inherit, .none, .oauth2:
+        case .oauth2:
+            oauth2.writes
+        case .inherit, .none:
             []
         }
     }
@@ -218,7 +222,8 @@ public nonisolated struct AuthDraft: Sendable {
         case .bearer: [typedToken]
         case .apiKey: [typedAPIKeyValue]
         case .awsSigV4: awsSigV4.typedText
-        case .inherit, .none, .oauth2: []
+        case .oauth2: oauth2.typedText
+        case .inherit, .none: []
         }
     }
 
@@ -237,7 +242,9 @@ public nonisolated struct AuthDraft: Sendable {
             typedAPIKeyValue = nil
         case .awsSigV4:
             awsSigV4.follow(saved.awsSigV4)
-        case .inherit, .none, .oauth2:
+        case .oauth2:
+            oauth2.follow(saved.oauth2)
+        case .inherit, .none:
             break
         }
         rebaseCredentials(onto: saved)
@@ -249,10 +256,7 @@ public nonisolated struct AuthDraft: Sendable {
         storedToken = saved.storedToken
         storedAPIKeyValue = saved.storedAPIKeyValue
         awsSigV4.rebaseCredentials(onto: saved.awsSigV4)
-        unsupportedAuth = saved.unsupportedAuth
-        if unsupportedAuth == nil, !AuthKind.editable.contains(kind) {
-            kind = saved.kind
-        }
+        oauth2.rebaseCredentials(onto: saved.oauth2)
         if newPassword == storedPassword {
             newPassword = SecretReference()
         }

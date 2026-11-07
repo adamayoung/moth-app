@@ -93,7 +93,11 @@ struct SidebarView: View {
             VariableSheet(title: target.title, table: model.variableTable(for: target))
         }
         .sheet(item: $model.presentedAuthorization) { target in
-            AuthorizationSheet(model: model.authorizationModel(for: target))
+            AuthorizationSheet(
+                model: model.authorizationModel(for: target),
+                accessTokens: tabs.accessTokens,
+                tree: model.tree
+            )
         }
         .focusedSceneValue(
             \.sidebarCommands,
