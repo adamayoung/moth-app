@@ -12,6 +12,17 @@
         }
       }
     },
+    "REQUEST_BUILD_INVALID_API_KEY" : {
+      "comment" : "Shown when a request cannot be sent because its API Key name or value has characters a header cannot hold, such as a line break.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This API key can’t be sent in a header."
+          }
+        }
+      }
+    },
     "REQUEST_BUILD_INVALID_BEARER_TOKEN" : {
       "comment" : "Shown when a request cannot be sent because its Bearer token has characters a header cannot hold, such as a line break.",
       "localizations" : {

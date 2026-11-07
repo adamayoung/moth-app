@@ -40,9 +40,7 @@ public nonisolated struct RequestBuilder: Sendable {
         let authProvider = request.authProvider(signingAt: now())
         try await authProvider?.apply(to: &urlRequest)
 
-        omissions.leftOut.formUnion(
-            authProvider == nil ? [.auth] : Self.rowsReplacedByAuth(of: request)
-        )
+        omissions.leftOut.formUnion(authProvider == nil ? [.auth] : request.rowsReplacedByAuth)
 
         if let authNotice = request.authNotice {
             omissions.notices.append(authNotice)
@@ -53,12 +51,6 @@ public nonisolated struct RequestBuilder: Sendable {
             notices: omissions.notices,
             unresolved: request.unresolved(outside: omissions.leftOut)
         )
-    }
-
-    private static func rowsReplacedByAuth(of request: ResolvedRequest) -> Set<RequestPart> {
-        let replaced = request.headersReplacedByAuth
-
-        return Set(request.headers.filter { replaced.contains($0.key.lowercased()) }.map { .row($0.id) })
     }
 
     private func emptiedKeyNotices(of request: ResolvedRequest, bodyWasLeftOff: Bool) -> [RequestBuildNotice] {

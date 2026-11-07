@@ -106,6 +106,40 @@ struct AuthInheritanceTests {
         #expect(built.urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer abc")
     }
 
+    @Test("An API key inherited from a folder or a collection goes out", arguments: [
+        (true, APIKeyLocation.header),
+        (false, .header),
+        (true, .query),
+        (false, .query)
+    ])
+    func inheritedAPIKeyIsSent(fromFolder: Bool, location: APIKeyLocation) async throws {
+        let store = InMemorySecretStore()
+        await store.save("abc", for: token.identifier)
+        let apiKey = Auth.apiKey(APIKeyAuth(name: "X-Key", value: token, location: location))
+        let collection = nested(
+            collectionAuth: fromFolder ? bearer : apiKey,
+            folderAuths: [.inherit, fromFolder ? apiKey : .inherit]
+        )
+        var effective = Request(id: request.id, name: "Request", urlTemplate: "https://example.com")
+        effective.auth = collection.effectiveAuth(of: effective)
+
+        let resolved = try await VariableResolver(secretStore: store).resolve(
+            effective,
+            collection: collection.variables,
+            environment: [],
+            globals: []
+        )
+        let built = try await RequestBuilder().build(resolved)
+
+        #expect(effective.auth == apiKey)
+        switch location {
+        case .header:
+            #expect(built.urlRequest.value(forHTTPHeaderField: "X-Key") == "abc")
+        case .query:
+            #expect(built.urlRequest.url?.query == "X-Key=abc")
+        }
+    }
+
     private func nested(collectionAuth: Auth, folderAuths outermostFirst: [Auth]) -> RequestCollection {
         let children = outermostFirst.reversed().reduce([Self.item(.request(request))]) { children, auth in
             [Self.item(.folder(Folder(name: "Folder", auth: auth, children: children)))]

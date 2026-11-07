@@ -140,6 +140,41 @@ struct RequestSenderLeftOutVariableTests {
         #expect(await sentNotes(request, secretStore: secretStore).isEmpty)
     }
 
+    @Test("A variable only in a row an API key replaced has no note", arguments: [
+        (APIKeyLocation.header, "x-key"),
+        (.query, "X-Key")
+    ])
+    func variableInRowAnAPIKeyReplaced(location: APIKeyLocation, name: String) async {
+        let key = SecretReference(identifier: "key")
+        let secretStore = InMemorySecretStore()
+        await secretStore.save("stored", for: key.identifier)
+        let row = KeyValue(key: name, value: "{{x}}")
+        let request = Request(
+            name: "List",
+            urlTemplate: "https://example.com",
+            queryParameters: location == .query ? [row] : [],
+            headers: location == .header ? [row] : [],
+            auth: .apiKey(APIKeyAuth(name: "X-Key", value: key, location: location))
+        )
+
+        #expect(await sentNotes(request, secretStore: secretStore).isEmpty)
+    }
+
+    @Test("A query row keeps its variable's note when the API key's name differs in case")
+    func variableInQueryRowOfAnotherCase() async {
+        let key = SecretReference(identifier: "key")
+        let secretStore = InMemorySecretStore()
+        await secretStore.save("stored", for: key.identifier)
+        let request = Request(
+            name: "List",
+            urlTemplate: "https://example.com",
+            queryParameters: [KeyValue(key: "x-key", value: "{{x}}")],
+            auth: .apiKey(APIKeyAuth(name: "X-Key", value: key, location: .query))
+        )
+
+        #expect(await sentNotes(request, secretStore: secretStore) == [.undefinedVariable("x")])
+    }
+
     @Test("A manual Authorization header keeps its variable's note when no auth replaced it")
     func variableInKeptAuthorizationHeader() async {
         let request = Request(

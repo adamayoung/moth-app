@@ -51,12 +51,9 @@ struct RequestBuilderAuthTests {
         "An unsupported auth kind sends no auth and is reported",
         arguments: [
             (
-                Auth.apiKey(
-                    APIKeyAuth(name: "key", value: SecretReference(identifier: "secret"), location: .header)
-                ),
-                UnsupportedAuthKind.apiKey
+                Auth.digest(DigestAuth(username: "user", password: SecretReference(identifier: "secret"))),
+                UnsupportedAuthKind.digest
             ),
-            (.digest(DigestAuth(username: "user", password: SecretReference(identifier: "secret"))), .digest),
             (.oauth2(RequestBuilderAuthTests.oauth2), .oauth2)
         ]
     )
@@ -106,7 +103,8 @@ struct RequestBuilderAuthTests {
         "A credential with no value sends no auth, because the resolver has reported it",
         arguments: [
             Auth.basic(BasicAuth(username: "user", password: SecretReference(identifier: "secret"))),
-            .bearer(BearerAuth(token: SecretReference(identifier: "secret")))
+            .bearer(BearerAuth(token: SecretReference(identifier: "secret"))),
+            .apiKey(APIKeyAuth(name: "X-Key", value: SecretReference(identifier: "secret"), location: .header))
         ]
     )
     func missingCredential(auth: Auth) async throws {

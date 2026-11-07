@@ -69,6 +69,15 @@ Every file is Postman-authored, from `examples/`.
 | `postman-collection-transformer/v2.1.0/proper-description-parsing.json` | `examples/v2.1.0/proper-description-parsing.json` | Sits in the v2.1.0 folder but declares the v2.0.0 schema, so `PostmanCollection` rejects it |
 | `postman-collection-transformer/v1.0.0/binary-upload.json` | `examples/v1.0.0/binary-upload.json` | Collection v1, which has no `info` object |
 
+## postman-schemas
+
+`Copyright 2015 Postdot Technologies Pvt. Ltd.`, commit
+[`c5fa20c`](https://github.com/postmanlabs/schemas/tree/c5fa20c6210207d09b06a23d700f9228c31ad703).
+
+| Fixture | Upstream path | Kind |
+| --- | --- | --- |
+| `postman-schemas/apikeyAuthTest.json` | `examples/draft-04/v2.1.0/apikeyAuthTest.json` | Postman-authored. Declares the `http` form of the schema URL, so `PostmanCollection` rejects it as it is |
+
 ## aws-iam-identity-center-extensions
 
 `Copyright (c) 2021 Amazon Web Services, Inc. or its affiliates.`, MIT, in

@@ -100,7 +100,7 @@ struct ResponseNoteTests {
     }
 
     @Test("An unsupported auth is noted", arguments: [
-        UnsupportedAuthKind.apiKey, .digest, .oauth2
+        UnsupportedAuthKind.digest, .oauth2
     ])
     func unsupportedAuth(kind: UnsupportedAuthKind) {
         #expect(ResponseNote.notes(unresolved: [], notices: [.unsupportedAuth(kind)]) == [.unsupportedAuth])
@@ -126,7 +126,7 @@ struct ResponseNoteTests {
     func unsupportedAuthWithNoCredential() {
         let notes = ResponseNote.notes(
             unresolved: [],
-            notices: [.unsupportedAuth(.apiKey)],
+            notices: [.unsupportedAuth(.digest)],
             unresolvedCredentials: [SecretReference(identifier: "key")]
         )
 
@@ -137,7 +137,7 @@ struct ResponseNoteTests {
     func order() {
         let notes = ResponseNote.notes(
             unresolved: unresolved("host"),
-            notices: [.unsupportedBody(.binary), .unsupportedAuth(.apiKey)]
+            notices: [.unsupportedBody(.binary), .unsupportedAuth(.digest)]
         )
 
         #expect(notes == [.undefinedVariable("host"), .unsupportedAuth, .unsupportedBody])
@@ -169,7 +169,7 @@ struct ResponseNoteTests {
             .unsupportedFormDataFile(key: "photo"),
             .unsupportedBody(.binary),
             .bodyNotSent(method: .get),
-            .unsupportedAuth(.apiKey),
+            .unsupportedAuth(.digest),
             .unsendableHeader(name: "X-Trace")
         ]
 
