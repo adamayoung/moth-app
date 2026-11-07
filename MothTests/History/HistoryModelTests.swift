@@ -20,9 +20,12 @@ struct HistoryModelTests {
     @Test("Open Request opens the source request's tab and closes the entry")
     func openRequestOpensATab() {
         var opened: [Request.ID] = []
-        let history = HistoryModel(sendAgain: { _ in .secretUnavailable }, record: { _ in }, clear: {}) {
-            opened.append($0)
-        }
+        let history = HistoryModel(
+            sendAgain: { _ in .secretUnavailable },
+            record: { _ in },
+            clear: {},
+            openTab: { opened.append($0) }
+        )
         history.open(entry.id)
 
         history.openRequest(entry.request.id)
@@ -83,8 +86,12 @@ struct HistoryModelTests {
     @Test("Clear History clears the store and closes the entry")
     func clearClosesTheEntry() async {
         var cleared = 0
-        let history = HistoryModel(sendAgain: { _ in .secretUnavailable }, record: { _ in
-        }, clear: { cleared += 1 }) { _ in }
+        let history = HistoryModel(
+            sendAgain: { _ in .secretUnavailable },
+            record: { _ in },
+            clear: { cleared += 1 },
+            openTab: { _ in }
+        )
         history.open(entry.id)
 
         await history.clear()

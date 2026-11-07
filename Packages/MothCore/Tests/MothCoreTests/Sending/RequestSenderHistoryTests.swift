@@ -155,7 +155,7 @@ struct RequestSenderHistoryTests {
         try await dataModel.writer.addHistoryEntry(entry)
 
         let row = try #require(try ModelContext(dataModel.container).fetch(FetchDescriptor<HistoryEntryModel>()).first)
-        let stored = String(decoding: row.requestData ?? Data(), as: UTF8.self) + row.url
+        let stored = try #require(String(bytes: row.requestData ?? Data(), encoding: .utf8)) + row.url
         #expect(!stored.contains("s3cret-variable"))
         #expect(!stored.contains("s3cret-credential"))
         #expect(!stored.contains("typed-in-token"))
