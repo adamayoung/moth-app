@@ -87,6 +87,18 @@ private extension SentResponse {
         .frame(width: 600, height: 300)
 }
 
+#Preview("All Notes") {
+    ResponsePane(state: .finished(.response(.preview(notes: [
+        .secretWithNoValue("token"),
+        .unsendableHeaders(2),
+        .unsupportedAuth,
+        .bodyNotSent(.get),
+        .unsupportedFile("photo"),
+        .formDataBoundaryReplaced
+    ]))))
+    .frame(width: 600, height: 300)
+}
+
 #Preview("Failure") {
     ResponsePane(state: .finished(.failed(
         SendFailure(kind: .couldNotConnect, description: "A server with the specified hostname could not be found."),

@@ -80,6 +80,7 @@ struct ResponseNotesView: View {
                 ForEach(notes, id: \.self) { note in
                     Label {
                         Text(verbatim: note.message)
+                            .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("response.note")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle")
