@@ -1553,6 +1553,17 @@
         }
       }
     },
+    "REQUEST_EDITOR_SECTION_SETTINGS" : {
+      "comment" : "Segment in the request editor that shows the request's timeout, redirect and TLS settings.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
     "REQUEST_EDITOR_SECTIONS_LABEL" : {
       "comment" : "Accessibility label of the control that switches between Params, Headers, Body and Auth.",
       "localizations" : {
@@ -1604,6 +1615,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "URL"
+          }
+        }
+      }
+    },
+    "REQUEST_SETTINGS_FOLLOW_REDIRECTS" : {
+      "comment" : "Toggle in the request's settings: when on, a send follows a 3xx response to its final response.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follow Redirects"
+          }
+        }
+      }
+    },
+    "REQUEST_SETTINGS_SECONDS" : {
+      "comment" : "Unit shown after the timeout field in the request's settings.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seconds"
+          }
+        }
+      }
+    },
+    "REQUEST_SETTINGS_TIMEOUT" : {
+      "comment" : "Label of the field holding how long a send waits for the server, in whole seconds.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeout"
+          }
+        }
+      }
+    },
+    "REQUEST_SETTINGS_TLS_WARNING" : {
+      "comment" : "Warning in the request's settings while Verify TLS Certificate is off.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth won’t check who it’s connecting to."
+          }
+        }
+      }
+    },
+    "REQUEST_SETTINGS_VERIFY_TLS" : {
+      "comment" : "Toggle in the request's settings: when off, a send accepts a server certificate nothing trusts.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verify TLS Certificate"
           }
         }
       }
@@ -1916,6 +1982,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "{{%@}} is a secret with no value, so it was sent as written."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_SENT_WITHOUT_TLS_VERIFICATION" : {
+      "comment" : "Shown above a response to a request whose Verify TLS Certificate setting is off.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without verifying the TLS certificate."
           }
         }
       }

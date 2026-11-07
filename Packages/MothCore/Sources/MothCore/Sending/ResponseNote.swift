@@ -31,6 +31,7 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     case sentAgainForDigestChallenge
     case digestChallengeUnsupported
     case digestChallengeAfterRedirect
+    case sentWithoutTLSVerification
 
     public static func notes(
         unresolved: [UnresolvedVariable],

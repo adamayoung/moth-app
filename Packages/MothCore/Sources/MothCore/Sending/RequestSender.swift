@@ -111,11 +111,13 @@ public nonisolated struct RequestSender: Sendable {
         let urlRequest: URLRequest
         let notes: [ResponseNote]
         let digest: DigestAuthProvider?
+        let delivery: Delivery
         do {
             let resolved = try await resolve(outgoing, scopes: scopes, dynamicVariables: dynamicVariables)
             let built = try await RequestBuilder(now: { sentAt }).build(resolved)
             urlRequest = built.urlRequest
             digest = resolved.digestProvider
+            delivery = Delivery(cookies: cookies, settings: resolved.settings)
             notes = ResponseNote.notes(
                 unresolved: built.unresolved,
                 notices: built.notices.map { $0.namingRow(of: outgoing.request, resolvedAs: resolved) },
@@ -126,7 +128,7 @@ public nonisolated struct RequestSender: Sendable {
         } catch {
             return Transmission(result: .failed(SendFailure(notSent: error), notes: []))
         }
-        return await transmit(urlRequest, cookies: cookies, notes: notes, digest: digest)
+        return await transmit(urlRequest, delivery: delivery, notes: notes, digest: digest)
     }
 
     private func resolve(
@@ -145,14 +147,15 @@ public nonisolated struct RequestSender: Sendable {
 
     private func transmit(
         _ request: URLRequest,
-        cookies: any CookieJar?,
+        delivery: Delivery,
         notes: [ResponseNote],
         digest: DigestAuthProvider?
     ) async -> Transmission {
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            let sent = try await timedSend(request, cookies: cookies)
+            let sent = try await timedSend(request, delivery: delivery)
+            let notes = delivery.notes(notes, after: sent.response, to: request)
             guard sent.response.status == 401, let digest else {
                 return Transmission(sent.response, measured: sent.measured, notes: notes)
             }
@@ -161,7 +164,7 @@ public nonisolated struct RequestSender: Sendable {
                 notes: notes,
                 to: request,
                 with: digest,
-                cookies: cookies
+                delivery: delivery
             )
         } catch is CancellationError {
             return Transmission(result: .cancelled)
@@ -177,11 +180,11 @@ private nonisolated extension RequestSender {
 
     func timedSend(
         _ request: URLRequest,
-        cookies: any CookieJar?
+        delivery: Delivery
     ) async throws -> (response: HTTPResponse, measured: Duration) {
         let clock = ContinuousClock()
         let start = clock.now
-        let response = try await transport.send(request, cookies: cookies)
+        let response = try await transport.send(request, cookies: delivery.cookies, policy: delivery.policy)
         return (response, start.duration(to: clock.now))
     }
 
@@ -193,7 +196,7 @@ private nonisolated extension RequestSender {
         notes: [ResponseNote],
         to request: URLRequest,
         with digest: DigestAuthProvider,
-        cookies: any CookieJar?
+        delivery: Delivery
     ) async throws -> Transmission {
         let (refusal, measured) = sent
         let challenges = AuthChallenge.all(in: refusal.value(forHeader: "WWW-Authenticate") ?? "")
@@ -217,19 +220,19 @@ private nonisolated extension RequestSender {
             digest.authorization(answering: challenge, to: answer, cnonce: cnonce()),
             forHTTPHeaderField: "Authorization"
         )
-        return try await transmitAnswer(answer, cookies: cookies, notes: notes + [.sentAgainForDigestChallenge])
+        return try await transmitAnswer(answer, delivery: delivery, notes: notes + [.sentAgainForDigestChallenge])
     }
 
     /// The same jar as the first send, so a cookie the refusal set goes with the answer.
     private func transmitAnswer(
         _ answer: URLRequest,
-        cookies: any CookieJar?,
+        delivery: Delivery,
         notes: [ResponseNote]
     ) async throws -> Transmission {
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            let (response, measured) = try await timedSend(answer, cookies: cookies)
+            let (response, measured) = try await timedSend(answer, delivery: delivery)
             return Transmission(response, measured: measured, notes: notes)
         } catch is CancellationError {
             throw CancellationError()
@@ -252,20 +255,21 @@ private nonisolated extension RequestSender {
 
 }
 
-private nonisolated extension URL {
+/// How each send of one request travels: the workspace's jar, and the request's settings as the transport's policy.
+private nonisolated struct Delivery {
 
-    func hasSameOrigin(as other: URL?) -> Bool {
-        guard let other, let origin, let otherOrigin = other.origin else {
-            return false
-        }
-        return origin == otherOrigin
+    var cookies: (any CookieJar)?
+    var policy: SendPolicy
+
+    init(cookies: (any CookieJar)?, settings: RequestSettings) {
+        self.cookies = cookies
+        self.policy = SendPolicy(followsRedirects: settings.followsRedirects, verifiesTLS: settings.verifiesTLS)
     }
 
-    private var origin: String? {
-        guard let scheme = scheme?.lowercased(), let host = host()?.lowercased() else {
-            return nil
-        }
-        return "\(scheme)://\(host):\(port ?? HTTPDefaultPort.of(scheme: scheme) ?? -1)"
+    /// Plain HTTP has no certificate to skip, unless a redirect took it to HTTPS.
+    func notes(_ notes: [ResponseNote], after response: HTTPResponse, to request: URLRequest) -> [ResponseNote] {
+        let reachedHTTPS = [request.url, response.url].contains { $0?.isSecureScheme == true }
+        return policy.verifiesTLS || !reachedHTTPS ? notes : notes + [.sentWithoutTLSVerification]
     }
 
 }

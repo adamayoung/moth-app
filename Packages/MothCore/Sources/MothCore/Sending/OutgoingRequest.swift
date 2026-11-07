@@ -35,6 +35,7 @@ public nonisolated extension RequestDraft {
         request.pathParameters = edit.pathParameters
         request.headers = edit.headers
         request.body = edit.body
+        request.settings = edit.settings
         request.auth = edit.auth == .inherit ? try tree.effectiveAuth(of: .request(stored.id)) : edit.auth
         return OutgoingRequest(request: request, typedCredentials: auth.credentialWrites())
     }

@@ -13,6 +13,7 @@ public nonisolated struct RequestDraft: Sendable {
     public var headers: [KeyValue]
     public var body: BodyDraft
     public var auth: AuthDraft
+    public var settings: RequestSettings
     public private(set) var pathParameters: [KeyValue]
     private var composedURL: String
     private var queryRows: [KeyValue]
@@ -32,6 +33,7 @@ public nonisolated struct RequestDraft: Sendable {
         self.headers = edit.headers
         self.body = BodyDraft(edit.body)
         self.auth = AuthDraft(edit.auth)
+        self.settings = edit.settings
         let names = text.pathVariableNames
         self.pathParameters = names.map { name in
             edit.pathParameters.first { $0.key == name } ?? KeyValue(key: name, value: "")
@@ -49,7 +51,8 @@ public nonisolated struct RequestDraft: Sendable {
             pathParameters: pathParameters + unseenPathRows,
             headers: headers,
             body: body.requestBody,
-            auth: auth.requestAuth
+            auth: auth.requestAuth,
+            settings: settings
         )
     }
 
@@ -62,6 +65,7 @@ public nonisolated struct RequestDraft: Sendable {
             && headers.hasSameContent(as: other.headers)
             && body.hasSameContent(as: other.body)
             && auth.hasSameContent(as: other.auth)
+            && settings == other.settings
     }
 
     /// Enables the row, because the editor shows no control for it and a disabled row is not sent.

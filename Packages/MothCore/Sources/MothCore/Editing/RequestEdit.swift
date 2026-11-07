@@ -14,6 +14,7 @@ public nonisolated struct RequestEdit: Sendable, Hashable {
     public var headers: [KeyValue]
     public var body: RequestBody
     public var auth: Auth
+    public var settings: RequestSettings
 
     public init(
         method: HTTPMethod = .get,
@@ -22,7 +23,8 @@ public nonisolated struct RequestEdit: Sendable, Hashable {
         pathParameters: [KeyValue] = [],
         headers: [KeyValue] = [],
         body: RequestBody = .none,
-        auth: Auth = .inherit
+        auth: Auth = .inherit,
+        settings: RequestSettings = RequestSettings()
     ) {
         self.method = method
         self.urlTemplate = urlTemplate
@@ -31,6 +33,7 @@ public nonisolated struct RequestEdit: Sendable, Hashable {
         self.headers = headers
         self.body = body
         self.auth = auth
+        self.settings = settings
     }
 
     public init(_ request: Request) {
@@ -41,7 +44,8 @@ public nonisolated struct RequestEdit: Sendable, Hashable {
             pathParameters: request.pathParameters,
             headers: request.headers,
             body: request.body,
-            auth: request.auth
+            auth: request.auth,
+            settings: request.settings
         )
     }
 

@@ -38,7 +38,7 @@ These are decided. Do not reopen them without being asked.
 | `Moth` | Scene roots, SwiftUI, commands, `AppModel`, dependency composition, and platform-only APIs | `MothCore`, `MothImport`, `HTTPKit` | `MainActor` |
 | `MothImport` | Mapping Postman collections and environments to and from the domain, cURL import, and code generation (cURL, Swift URLSession) | `MothCore`, `PostmanKit` | `MainActor` |
 | `MothCore` | Domain types, variable resolution, auth providers, SwiftData models and schemas, CloudKit configuration, the Keychain secret store, each workspace's cookie jar, mappers, and services | `HTTPKit` | `MainActor` |
-| `HTTPKit` | `HTTPTransport`, its URLSession implementation, metrics capture, the redirect chain, and the cookie rules and jar protocol; no SwiftData or UI | nothing | `nonisolated` |
+| `HTTPKit` | `HTTPTransport`, its URLSession implementation, metrics capture, the redirect chain, each send's redirect and TLS policy, and the cookie rules and jar protocol; no SwiftData or UI | nothing | `nonisolated` |
 | `PostmanKit` | Codable wire models for Postman Collection v2.1 and Environment JSON; no SwiftData or UI | nothing | `nonisolated` |
 
 Non-UI modules have no SwiftUI or AppKit dependency and are fully unit-testable.
@@ -110,7 +110,8 @@ Postman-shaped:
   GraphQL.
 - **Auth** is inherited, or overridden with none, Basic, Bearer, API key, Digest,
   OAuth2 or AWS SigV4.
-- **Settings** cover redirects, timeout and SSL verification.
+- **Settings** cover the timeout (60 seconds; whole seconds from 1 to 3600 in the
+  editor), following redirects and verifying the TLS certificate (both on).
 - A **HistoryEntry** records a sent request and its response.
 
 ### Variables
@@ -251,8 +252,7 @@ and roll back as a Postman import's do.
   scheme, such as `--digest` or `--aws-sigv4`, imports no `-u` or URL credential and
   has `.none`, because Basic would send the secret as it stands.
 - `followsRedirects` is true only with `-L`, because curl doesn't follow redirects,
-  and `verifiesTLS` is false only with `-k`. Sending doesn't read either setting
-  yet.
+  and `verifiesTLS` is false only with `-k`.
 - `.inherit` is the auth of a command with no credential, as for New Request.
 - With `-F`, a `Content-Type` header leaves the rows, because curl adds its boundary
   to that header and `RequestBuilder` can't.
@@ -347,8 +347,13 @@ its writes one at a time, because Keychain calls finish in no set order.
 A request saves explicitly, unlike a variable. An edit changes a `RequestDraft`,
 a value type, and File > Save writes its `RequestEdit` through
 `StoreWriter.updateRequest`. `RequestEdit` holds the method, URL template, query
-and path rows, headers, body and auth. It has no name, so a Save can't undo a
-rename from the sidebar.
+and path rows, headers, body, auth and settings. It has no name, so a Save can't
+undo a rename from the sidebar.
+
+The Settings section's Timeout field joins the draft with each valid value as it
+is typed, because a Send button takes no focus from it, and leaving the field puts
+back the last valid value. Turning Verify TLS Certificate off shows a warning in the
+section.
 
 The URL field shows the query the store keeps in rows, because
 [a query that has rows leaves the template](#postman-import). `RequestDraft`
@@ -406,8 +411,8 @@ Session Token leaves the row with no reference, so its old item is released.
 `RequestDrafts` runs Saves and reads one at a time, because Keychain calls finish in
 no set order.
 
-`updateRequest` takes the edit the draft started from, and writes a body or auth
-only if the draft changed it. That keeps what a sync wrote, including to a tab whose
+`updateRequest` takes the edit the draft started from, and writes a body, auth or
+settings only if the draft changed them. That keeps what a sync wrote, including to a tab whose
 row isn't being delivered, and keeps the stored bytes, because encoding a decoded
 value drops any key this build can't read. A changed auth must match what a row still
 holds, or the write is refused. The refused draft stays edited, and the next delivery
@@ -415,7 +420,7 @@ moves it to the row's references. `updateRequest` returns the references no othe
 request, folder or collection holds, and it searches each row's auth JSON as bytes,
 so a row this build can't read keeps its items.
 
-While a draft is edited, a body or auth nobody touched follows a delivery, and only
+While a draft is edited, a body, auth or settings nobody touched follows a delivery, and only
 its chosen kind's fields change, so text held for another kind stays. A credential
 with no stored value stays editable, with "Not available on this Mac yet" as its
 placeholder, because an import saves nothing for an empty credential.
@@ -649,6 +654,25 @@ the app never does. A timeout, a connection failure, a TLS failure and anything
 else are separate cases, and each keeps the system's description. A cancelled
 send throws `CancellationError`, which is not a failure.
 
+### Redirects and TLS
+
+Each send takes a `SendPolicy`, built from the request's settings. With redirects
+off, `willPerformHTTPRedirection` answers `nil`, so URLSession returns the 3xx with
+its status, headers and body. On a hop to another origin (scheme, host or port),
+it removes the policy's `credentialHeaders`, `Authorization` and `Cookie` by
+default, so a secret never follows a redirect to another server. URLSession itself
+drops `Authorization` on every redirect, same origin included, and keeps custom
+headers. Issue #80 adds the API Key header and `X-Amz-Security-Token` to that set,
+from the built request.
+
+With verification off, the task's delegate accepts the server's trust, and the send
+runs in a `URLSession` of its own, so no verified send can reuse a connection whose
+certificate nobody checked. URLSession on macOS 27.2 also declines to reuse such a
+connection within one session, but that is not documented. A response then notes
+that it was sent without verifying the certificate, if the request or its final URL
+was HTTPS. `URLSessionTLSTests` serves a self-signed certificate on loopback, imported
+into memory only, so no keychain is touched.
+
 URLSession merges a repeated response header into one comma-separated value,
 `Set-Cookie` included. `URLSessionLoopbackTests` records this. Keeping them apart
 needs the transport swap that [Stack](#stack) reserves for a real wall.
@@ -666,8 +690,8 @@ cookie.
 
 A redirect response's cookies can only be read in `willPerformHTTPRedirection`,
 which also works `Cookie` out again for the new URL, so jar cookies never follow a
-redirect to another host. A manual `Cookie` header follows as other manual headers
-do. A session cookie lasts until it is deleted or replaced, as in Postman, so a
+redirect to another host. A manual `Cookie` header goes only to its own origin; on
+another, the jar adds that host's own cookies. A session cookie lasts until it is deleted or replaced, as in Postman, so a
 login survives a relaunch.
 
 `WorkspaceCookieJar` keeps one workspace's cookies, and `CookieJars` holds one for
@@ -682,7 +706,7 @@ domain, with a value shown only for the selected cookie.
 ## Sending a Request
 
 Send takes what the tab shows. `RequestDraft.outgoing(from:in:)` puts the draft's
-fields over the stored row, because a draft holds no settings or variables, and
+fields, settings included, over the stored row, because a draft holds no variables, and
 replaces `.inherit` from `CollectionTree`, which already holds each container's
 decoded auth. A container whose auth can't be read refuses the send rather than
 going out with no auth. `DataModel.sendContext` fetches each variable scope, because

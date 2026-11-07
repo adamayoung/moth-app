@@ -50,11 +50,10 @@ struct StoreWriterRequestTests {
         #expect(try savedRequest(request.id, in: dataModel).name == "Renamed")
     }
 
-    @Test("Saving an edit keeps the settings and variables")
+    @Test("Saving an edit keeps the variables")
     func keepsOtherFields() async throws {
         let request = Request(
             name: "Request",
-            settings: RequestSettings(timeout: .seconds(5)),
             variables: [Variable(name: "page", value: .plain(initial: "1", current: "2"))]
         )
         let dataModel = try TreeFixtures.dataModel(
@@ -63,9 +62,21 @@ struct StoreWriterRequestTests {
 
         try await dataModel.writer.updateRequest(request.id, with: edit, from: RequestEdit(request))
 
-        let saved = try savedRequest(request.id, in: dataModel)
-        #expect(saved.settings == request.settings)
-        #expect(saved.variables == request.variables)
+        #expect(try savedRequest(request.id, in: dataModel).variables == request.variables)
+    }
+
+    @Test("Saving an edit writes its settings")
+    func writesSettings() async throws {
+        let request = Request(name: "Request", settings: RequestSettings(timeout: .seconds(5)))
+        let dataModel = try TreeFixtures.dataModel(
+            holding: RequestCollection(name: "API", children: [TreeFixtures.item(0, request)])
+        )
+        var changed = RequestEdit(request)
+        changed.settings = RequestSettings(timeout: .seconds(9), followsRedirects: false, verifiesTLS: false)
+
+        try await dataModel.writer.updateRequest(request.id, with: changed, from: RequestEdit(request))
+
+        #expect(try savedRequest(request.id, in: dataModel).settings == changed.settings)
     }
 
     @Test("Saving an edit updates every row with the identifier, because sync can duplicate one")
