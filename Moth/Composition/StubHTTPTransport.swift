@@ -22,7 +22,7 @@ final nonisolated class StubHTTPTransport: HTTPTransport {
     )
 
     @concurrent
-    func send(_ request: URLRequest) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies _: any CookieJar?) async throws -> HTTPResponse {
         switch request.url?.path() {
         case "/wait":
             try await Task.sleep(for: .seconds(600))

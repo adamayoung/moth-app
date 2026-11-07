@@ -10,7 +10,9 @@ import OSLog
 
 final class LiveAppDependencies: AppDependencies {
 
-    let transport: any HTTPTransport = URLSessionHTTPTransport(session: makeSession())
+    let transport: any HTTPTransport = URLSessionHTTPTransport(
+        session: URLSession(configuration: URLSessionHTTPTransport.sessionConfiguration)
+    )
     let secretStore: any SecretStore
     let dataModel: DataModel
     let iCloudContainerIdentifier: String?
@@ -75,16 +77,6 @@ final class LiveAppDependencies: AppDependencies {
             return KeychainSecretStore(service: service, mode: .synchronised(accessGroup: accessGroup))
         }
         return KeychainSecretStore(service: service, mode: .localOnly)
-    }
-
-    /// An API client shows what the server sent, so no cached response, cookie or credential carries between requests.
-    private static func makeSession() -> URLSession {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.urlCache = nil
-        configuration.httpCookieStorage = nil
-        configuration.httpShouldSetCookies = false
-        configuration.urlCredentialStorage = nil
-        return URLSession(configuration: configuration)
     }
 
 }

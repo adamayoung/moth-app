@@ -23,7 +23,7 @@ final nonisolated class RecordingTransport: HTTPTransport {
     }
 
     @concurrent
-    func send(_ request: URLRequest) async throws -> HTTPResponse {
+    func send(_ request: URLRequest, cookies _: any CookieJar?) async throws -> HTTPResponse {
         sent.withLock { $0.append(request) }
         return try result()
     }
