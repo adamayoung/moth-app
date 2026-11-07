@@ -5,7 +5,7 @@
 
 nonisolated extension KeyValue {
 
-    var isSent: Bool {
+    public var isSent: Bool {
         isEnabled && !key.isEmpty
     }
 

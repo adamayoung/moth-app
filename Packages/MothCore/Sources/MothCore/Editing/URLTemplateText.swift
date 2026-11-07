@@ -34,11 +34,18 @@ nonisolated struct URLTemplateText {
         }
     }
 
+    private var scheme: Substring {
+        address.prefixMatch(of: /[A-Za-z][A-Za-z0-9+.\-]*:\/\//)?.output ?? ""
+    }
+
     /// The segment after the scheme is the authority, however it is written: a port, or a `{{host}}`.
+    private var authorityAndPath: [Substring] {
+        address.dropFirst(scheme.count).split(separator: "/", omittingEmptySubsequences: false)
+    }
+
     var pathVariableNames: [String] {
-        let withoutScheme = address.trimmingPrefix(/[A-Za-z][A-Za-z0-9+.\-]*:\/\//)
         var names: [String] = []
-        for segment in withoutScheme.split(separator: "/", omittingEmptySubsequences: false).dropFirst() {
+        for segment in authorityAndPath.dropFirst() {
             if let name = segment.pathVariableName, !names.contains(name) {
                 names.append(name)
             }
@@ -46,14 +53,38 @@ nonisolated struct URLTemplateText {
         return names
     }
 
+    func addressFillingPathVariables(from rows: [KeyValue]) -> String {
+        let segments = authorityAndPath.enumerated().map { index, segment in
+            guard
+                index > 0, let name = segment.pathVariableName,
+                let row = rows.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
+            else {
+                return String(segment)
+            }
+            return row.value.urlDisplayEncoded
+        }
+        return scheme + segments.joined(separator: "/")
+    }
+
     var withoutQuery: String {
         address + fragmentSuffix
     }
 
     func replacingQuery(with rows: [KeyValue]) -> String {
-        let pairs = rows.filter(\.isSent).map { "\($0.key.urlDisplayEncoded)=\($0.value.urlDisplayEncoded)" }
-        let query = pairs.isEmpty ? "" : "?\(pairs.joined(separator: "&"))"
-        return address + query + fragmentSuffix
+        address + Self.querySuffix(Self.displayPairs(of: rows)) + fragmentSuffix
+    }
+
+    func queryAndFragment(appending rows: [KeyValue], then literalPair: String?) -> String {
+        let pairs = [query].compactMap(\.self) + Self.displayPairs(of: rows) + [literalPair].compactMap(\.self)
+        return Self.querySuffix(pairs.filter { !$0.isEmpty }) + fragmentSuffix
+    }
+
+    private static func displayPairs(of rows: [KeyValue]) -> [String] {
+        rows.filter(\.isSent).map { "\($0.key.urlDisplayEncoded)=\($0.value.urlDisplayEncoded)" }
+    }
+
+    private static func querySuffix(_ pairs: [String]) -> String {
+        pairs.isEmpty ? "" : "?\(pairs.joined(separator: "&"))"
     }
 
     private var fragmentSuffix: String {
@@ -98,6 +129,10 @@ private nonisolated extension StringProtocol where SubSequence == Substring {
             text.replacing("+", with: " ").removingPercentEncoding ?? String(text)
         }
     }
+
+}
+
+public nonisolated extension StringProtocol where SubSequence == Substring {
 
     var urlDisplayEncoded: String {
         mapOutsideVariables { String($0).percentEncoded }

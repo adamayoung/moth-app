@@ -7,9 +7,6 @@ import Foundation
 
 public nonisolated struct RequestBuilder: Sendable {
 
-    /// URLSession fails a GET that has a body, and a HEAD with one announces a length and sends no bytes.
-    private static let methodsWithoutBodies: Set<String> = ["GET", "HEAD"]
-
     private let multipartBoundary: @Sendable () -> String
 
     public init(multipartBoundary: @escaping @Sendable () -> String = { "moth-\(UUID().uuidString)" }) {
@@ -107,7 +104,7 @@ public nonisolated struct RequestBuilder: Sendable {
         let body = request.body.encoded(multipartBoundary: multipartBoundary)
         var omissions = body.omissions
 
-        if body.data?.isEmpty == false, Self.methodsWithoutBodies.contains(request.method.rawValue.uppercased()) {
+        if body.data?.isEmpty == false, !request.method.sendsBody {
             if !body.isFormWithNoRows {
                 omissions.notices.append(.bodyNotSent(method: request.method))
                 omissions.leftOut = request.body.parts
