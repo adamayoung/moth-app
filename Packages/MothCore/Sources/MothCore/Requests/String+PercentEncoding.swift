@@ -13,7 +13,7 @@ nonisolated extension String {
         charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
     )
 
-    var percentEncoded: String {
+    public var percentEncoded: String {
         addingPercentEncoding(withAllowedCharacters: Self.unreservedCharacters) ?? ""
     }
 

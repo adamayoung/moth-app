@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "CURL_IGNORED_%@" : {
+      "comment" : "Listed after a cURL import. The argument is the flags Moth did not read, such as “-s and --data @file”.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignored: %@"
+          }
+        }
+      }
+    },
+    "CURL_IMPORT_SUMMARY_%@" : {
+      "comment" : "Shown above the ignored flags after a cURL import. The argument is the new request's name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported “%@”."
+          }
+        }
+      }
+    },
     "IMPORT_AUTH_API_KEY" : {
       "comment" : "The name of an auth scheme, used inside IMPORT_SKIPPED_AUTH_%lld_%@.",
       "localizations" : {

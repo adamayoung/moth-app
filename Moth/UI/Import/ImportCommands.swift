@@ -10,6 +10,7 @@ struct ImportCommandContext {
 
     let model: ImportModel
     let canImport: Bool
+    let canImportCurl: Bool
 
 }
 
@@ -31,6 +32,11 @@ struct ImportCommands: Commands {
                 }
             }
             .disabled(context?.canImport != true)
+
+            Button("MENU_IMPORT_CURL") {
+                context?.model.beginCurlImport()
+            }
+            .disabled(context?.canImportCurl != true)
         }
     }
 
