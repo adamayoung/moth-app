@@ -94,7 +94,9 @@ struct PostmanStoredAuthMappingTests {
     @Test("A real Postman export's API key goes out, replacing the header Postman wrote beside it")
     func appliesAnExportedAPIKey() async throws {
         let store = InMemorySecretStore()
-        let exported = try String(decoding: Fixture.data("postman-schemas/apikeyAuthTest.json"), as: UTF8.self)
+        let exported = try #require(
+            String(bytes: Fixture.data("postman-schemas/apikeyAuthTest.json"), encoding: .utf8)
+        )
         // This export declares the `http` schema URL, which `PostmanSchema` doesn't accept.
         let accepted = exported.replacing("http://schema", with: "https://schema")
         let imported = try await Fixture.importing(contents: accepted, secretStore: store)
