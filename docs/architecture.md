@@ -136,8 +136,9 @@ body. Digest's provider only removes an `Authorization` header, because Digest
 answers a 401 challenge, and [sending](#sending-a-request) does that.
 
 `RequestBuilder` applies the provider last, so `AWSSigV4AuthProvider` signs the
-final URL, headers and body, with the time of that build. `AWSSigV4Signer` works on
-the wire form of a request, and AWS's published suite checks it. A required
+final URL, headers and body, with the time the send started, which History records
+too. `AWSSigV4Signer` works on the wire form of a request, and AWS's published
+suite checks it. A required
 credential with no value stops the build, unlike Basic and Bearer, because an
 unsigned call to AWS would come back as a bare 403. A session token with no value
 is left off and noted. Headers URLSession reserves aren't signed, because it can
@@ -443,6 +444,13 @@ once promoted to production, a schema is additive only, so a model type cannot
 be deleted and an existing attribute cannot be changed. Promote the development
 schema before release.
 
+`CurrentSchema` names the version this build opens. `SchemaV2` changes only the
+local store: it adds `HistoryEntryModel`'s summary, response and timing
+attributes. The plan lists both versions with no stage, because a staged
+migration can't identify a store that holds only some of a version's models, and
+each store holds only its configuration's. SwiftData's automatic lightweight
+migration adds the attributes.
+
 ### Stores From Another Schema
 
 Before either store opens, `StoreSchemaCheck` compares each store file's entity
@@ -675,6 +683,37 @@ so; any other 401, and a second one, are shown as they came.
 so a relaunch returns to No Response. Cancel shows at once, and each send has a token,
 so a result that arrives afterwards lands nowhere. Closing a tab cancels its send and
 drops its response, and closing a window cancels.
+
+## History
+
+`RequestSender.sendRecording` returns a send's result with a `HistoryEntry`, and
+`RequestResponses` writes it only while its send still holds its token, so a
+cancelled send leaves none. A send that failed, or couldn't be built, is recorded
+with its failure. The sender builds the entry, because only it holds the raw body.
+A body over 5 MB keeps its size and no bytes.
+
+The entry's request is a snapshot of what was sent. A second resolution, against a
+secret store that answers nothing, leaves each secret variable as `{{name}}`. It
+replays the `{{$guid}}`, `{{$timestamp}}` and `{{$randomInt}}` values the send
+drew, in order, so the snapshot holds them. A dynamic variable inside a secret's own
+value draws one that the snapshot doesn't, which shifts every later value of that
+kind in the record, and Send Again resends the record. The snapshot keeps every
+variable in scope, so a secret's value can still name the others. Auth keeps
+references, and rows named `Authorization` or `Proxy-Authorization`, and the rows
+`rowsReplacedByAuth` names, are masked, so no secret reaches the local store.
+
+Send Again resolves the snapshot against its own variables and the Keychain. A
+secret or credential with no value, or a masked row that no auth provider replaces,
+as under OAuth2 today, sends nothing and shows "Secret unavailable". Otherwise it
+sends and records as Send does.
+
+History belongs to this Mac's one implicit workspace, and its rows carry no
+workspace id, because reconcile can replace the workspace row with a synced one of
+lower id. `StoreWriter` keeps the newest 500 entries in the save that adds one. A
+sidebar row fetches only the `method`, `url`, `statusCode` and `sentAt` columns, so
+it reads no blob, and an open entry is read off the main actor. An open entry covers
+the tabs in the detail column. They stay live, so ⌘W and the tab commands still act
+on the selected tab, and selecting a sidebar row or a tab closes the entry.
 
 ## Code Generation
 

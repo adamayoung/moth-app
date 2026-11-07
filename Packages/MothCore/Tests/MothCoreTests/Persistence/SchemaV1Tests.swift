@@ -139,10 +139,4 @@ struct SchemaV1Tests {
         #expect(history.attributesByName["requestID"] != nil)
     }
 
-    @Test("The migration plan's only version is SchemaV1, which has no stages to run")
-    func migrationPlanHoldsSchemaV1() {
-        #expect(MothMigrationPlan.schemas.map { "\($0)" } == ["SchemaV1"])
-        #expect(MothMigrationPlan.stages.isEmpty)
-    }
-
 }

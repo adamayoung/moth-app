@@ -42,12 +42,59 @@ public nonisolated struct RequestSender: Sendable {
 
     @concurrent
     public func send(_ outgoing: OutgoingRequest, scopes: VariableScopes) async -> SendResult {
+        await sendRecording(outgoing, scopes: scopes).result
+    }
+
+    @concurrent
+    public func sendRecording(_ outgoing: OutgoingRequest, scopes: VariableScopes) async -> RecordedSend {
+        let sentAt = now()
+        let dynamicValues = DynamicValueLog()
+        let sent = await send(outgoing, scopes: scopes, dynamicVariables: dynamicValues.recording, at: sentAt)
+        if sent.result == .cancelled {
+            return RecordedSend(result: .cancelled, entry: nil)
+        }
+
+        guard let snapshot = try? await HistorySnapshot.make(
+            of: outgoing.request,
+            scopes: scopes,
+            replaying: dynamicValues
+        ) else {
+            return RecordedSend(result: sent.result, entry: nil)
+        }
+        let entry = HistoryEntry(request: snapshot, sent: sent, at: sentAt)
+        return RecordedSend(result: sent.result, entry: entry)
+    }
+
+    /// Sends nothing while a secret the snapshot names, or a row it masked, has no value to send.
+    @concurrent
+    public func sendAgain(_ entry: HistoryEntry) async -> SendAgainOutcome {
+        do {
+            let resolved = try await VariableResolver(secretStore: secretStore)
+                .resolve(entry.request, collection: [], environment: [], globals: [])
+            let hasMissingSecret = resolved.unresolved.contains { $0.reason == .missingSecret }
+            guard !hasMissingSecret, resolved.unresolvedCredentials.isEmpty,
+                  !HistorySnapshot.hasLostRow(in: resolved)
+            else {
+                return .secretUnavailable
+            }
+        } catch {
+            return .secretUnavailable
+        }
+        return await .sent(sendRecording(OutgoingRequest(request: entry.request), scopes: VariableScopes()))
+    }
+
+    private func send(
+        _ outgoing: OutgoingRequest,
+        scopes: VariableScopes,
+        dynamicVariables: DynamicVariables,
+        at sentAt: Date
+    ) async -> Transmission {
         let urlRequest: URLRequest
         let notes: [ResponseNote]
         let digest: DigestAuthProvider?
         do {
-            let resolved = try await resolve(outgoing, scopes: scopes)
-            let built = try await RequestBuilder(now: now).build(resolved)
+            let resolved = try await resolve(outgoing, scopes: scopes, dynamicVariables: dynamicVariables)
+            let built = try await RequestBuilder(now: { sentAt }).build(resolved)
             urlRequest = built.urlRequest
             digest = resolved.digestProvider
             notes = ResponseNote.notes(
@@ -56,16 +103,20 @@ public nonisolated struct RequestSender: Sendable {
                 unresolvedCredentials: resolved.unresolvedCredentials
             )
         } catch is CancellationError {
-            return .cancelled
+            return Transmission(result: .cancelled)
         } catch {
-            return .failed(SendFailure(notSent: error), notes: [])
+            return Transmission(result: .failed(SendFailure(notSent: error), notes: []))
         }
         return await transmit(urlRequest, notes: notes, digest: digest)
     }
 
-    private func resolve(_ outgoing: OutgoingRequest, scopes: VariableScopes) async throws -> ResolvedRequest {
+    private func resolve(
+        _ outgoing: OutgoingRequest,
+        scopes: VariableScopes,
+        dynamicVariables: DynamicVariables
+    ) async throws -> ResolvedRequest {
         let credentials = TypedCredentialStore(typed: outgoing.typedCredentials, stored: secretStore)
-        return try await VariableResolver(secretStore: credentials).resolve(
+        return try await VariableResolver(secretStore: credentials, dynamicVariables: dynamicVariables).resolve(
             outgoing.request,
             collection: scopes.collection,
             environment: scopes.environment,
@@ -77,11 +128,13 @@ public nonisolated struct RequestSender: Sendable {
         _ request: URLRequest,
         notes: [ResponseNote],
         digest: DigestAuthProvider?
-    ) async -> SendResult {
+    ) async -> Transmission {
+        let clock = ContinuousClock()
+        let start = clock.now
         do {
             let (response, measured) = try await timedSend(request)
             guard response.status == 401, let digest else {
-                return .response(SentResponse(response, measured: measured, notes: notes))
+                return Transmission(response, measured: measured, notes: notes)
             }
             return try await answerDigestChallenge(
                 in: response,
@@ -91,9 +144,10 @@ public nonisolated struct RequestSender: Sendable {
                 with: digest
             )
         } catch is CancellationError {
-            return .cancelled
+            return Transmission(result: .cancelled)
         } catch {
-            return .failed(SendFailure(transportError: error), notes: notes)
+            let failure = SendFailure(transportError: error)
+            return Transmission(result: .failed(failure, notes: notes), duration: start.duration(to: clock.now))
         }
     }
 
@@ -117,20 +171,20 @@ private nonisolated extension RequestSender {
         notes: [ResponseNote],
         to request: URLRequest,
         with digest: DigestAuthProvider
-    ) async throws -> SendResult {
+    ) async throws -> Transmission {
         let challenger = refusal.url ?? request.url
         guard let challenger, challenger.hasSameOrigin(as: request.url) else {
-            return .response(SentResponse(refusal, measured: measured, notes: notes))
+            return Transmission(refusal, measured: measured, notes: notes)
         }
 
         let challenges = AuthChallenge.all(in: refusal.value(forHeader: "WWW-Authenticate") ?? "")
         guard let challenge = DigestChallenge.first(in: challenges) else {
             let isOffered = challenges.contains { $0.isScheme("Digest") }
-            return .response(SentResponse(
+            return Transmission(
                 refusal,
                 measured: measured,
                 notes: notes + (isOffered ? [.digestChallengeUnsupported] : [])
-            ))
+            )
         }
 
         try Task.checkCancellation()
@@ -141,7 +195,7 @@ private nonisolated extension RequestSender {
             forHTTPHeaderField: "Authorization"
         )
         let (response, measured) = try await timedSend(answer)
-        return .response(SentResponse(response, measured: measured, notes: notes + [.sentAgainForDigestChallenge]))
+        return Transmission(response, measured: measured, notes: notes + [.sentAgainForDigestChallenge])
     }
 
 }
@@ -161,6 +215,52 @@ private nonisolated extension URL {
         }
         let defaultPort = ["http": 80, "https": 443][scheme]
         return "\(scheme)://\(host):\(port ?? defaultPort ?? -1)"
+    }
+
+}
+
+/// What history needs from a send: the raw body, which ``SentResponse`` doesn't keep.
+private nonisolated struct Transmission {
+
+    var result: SendResult
+    var duration: Duration = .zero
+    var response: HTTPResponse?
+
+    init(result: SendResult, duration: Duration = .zero, response: HTTPResponse? = nil) {
+        self.result = result
+        self.duration = duration
+        self.response = response
+    }
+
+    init(_ response: HTTPResponse, measured: Duration, notes: [ResponseNote]) {
+        let shown = SentResponse(response, measured: measured, notes: notes)
+        self.init(result: .response(shown), duration: shown.duration, response: response)
+    }
+
+}
+
+private nonisolated extension HistoryEntry {
+
+    init(request: Request, sent: Transmission, at sentAt: Date) {
+        var failure: SendFailure?
+        var response: HistoryResponse?
+        switch sent.result {
+        case .response(let shown):
+            let body = sent.response?.body ?? Data()
+            response = HistoryResponse(
+                status: shown.status,
+                reasonPhrase: shown.reasonPhrase,
+                headers: shown.headers.map { KeyValue(key: $0.name, value: $0.value) },
+                timing: shown.timing,
+                size: body.count,
+                body: body.count > HistoryResponse.bodyLimit ? nil : body
+            )
+        case .failed(let sendFailure, _):
+            failure = sendFailure
+        case .cancelled:
+            break
+        }
+        self.init(request: request, sentAt: sentAt, duration: sent.duration, response: response, failure: failure)
     }
 
 }

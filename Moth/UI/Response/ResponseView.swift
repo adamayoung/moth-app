@@ -30,6 +30,7 @@ struct ResponseView: View {
 
     let response: SentResponse
     @Binding var section: ResponseSection
+    var isBodyKept = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -64,6 +65,9 @@ struct ResponseView: View {
     @ViewBuilder
     private var sectionContent: some View {
         switch section {
+        case .body where !isBodyKept:
+            ContentUnavailableView("HISTORY_BODY_NOT_KEPT", systemImage: "doc.badge.ellipsis")
+                .accessibilityIdentifier("response.bodyNotKept")
         case .body: ResponseBodyView(content: response.content)
         case .headers: ResponseHeadersView(headers: response.headers)
         case .timing: ResponseTimingView(timing: response.timing, total: response.duration)

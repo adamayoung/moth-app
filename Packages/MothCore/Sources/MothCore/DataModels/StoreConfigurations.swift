@@ -31,13 +31,13 @@ nonisolated struct StoreConfigurations {
     init(location: DataModelLocation, containerIdentifier: String?) {
         self.synced = Self.configuration(
             named: "Synced",
-            models: SchemaV1.syncedModels,
+            models: CurrentSchema.syncedModels,
             location: location,
             cloudKitDatabase: containerIdentifier.map { .private($0) } ?? .none
         )
         self.local = Self.configuration(
             named: "Local",
-            models: SchemaV1.localModels,
+            models: CurrentSchema.localModels,
             location: location,
             cloudKitDatabase: .none
         )
@@ -51,7 +51,7 @@ nonisolated struct StoreConfigurations {
         location: DataModelLocation,
         cloudKitDatabase: ModelConfiguration.CloudKitDatabase
     ) -> ModelConfiguration {
-        let schema = Schema(models, version: SchemaV1.versionIdentifier)
+        let schema = Schema(models, version: CurrentSchema.versionIdentifier)
         return switch location {
         case .inMemory:
             ModelConfiguration(name, schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: cloudKitDatabase)

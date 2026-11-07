@@ -25,7 +25,7 @@
             )
             try configurations.verifyStoresAreKnown()
             try autoreleasepool {
-                guard let model = NSManagedObjectModel.makeManagedObjectModel(for: SchemaV1.syncedModels) else {
+                guard let model = NSManagedObjectModel.makeManagedObjectModel(for: CurrentSchema.syncedModels) else {
                     throw Failure.noManagedObjectModel
                 }
 
