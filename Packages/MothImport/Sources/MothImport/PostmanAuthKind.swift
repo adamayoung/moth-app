@@ -6,7 +6,6 @@
 public nonisolated enum PostmanAuthKind: Sendable, Hashable {
 
     case apiKey
-    case awsSigV4
     case digest
     case edgeGrid
     case hawk

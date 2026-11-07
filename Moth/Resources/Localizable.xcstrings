@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "AUTH_ACCESS_KEY" : {
+      "comment" : "Label of the access key field in AWS Signature auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access Key"
+          }
+        }
+      }
+    },
     "AUTH_INHERITED_FROM_%@" : {
       "comment" : "Says where inherited auth comes from. The argument is a folder's or collection's name.",
       "localizations" : {
@@ -24,7 +35,7 @@
       }
     },
     "AUTH_KIND_AWS_SIGV4" : {
-      "comment" : "Stored auth kind Moth can't edit yet.",
+      "comment" : "Auth kind.",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
@@ -162,6 +173,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Password"
+          }
+        }
+      }
+    },
+    "AUTH_REGION" : {
+      "comment" : "Label of the region field in AWS Signature auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Region"
+          }
+        }
+      }
+    },
+    "AUTH_SECRET_KEY" : {
+      "comment" : "Label of the secret key field in AWS Signature auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secret Key"
+          }
+        }
+      }
+    },
+    "AUTH_SERVICE" : {
+      "comment" : "Label of the service field in AWS Signature auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service"
+          }
+        }
+      }
+    },
+    "AUTH_SESSION_TOKEN" : {
+      "comment" : "Label of the optional session token field in AWS Signature auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session Token"
           }
         }
       }

@@ -134,6 +134,13 @@ An auth provider is a protocol that mutates a `URLRequest`. Its requirement must
 be `async throws`: OAuth2 refreshes tokens, and SigV4 has to sign the final
 body. Digest answers a 401 challenge, so it also needs the transport to retry.
 
+`RequestBuilder` applies the provider last, so `AWSSigV4AuthProvider` signs the
+final URL, headers and body, with the time of that build. `AWSSigV4Signer` works on
+the wire form of a request, and AWS's published suite checks it. A credential with
+no value stops the build, unlike Basic and Bearer, because an unsigned call to AWS
+would come back as a bare 403. Headers URLSession reserves aren't signed, because it
+can rewrite them.
+
 `.inherit` is replaced before resolution, by `RequestCollection.effectiveAuth(of:)`,
 because `VariableResolver` fetches secrets only for the auth it is given. The walk
 goes up through folders to the collection and stops at the first that sets auth,
@@ -193,8 +200,11 @@ Moth keeps what it can store and counts the rest:
 - A credential goes to the secret store as written. An empty one saves nothing, so
   it is reported as missing. Basic and Digest always save a password, because they
   can send a username alone.
-- API key, AWS, Digest and OAuth2 are stored by kind and counted as unsupported
-  until they have a provider.
+- API key, Digest and OAuth2 are stored by kind and counted as unsupported until
+  they have a provider.
+- AWS takes Postman's own defaults for a blank region or service, `us-east-1` and
+  `execute-api`, so an export that worked there signs here with no edit. An export
+  leaves a blank `service` out altogether.
 - OAuth 1.0, Hawk, NTLM, EdgeGrid and unknown types become `.none` and lose their
   credentials. `.none` stops the walk up the tree, so a parent's credential cannot
   reach something that asked for another scheme.
@@ -328,8 +338,8 @@ A failed Save keeps the draft and leaves its tab open.
 `BodyDraft` and `AuthDraft` keep each kind's fields while a draft is open, so
 trying another kind loses nothing, and only the chosen kind is saved. What the
 editor can't change yet stays as it came and shows Not Supported Yet: a binary or
-GraphQL body, a form-data file row, and API key, Digest, OAuth2 and AWS auth. Such
-a body or auth keeps an entry of its own in the picker, and a Save writes the same
+GraphQL body, a form-data file row, and API key, Digest and OAuth2 auth. Such a
+body or auth keeps an entry of its own in the picker, and a Save writes the same
 bytes. Choosing another kind and saving replaces it.
 
 A typed credential stays on the `AuthDraft`. `RequestEdit` holds references, so
@@ -339,7 +349,10 @@ stored. It writes the value, then the row, then removes what the row released, a
 a row that can't be written takes the new value with it. `AuthDraft` mints its new
 references up front, so a Save tried again writes the same item. Clearing a Token
 leaves the new reference with no value, because a header can't send an empty token.
-An empty Password is saved, because Basic can send a username alone.
+An empty Password is saved, because Basic can send a username alone. `AWSSigV4Draft`
+keeps these rules for its three credentials. The Access Key is one of them, in the
+Keychain like the others, though its field shows the text. Clearing the optional
+Session Token leaves the row with no reference, so its old item is released.
 `RequestDrafts` runs Saves and reads one at a time, because Keychain calls finish in
 no set order.
 

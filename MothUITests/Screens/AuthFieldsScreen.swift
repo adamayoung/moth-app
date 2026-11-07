@@ -39,6 +39,26 @@ struct AuthFieldsScreen {
         root.buttons["auth.passwordVisibility"]
     }
 
+    var accessKeyField: XCUIElement {
+        root.textFields["auth.accessKey"]
+    }
+
+    var secureSecretKeyField: XCUIElement {
+        root.secureTextFields["auth.secretKey"]
+    }
+
+    var secureSessionTokenField: XCUIElement {
+        root.secureTextFields["auth.sessionToken"]
+    }
+
+    var regionField: XCUIElement {
+        root.textFields["auth.region"]
+    }
+
+    var serviceField: XCUIElement {
+        root.textFields["auth.service"]
+    }
+
     var inheritedText: XCUIElement {
         root.staticTexts["auth.inherited"]
     }

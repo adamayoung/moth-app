@@ -182,10 +182,8 @@ final class RequestDrafts {
             entries[id]?.draft.auth.rebaseCredentials(onto: saved.auth)
         }
         entries[id]?.discardCredentialsMatchingStore()
-        if
-            let reference = saved.auth.credentialReference,
-            !held.secretReferences.contains(reference),
-            credential(reference, in: id) == .loading {
+        for reference in saved.auth.credentialReferences
+            where !held.secretReferences.contains(reference) && credential(reference, in: id) == .loading {
             await readCredential(reference, in: id)
         }
     }

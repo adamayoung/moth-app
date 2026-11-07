@@ -55,10 +55,25 @@ final class AuthorizationSheetTests: MothTestCase {
         XCTAssertEqual(sheet.fields.kindPicker.value as? String, "Inherit")
 
         sheet.fields.openKinds()
-        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token"] {
+        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "AWS Signature"] {
             XCTAssertTrue(sheet.fields.kindMenuItem(title).waitForExistence(timeout: 10), title)
         }
         app.typeKey(.escape, modifierFlags: [])
+    }
+
+    @MainActor
+    func testAFolderShowsAWSSignatureFiveFieldsAndItsButtons() {
+        let screen = expandedScreen()
+        let sheet = openSheet(on: "Users", in: screen)
+
+        sheet.fields.chooseKind("AWS Signature")
+
+        XCTAssertTrue(sheet.fields.accessKeyField.waitForExistence(timeout: 10))
+        XCTAssertTrue(sheet.fields.secureSecretKeyField.waitForExistence(timeout: 10))
+        XCTAssertTrue(sheet.fields.secureSessionTokenField.waitForExistence(timeout: 10))
+        XCTAssertTrue(sheet.fields.regionField.waitForExistence(timeout: 10))
+        XCTAssertTrue(sheet.fields.serviceField.waitForExistence(timeout: 10))
+        XCTAssertTrue(sheet.saveButton.isHittable)
     }
 
     @MainActor

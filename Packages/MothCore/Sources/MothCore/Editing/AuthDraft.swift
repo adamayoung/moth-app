@@ -14,7 +14,7 @@ public nonisolated enum AuthKind: Sendable, Hashable {
     case oauth2
     case awsSigV4
 
-    public static let editable: [AuthKind] = [.inherit, .none, .basic, .bearer]
+    public static let editable: [AuthKind] = [.inherit, .none, .basic, .bearer, .awsSigV4]
 
     init(_ auth: Auth) {
         switch auth {
@@ -51,6 +51,7 @@ public nonisolated struct AuthDraft: Sendable {
 
     public var kind: AuthKind
     public var username = ""
+    public var awsSigV4 = AWSSigV4Draft()
     private var storedPassword: SecretReference?
     private var storedToken: SecretReference?
     private var newPassword = SecretReference()
@@ -69,7 +70,9 @@ public nonisolated struct AuthDraft: Sendable {
             self.storedPassword = basic.password
         case .bearer(let bearer):
             self.storedToken = bearer.token
-        case .apiKey, .digest, .oauth2, .awsSigV4:
+        case .awsSigV4(let sigV4):
+            self.awsSigV4 = AWSSigV4Draft(sigV4)
+        case .apiKey, .digest, .oauth2:
             self.unsupportedAuth = auth
         }
     }
@@ -83,7 +86,8 @@ public nonisolated struct AuthDraft: Sendable {
                 password: typedPassword == nil ? passwordReference : newPassword
             ))
         case .bearer: .bearer(BearerAuth(token: typedToken == nil ? tokenReference : newToken))
-        case .apiKey, .digest, .oauth2, .awsSigV4: unsupportedAuth ?? .none
+        case .awsSigV4: .awsSigV4(awsSigV4.auth)
+        case .apiKey, .digest, .oauth2: unsupportedAuth ?? .none
         }
     }
 
@@ -100,11 +104,12 @@ public nonisolated struct AuthDraft: Sendable {
         storedToken ?? newToken
     }
 
-    public var credentialReference: SecretReference? {
+    public var credentialReferences: [SecretReference] {
         switch kind {
-        case .basic: passwordReference
-        case .bearer: tokenReference
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4: nil
+        case .basic: [passwordReference]
+        case .bearer: [tokenReference]
+        case .awsSigV4: awsSigV4.references
+        case .inherit, .none, .apiKey, .digest, .oauth2: []
         }
     }
 
@@ -114,7 +119,7 @@ public nonisolated struct AuthDraft: Sendable {
         } else if reference == tokenReference {
             typedToken
         } else {
-            nil
+            awsSigV4.typedCredential(for: reference)
         }
     }
 
@@ -123,6 +128,8 @@ public nonisolated struct AuthDraft: Sendable {
             typedPassword = text
         } else if reference == tokenReference {
             typedToken = text
+        } else {
+            awsSigV4.setCredential(text, for: reference)
         }
     }
 
@@ -134,6 +141,7 @@ public nonisolated struct AuthDraft: Sendable {
         if let typedToken, isStored(tokenReference, typedToken) {
             self.typedToken = nil
         }
+        awsSigV4.discardCredentials(where: isStored)
     }
 
     /// A password is always saved, because Basic can send a username alone. An empty token is not, because a header
@@ -154,7 +162,9 @@ public nonisolated struct AuthDraft: Sendable {
             } else {
                 []
             }
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4:
+        case .awsSigV4:
+            awsSigV4.writes
+        case .inherit, .none, .apiKey, .digest, .oauth2:
             []
         }
     }
@@ -162,14 +172,15 @@ public nonisolated struct AuthDraft: Sendable {
     /// Compares the text too, because two values typed before a Save share one new reference. Typing for a kind that
     /// isn't chosen is no change, because Save won't write it.
     public func hasSameContent(as other: AuthDraft) -> Bool {
-        requestAuth == other.requestAuth && chosenCredential == other.chosenCredential
+        requestAuth == other.requestAuth && chosenCredentials == other.chosenCredentials
     }
 
-    private var chosenCredential: String? {
+    private var chosenCredentials: [String?] {
         switch kind {
-        case .basic: typedPassword
-        case .bearer: typedToken
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4: nil
+        case .basic: [typedPassword]
+        case .bearer: [typedToken]
+        case .awsSigV4: awsSigV4.typedText
+        case .inherit, .none, .apiKey, .digest, .oauth2: []
         }
     }
 
@@ -182,7 +193,9 @@ public nonisolated struct AuthDraft: Sendable {
             typedPassword = nil
         case .bearer:
             typedToken = nil
-        case .inherit, .none, .apiKey, .digest, .oauth2, .awsSigV4:
+        case .awsSigV4:
+            awsSigV4.follow(saved.awsSigV4)
+        case .inherit, .none, .apiKey, .digest, .oauth2:
             break
         }
         rebaseCredentials(onto: saved)
@@ -192,6 +205,7 @@ public nonisolated struct AuthDraft: Sendable {
     public mutating func rebaseCredentials(onto saved: AuthDraft) {
         storedPassword = saved.storedPassword
         storedToken = saved.storedToken
+        awsSigV4.rebaseCredentials(onto: saved.awsSigV4)
         unsupportedAuth = saved.unsupportedAuth
         if unsupportedAuth == nil, !AuthKind.editable.contains(kind) {
             kind = saved.kind

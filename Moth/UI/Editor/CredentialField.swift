@@ -11,6 +11,7 @@ struct CredentialField: View {
 
     let label: LocalizedStringKey
     let identifier: String
+    var isConcealed = true
     let value: SecretValue
     @Binding var text: String
 
@@ -21,6 +22,10 @@ struct CredentialField: View {
             ProgressView()
                 .controlSize(.small)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        } else if !isConcealed {
+            TextField(label, text: $text, prompt: prompt)
+                .labelsHidden()
+                .accessibilityIdentifier(identifier)
         } else {
             HStack {
                 field

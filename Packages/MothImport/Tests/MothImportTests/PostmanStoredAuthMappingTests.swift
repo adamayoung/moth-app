@@ -137,7 +137,6 @@ struct PostmanStoredAuthMappingTests {
         #expect(await Fixture.stored(sigV4.accessKeyID, in: store) == "AK")
         #expect(await Fixture.stored(sigV4.secretAccessKey, in: store) == "SK")
         #expect(await Fixture.stored(sigV4.sessionToken, in: store) == "ST")
-        #expect(result.imported.unsupportedAuth[.awsSigV4] == 1)
     }
 
 }

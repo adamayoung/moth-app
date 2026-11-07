@@ -33,11 +33,24 @@ final class RequestAuthTests: MothTestCase {
         XCTAssertEqual(fields.kindPicker.value as? String, "Inherit")
 
         fields.openKinds()
-        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token"] {
+        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "AWS Signature"] {
             XCTAssertTrue(fields.kindMenuItem(title).waitForExistence(timeout: 10), title)
         }
-        XCTAssertEqual(fields.kindPicker.menuItems.count, 4)
+        XCTAssertEqual(fields.kindPicker.menuItems.count, 5)
         app.typeKey(.escape, modifierFlags: [])
+    }
+
+    @MainActor
+    func testAWSSignatureShowsItsFiveFields() {
+        let (_, _, fields) = openAuth(of: "List Users")
+
+        fields.chooseKind("AWS Signature")
+
+        XCTAssertTrue(fields.accessKeyField.waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.secureSecretKeyField.waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.secureSessionTokenField.waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.regionField.waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.serviceField.waitForExistence(timeout: 10))
     }
 
     @MainActor
