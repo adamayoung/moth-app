@@ -5,8 +5,8 @@
 
 import XCTest
 
-/// Values mirror `SeedData` by hand: List Users inherits, with nothing above it that sets auth, and Health has API key
-/// auth.
+/// Values mirror `SeedData` by hand: List Users inherits, with nothing above it that sets auth, Health has API key auth
+/// and Update User has Digest auth.
 final class RequestAuthTests: MothTestCase {
 
     @MainActor
@@ -27,16 +27,16 @@ final class RequestAuthTests: MothTestCase {
     }
 
     @MainActor
-    func testAuthOffersInheritNoAuthBasicAndBearer() {
+    func testAuthOffersInheritNoAuthBasicBearerAndAPIKey() {
         let (_, _, fields) = openAuth(of: "List Users")
 
         XCTAssertEqual(fields.kindPicker.value as? String, "Inherit")
 
         fields.openKinds()
-        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token"] {
+        for title in ["Inherit", "No Auth", "Basic Auth", "Bearer Token", "API Key"] {
             XCTAssertTrue(fields.kindMenuItem(title).waitForExistence(timeout: 10), title)
         }
-        XCTAssertEqual(fields.kindPicker.menuItems.count, 4)
+        XCTAssertEqual(fields.kindPicker.menuItems.count, 5)
         app.typeKey(.escape, modifierFlags: [])
     }
 
@@ -63,8 +63,16 @@ final class RequestAuthTests: MothTestCase {
         XCTAssertFalse(fields.usernameField.exists)
         XCTAssertFalse(fields.securePasswordField.exists)
 
+        fields.chooseKind("API Key")
+        XCTAssertTrue(fields.apiKeyNameField.waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.secureAPIKeyValueField.waitForExistence(timeout: 10))
+        XCTAssertTrue(fields.apiKeyLocationPicker.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.apiKeyLocationPicker.value as? String, "Header")
+        XCTAssertFalse(fields.secureTokenField.exists)
+
         fields.chooseKind("No Auth")
         XCTAssertTrue(RequestEditorScreen(app: app).waitForValue("No Auth", of: fields.kindPicker))
+        XCTAssertFalse(fields.apiKeyNameField.exists)
         XCTAssertFalse(fields.secureTokenField.exists)
         XCTAssertFalse(fields.inheritedText.exists)
 
@@ -109,12 +117,37 @@ final class RequestAuthTests: MothTestCase {
 
     @MainActor
     func testAnAuthMothCantEditShowsNotSupported() {
+        let (screen, _, fields) = openAuth(of: "Update User")
+
+        XCTAssertEqual(fields.kindPicker.value as? String, "Digest Auth")
+        XCTAssertTrue(fields.notSupportedText.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.notSupportedText.value as? String, "Not Supported Yet")
+        XCTAssertFalse(screen.editedDot(on: "Update User").exists)
+    }
+
+    @MainActor
+    func testAStoredAPIKeyShowsItsFields() {
         let (screen, _, fields) = openAuth(of: "Health")
 
         XCTAssertEqual(fields.kindPicker.value as? String, "API Key")
-        XCTAssertTrue(fields.notSupportedText.waitForExistence(timeout: 10))
-        XCTAssertEqual(fields.notSupportedText.value as? String, "Not Supported Yet")
+        XCTAssertTrue(fields.apiKeyNameField.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.apiKeyNameField.value as? String, "X-Key")
+        XCTAssertEqual(fields.apiKeyLocationPicker.value as? String, "Header")
+        XCTAssertFalse(fields.notSupportedText.exists)
         XCTAssertFalse(screen.editedDot(on: "Health").exists)
+    }
+
+    @MainActor
+    func testAddToOffersHeaderAndQueryParams() {
+        let (_, editor, fields) = openAuth(of: "List Users")
+        fields.chooseKind("API Key")
+        XCTAssertTrue(fields.apiKeyLocationPicker.waitForExistence(timeout: 10))
+
+        fields.apiKeyLocationPicker.click()
+        XCTAssertTrue(fields.apiKeyLocationPicker.menuItems["Header"].waitForExistence(timeout: 10))
+        fields.apiKeyLocationPicker.menuItems["Query Params"].click()
+
+        XCTAssertTrue(editor.waitForValue("Query Params", of: fields.apiKeyLocationPicker))
     }
 
     @MainActor

@@ -146,9 +146,10 @@ container whose auth can't be read ends that walk, and its Authorization… comm
 is disabled, because a Save would overwrite what it holds.
 
 `RequestBuilder` turns a `ResolvedRequest` into the `URLRequest` that `HTTPKit`
-sends. An invalid URL or method, or a Bearer token a header cannot hold, throws.
-What it cannot send stays out of the request and is reported in
-`BuiltRequest.notices`: an auth kind with no provider, a binary or GraphQL body, a
+sends. An invalid URL or method, or a Bearer token or API key a header cannot hold,
+throws. What it cannot send stays out of the request and is reported in
+`BuiltRequest.notices`: an auth kind with no provider, an API key with no name, a
+binary or GraphQL body, a
 form-data file field, a header URLSession would drop or alter, a body on GET or
 HEAD, a key that resolved to empty, and a path variable with no value. A
 credential with no stored value sends no auth, and
@@ -157,7 +158,8 @@ records which part of the request each unresolved variable came from, and
 `BuiltRequest.unresolved` leaves out one that only a left-out part held. A key
 that resolved to empty is reported as the tab shows it, because it has no resolved
 name to show. An auth provider's
-`Authorization` header replaces a manual one. `URLRequest` holds one value per
+`Authorization` header replaces a manual one, and an API key replaces a manual
+header or query parameter of its name, including one typed into the URL. `URLRequest` holds one value per
 header name, so repeated names go out comma-joined, and repeated cookies joined by
 `; `.
 
@@ -193,8 +195,8 @@ Moth keeps what it can store and counts the rest:
 - A credential goes to the secret store as written. An empty one saves nothing, so
   it is reported as missing. Basic and Digest always save a password, because they
   can send a username alone.
-- API key, AWS, Digest and OAuth2 are stored by kind and counted as unsupported
-  until they have a provider.
+- AWS, Digest and OAuth2 are stored by kind and counted as unsupported until they
+  have a provider.
 - OAuth 1.0, Hawk, NTLM, EdgeGrid and unknown types become `.none` and lose their
   credentials. `.none` stops the walk up the tree, so a parent's credential cannot
   reach something that asked for another scheme.
@@ -363,8 +365,8 @@ A failed Save keeps the draft and leaves its tab open.
 `BodyDraft` and `AuthDraft` keep each kind's fields while a draft is open, so
 trying another kind loses nothing, and only the chosen kind is saved. What the
 editor can't change yet stays as it came and shows Not Supported Yet: a binary or
-GraphQL body, a form-data file row, and API key, Digest, OAuth2 and AWS auth. Such
-a body or auth keeps an entry of its own in the picker, and a Save writes the same
+GraphQL body, a form-data file row, and Digest, OAuth2 and AWS auth. Such a body
+or auth keeps an entry of its own in the picker, and a Save writes the same
 bytes. Choosing another kind and saving replaces it.
 
 A typed credential stays on the `AuthDraft`. `RequestEdit` holds references, so

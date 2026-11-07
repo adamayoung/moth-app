@@ -63,7 +63,6 @@ private nonisolated extension PostmanAuthKind {
 
     var displayName: String {
         switch self {
-        case .apiKey: String(localized: "IMPORT_AUTH_API_KEY", bundle: .module)
         case .awsSigV4: String(localized: "IMPORT_AUTH_AWS_SIGV4", bundle: .module)
         case .digest: String(localized: "IMPORT_AUTH_DIGEST", bundle: .module)
         case .edgeGrid: String(localized: "IMPORT_AUTH_EDGEGRID", bundle: .module)

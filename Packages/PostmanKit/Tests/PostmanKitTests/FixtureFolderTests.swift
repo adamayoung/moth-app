@@ -21,7 +21,7 @@ struct FixtureFolderTests {
         let sources = try Fixture.text("SOURCES.md")
         let fixtures = try fixturePaths()
 
-        #expect(fixtures.count == 16)
+        #expect(fixtures.count == 17)
         for fixture in fixtures {
             #expect(sources.contains(fixture), "SOURCES.md doesn't name \(fixture)")
         }

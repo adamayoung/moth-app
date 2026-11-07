@@ -13,7 +13,6 @@ struct AuthDraftTests {
     private nonisolated static let token = SecretReference(identifier: "token")
 
     private nonisolated static let unsupported: [Auth] = [
-        .apiKey(APIKeyAuth(name: "X-Key", value: SecretReference(identifier: "key"), location: .header)),
         .digest(DigestAuth(username: "ada", password: SecretReference(identifier: "digest"))),
         .oauth2(OAuth2Auth(
             grantType: .clientCredentials,
@@ -39,17 +38,18 @@ struct AuthDraftTests {
         Auth.inherit,
         .none,
         .basic(BasicAuth(username: "ada", password: password)),
-        .bearer(BearerAuth(token: token))
+        .bearer(BearerAuth(token: token)),
+        .apiKey(APIKeyAuth(name: "X-Key", value: token, location: .query))
     ] + unsupported)
     func roundTrips(auth: Auth) {
         #expect(AuthDraft(auth).requestAuth == auth)
     }
 
-    @Test("The kinds are the four editable ones, plus a stored kind the editor can't change")
+    @Test("The kinds are the editable ones, plus a stored kind the editor can't change")
     func kinds() throws {
-        #expect(AuthDraft(.none).kinds == [.inherit, .none, .basic, .bearer])
-        let apiKey = try #require(Self.unsupported.first)
-        #expect(AuthDraft(apiKey).kinds == [.inherit, .none, .basic, .bearer, .apiKey])
+        #expect(AuthDraft(.none).kinds == [.inherit, .none, .basic, .bearer, .apiKey])
+        let digest = try #require(Self.unsupported.first)
+        #expect(AuthDraft(digest).kinds == [.inherit, .none, .basic, .bearer, .apiKey, .digest])
     }
 
     @Test("Choosing another kind and back keeps an auth the editor can't change", arguments: unsupported)
@@ -246,24 +246,24 @@ struct AuthDraftTests {
 
     @Test("Rebasing an auth the editor can't change takes the row's, so choosing it again can't undo a sync")
     func rebasingMovesAnUnsupportedAuth() {
-        let older = Auth.apiKey(APIKeyAuth(name: "X-Key", value: Self.token, location: .header))
-        let newer = Auth.apiKey(APIKeyAuth(name: "X-Key", value: Self.password, location: .header))
+        let older = Auth.digest(DigestAuth(username: "ada", password: Self.token))
+        let newer = Auth.digest(DigestAuth(username: "ada", password: Self.password))
         var draft = AuthDraft(older)
         draft.kind = .bearer
 
         draft.rebaseCredentials(onto: AuthDraft(newer))
-        draft.kind = .apiKey
+        draft.kind = .digest
 
         #expect(draft.requestAuth == newer)
     }
 
     @Test("Rebasing onto a row with no such auth stops offering it")
     func rebasingDropsAnUnsupportedAuthTheRowLost() {
-        var draft = AuthDraft(.apiKey(APIKeyAuth(name: "X-Key", value: Self.token, location: .header)))
+        var draft = AuthDraft(.digest(DigestAuth(username: "ada", password: Self.token)))
 
         draft.rebaseCredentials(onto: AuthDraft(.none))
 
-        #expect(draft.kinds == [.inherit, .none, .basic, .bearer])
+        #expect(draft.kinds == [.inherit, .none, .basic, .bearer, .apiKey])
         #expect(draft.requestAuth == .none)
     }
 
