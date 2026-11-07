@@ -140,7 +140,7 @@ struct OAuth2DraftTests {
     }
 
     @Test("A stored auth with no token reference uses one derived from the auth, and comes back unchanged")
-    func derivedTokenReference() throws {
+    func derivedTokenReference() {
         let auth = Self.oauth2(accessToken: nil)
         let draft = AuthDraft(.oauth2(auth))
 
