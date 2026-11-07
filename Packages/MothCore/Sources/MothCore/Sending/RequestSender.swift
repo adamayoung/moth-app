@@ -51,8 +51,13 @@ public nonisolated struct RequestSender: Sendable {
             return RecordedSend(result: .cancelled, entry: nil)
         }
 
-        let snapshot = await (try? HistorySnapshot.make(of: outgoing.request, scopes: scopes, replaying: dynamicValues))
-            ?? HistorySnapshot.masked(outgoing.request)
+        guard let snapshot = try? await HistorySnapshot.make(
+            of: outgoing.request,
+            scopes: scopes,
+            replaying: dynamicValues
+        ) else {
+            return RecordedSend(result: sent.result, entry: nil)
+        }
         let entry = HistoryEntry(request: snapshot, sent: sent, at: sentAt)
         return RecordedSend(result: sent.result, entry: entry)
     }
@@ -60,14 +65,13 @@ public nonisolated struct RequestSender: Sendable {
     /// Sends nothing while a secret the snapshot names, or a row it masked, has no value to send.
     @concurrent
     public func sendAgain(_ entry: HistoryEntry) async -> SendAgainOutcome {
-        guard !HistorySnapshot.hasLostRow(entry.request) else {
-            return .secretUnavailable
-        }
         do {
             let resolved = try await VariableResolver(secretStore: secretStore)
                 .resolve(entry.request, collection: [], environment: [], globals: [])
             let hasMissingSecret = resolved.unresolved.contains { $0.reason == .missingSecret }
-            guard !hasMissingSecret, resolved.unresolvedCredentials.isEmpty else {
+            guard !hasMissingSecret, resolved.unresolvedCredentials.isEmpty,
+                  !HistorySnapshot.hasLostRow(in: resolved)
+            else {
                 return .secretUnavailable
             }
         } catch {

@@ -13,8 +13,13 @@ public extension StoreWriter {
     func addHistoryEntry(_ entry: HistoryEntry) throws {
         try write { context in
             try context.insert(HistoryEntryModel(entry))
-            let newestFirst = FetchDescriptor<HistoryEntryModel>(sortBy: [SortDescriptor(\.sentAt, order: .reverse)])
-            try context.fetch(newestFirst).dropFirst(Self.historyLimit).forEach(context.delete)
+            let overflow = try context.fetchCount(FetchDescriptor<HistoryEntryModel>()) - Self.historyLimit
+            guard overflow > 0 else {
+                return
+            }
+            var oldestFirst = FetchDescriptor<HistoryEntryModel>(sortBy: [SortDescriptor(\.sentAt)])
+            oldestFirst.fetchLimit = overflow
+            try context.fetch(oldestFirst).forEach(context.delete)
         }
     }
 

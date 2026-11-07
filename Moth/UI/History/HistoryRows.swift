@@ -10,9 +10,16 @@ import SwiftUI
 /// Buttons rather than list selection, which names collection tree rows only.
 struct HistoryRows: View {
 
-    @Query(sort: \HistoryEntryModel.sentAt, order: .reverse) private var entries: [HistoryEntryModel]
+    @Query(Self.summaries) private var entries: [HistoryEntryModel]
     let history: HistoryModel
     let didOpen: () -> Void
+
+    /// Leaves out the snapshot and response, so a row reads no blob.
+    private static var summaries: FetchDescriptor<HistoryEntryModel> {
+        var descriptor = FetchDescriptor<HistoryEntryModel>(sortBy: [SortDescriptor(\.sentAt, order: .reverse)])
+        descriptor.propertiesToFetch = [\.id, \.method, \.url, \.statusCode, \.sentAt]
+        return descriptor
+    }
 
     var body: some View {
         if entries.isEmpty {

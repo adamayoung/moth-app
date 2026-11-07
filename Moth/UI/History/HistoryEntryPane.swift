@@ -9,13 +9,17 @@ import SwiftUI
 
 struct HistoryEntryPane: View {
 
+    @Environment(\.modelContext) private var modelContext
     @Query private var rows: [HistoryEntryModel]
     @State private var shown: ShownHistoryEntry?
     let history: HistoryModel
     let canOpenRequest: (Request.ID) -> Bool
 
+    /// Fetches the identifier alone: the entry itself is read off the main actor.
     init(id: HistoryEntry.ID, history: HistoryModel, canOpenRequest: @escaping (Request.ID) -> Bool) {
-        _rows = Query(filter: #Predicate<HistoryEntryModel> { $0.id == id })
+        var descriptor = FetchDescriptor<HistoryEntryModel>(predicate: #Predicate { $0.id == id })
+        descriptor.propertiesToFetch = [\.id]
+        _rows = Query(descriptor)
         self.history = history
         self.canOpenRequest = canOpenRequest
     }
@@ -27,11 +31,11 @@ struct HistoryEntryPane: View {
             .accessibilityLabel("HISTORY_ENTRY_LABEL")
             .accessibilityIdentifier("history.entry")
             .task(id: rows.first?.id) {
-                guard let entry = try? rows.first?.asDomain() else {
+                guard let id = rows.first?.id else {
                     shown = nil
                     return
                 }
-                shown = await ShownHistoryEntry.make(entry)
+                shown = await ShownHistoryEntry.load(id, from: modelContext.container)
             }
     }
 
@@ -48,15 +52,23 @@ struct HistoryEntryPane: View {
 
 }
 
-/// Works out the response's content off the main actor, as a live send does, because a body can be megabytes.
+/// Reads and decodes off the main actor, as a live send does, because a body can be megabytes.
 struct ShownHistoryEntry: Sendable {
 
     let entry: HistoryEntry
     let response: SentResponse?
 
     @concurrent
-    static func make(_ entry: HistoryEntry) async -> ShownHistoryEntry {
-        ShownHistoryEntry(entry: entry, response: entry.response.map { SentResponse($0, duration: entry.duration) })
+    static func load(_ id: HistoryEntry.ID, from container: ModelContainer) async -> ShownHistoryEntry? {
+        var descriptor = FetchDescriptor<HistoryEntryModel>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        guard let entry = try? ModelContext(container).fetch(descriptor).first?.asDomain() else {
+            return nil
+        }
+        return ShownHistoryEntry(
+            entry: entry,
+            response: entry.response.map { SentResponse($0, duration: entry.duration) }
+        )
     }
 
 }

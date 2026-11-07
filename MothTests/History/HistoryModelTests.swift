@@ -65,6 +65,21 @@ struct HistoryModelTests {
         #expect(history.secretUnavailable == nil)
     }
 
+    @Test("Send Again leaves the detail column alone once someone has moved on from the entry")
+    func sendAgainAfterMovingOn() async {
+        let newEntry = HistoryEntry(request: entry.request, sentAt: .now, duration: .zero)
+        let history = HistoryModel(
+            sendAgain: { _ in .sent(RecordedSend(result: .cancelled, entry: newEntry)) },
+            record: { _ in },
+            clear: {},
+            openTab: { _ in }
+        )
+
+        await history.sendAgain(entry)
+
+        #expect(history.openEntry == nil)
+    }
+
     @Test("Send Again with a secret that has gone says so, and records nothing")
     func sendAgainWithAMissingSecret() async {
         var recorded: [HistoryEntry] = []

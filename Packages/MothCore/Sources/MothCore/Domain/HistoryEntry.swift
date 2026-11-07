@@ -6,7 +6,7 @@
 import Foundation
 
 /// `request` is the snapshot sent, with secret variables left as `{{name}}` and auth holding references, so no secret
-/// is stored. Its `variables` hold the secret variables it names, which Send Again reads from the Keychain.
+/// is stored. Its `variables` hold every variable in scope at the send, so Send Again resolves secrets as they are now.
 public nonisolated struct HistoryEntry: Identifiable, Sendable, Hashable {
 
     public static let maskedValue = "••••••••"

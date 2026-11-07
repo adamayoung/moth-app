@@ -117,8 +117,24 @@ struct RequestSenderHistoryTests {
         let snapshot = try #require(recorded.entry?.request)
         #expect(snapshot.urlTemplate == "https://example.com/users")
         #expect(snapshot.headers.map(\.value) == ["{{token}}"])
-        #expect(snapshot.variables.map(\.name) == ["token"])
-        #expect(snapshot.variables.map(\.secretReference) == [SecretReference(identifier: "token-ref")])
+        let kept = snapshot.variables.first { $0.name == "token" }
+        #expect(kept?.secretReference == SecretReference(identifier: "token-ref"))
+    }
+
+    @Test("Send Again resolves a variable that a secret's own value names")
+    func sendAgainResolvesWhatASecretNames() async throws {
+        let token = Variable(name: "token", value: .secret(SecretReference(identifier: "token-ref")))
+        try await secretStore.save("{{user}}-key", for: "token-ref")
+        let first = await record(
+            Request(name: "List", urlTemplate: "https://example.com/{{token}}"),
+            scopes: VariableScopes(environment: [.plain("user", "ada"), token])
+        )
+        let entry = try #require(first.entry)
+        let transport = RecordingTransport()
+
+        _ = await sender(transport).sendAgain(entry)
+
+        #expect(transport.requests.first?.url?.absoluteString == "https://example.com/ada-key")
     }
 
     @Test("The snapshot holds the dynamic values that were sent")
@@ -254,5 +270,26 @@ struct RequestSenderHistoryTests {
         #expect(unreplaced == .secretUnavailable)
         #expect(replaced != .secretUnavailable)
         #expect(transport.requests.map { $0.value(forHTTPHeaderField: "Authorization") } == ["Bearer token"])
+    }
+
+    @Test("Send Again with a masked row under an auth that has no provider sends nothing")
+    func sendAgainWithAMaskedRowUnderDigest() async throws {
+        try await secretStore.save("password", for: "digest-ref")
+        let digest = Auth.digest(DigestAuth(username: "ada", password: SecretReference(identifier: "digest-ref")))
+        let transport = RecordingTransport()
+
+        let outcome = await sender(transport).sendAgain(HistoryEntry(
+            request: Request(
+                name: "List",
+                urlTemplate: "https://example.com",
+                headers: [KeyValue(key: "Authorization", value: HistoryEntry.maskedValue)],
+                auth: digest
+            ),
+            sentAt: sentAt,
+            duration: .zero
+        ))
+
+        #expect(outcome == .secretUnavailable)
+        #expect(transport.requests.isEmpty)
     }
 }

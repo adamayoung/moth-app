@@ -6,6 +6,7 @@
 import SwiftUI
 
 /// Reads the selection here, not in `MainWindowView`, for the reason `RequestDetailView` gives.
+/// The tabs stay in the tree under an open entry, so their commands keep working and ⌘W never closes the window.
 struct MainDetailView: View {
 
     let history: HistoryModel
@@ -13,14 +14,20 @@ struct MainDetailView: View {
     let sidebar: SidebarModel
 
     var body: some View {
-        Group {
-            if let entry = history.openEntry {
+        let entry = history.openEntry
+
+        ZStack {
+            RequestDetailView(tabs: tabs)
+                .opacity(entry == nil ? 1 : 0)
+                .disabled(entry != nil)
+                .accessibilityHidden(entry != nil)
+
+            if let entry {
                 HistoryEntryPane(id: entry, history: history) { id in
                     history.canOpenRequest(id, in: sidebar.tree)
                 }
                 .id(entry)
-            } else {
-                RequestDetailView(tabs: tabs)
+                .background(.background)
             }
         }
         .onChange(of: sidebar.selection) { _, selection in

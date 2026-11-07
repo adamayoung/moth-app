@@ -679,21 +679,25 @@ A body over 5 MB keeps its size and no bytes.
 The entry's request is a snapshot of what was sent. A second resolution, against a
 secret store that answers nothing, leaves each secret variable as `{{name}}`. It
 replays the `{{$guid}}`, `{{$timestamp}}` and `{{$randomInt}}` values the send
-drew, so the snapshot holds them, unless a secret's own value drew one first. The
-snapshot's variables are the secret variables it names. Auth keeps references, and
-rows named `Authorization` or `Proxy-Authorization`, and an API key's own row, are
-masked, so no secret reaches the local store.
+drew, in order, so the snapshot holds them. A dynamic variable inside a secret's own
+value draws one that the snapshot doesn't, which shifts every later value of that
+kind in the record, and Send Again resends the record. The snapshot keeps every
+variable in scope, so a secret's value can still name the others. Auth keeps
+references, and rows named `Authorization` or `Proxy-Authorization`, and the rows
+`rowsReplacedByAuth` names, are masked, so no secret reaches the local store.
 
 Send Again resolves the snapshot against its own variables and the Keychain. A
-secret with no value, or a masked row that the auth doesn't replace, sends nothing
-and shows "Secret unavailable". Otherwise it sends and records as Send does.
+secret or credential with no value, or a masked row that no auth provider replaces,
+as under Digest today, sends nothing and shows "Secret unavailable". Otherwise it
+sends and records as Send does.
 
 History belongs to this Mac's one implicit workspace, and its rows carry no
 workspace id, because reconcile can replace the workspace row with a synced one of
 lower id. `StoreWriter` keeps the newest 500 entries in the save that adds one. A
-sidebar row reads the `method` and `url` columns, so it decodes no JSON. An open
-entry replaces the tabs in the detail column, and selecting a sidebar row or a tab
-closes it.
+sidebar row fetches only the `method`, `url`, `statusCode` and `sentAt` columns, so
+it reads no blob, and an open entry is read off the main actor. An open entry covers
+the tabs in the detail column. They stay live, so ⌘W and the tab commands still act
+on the selected tab, and selecting a sidebar row or a tab closes the entry.
 
 ## Code Generation
 

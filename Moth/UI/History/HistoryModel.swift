@@ -75,7 +75,7 @@ final class HistoryModel {
         openTab(id)
     }
 
-    /// Opens the new entry, so the response it shows is the one just sent.
+    /// Opens the new entry, so the response it shows is the one just sent, unless someone has moved on meanwhile.
     func sendAgain(_ entry: HistoryEntry) async {
         guard !isSendingAgain else {
             return
@@ -93,7 +93,9 @@ final class HistoryModel {
             }
             do {
                 try await record(newEntry)
-                openEntry = newEntry.id
+                if openEntry == entry.id {
+                    openEntry = newEntry.id
+                }
             } catch {
                 Logger.history.error("Couldn’t record a send in History: \(error)")
             }
