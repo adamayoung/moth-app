@@ -420,7 +420,7 @@ moves it to the row's references. `updateRequest` returns the references no othe
 request, folder or collection holds, and it searches each row's auth JSON as bytes,
 so a row this build can't read keeps its items.
 
-While a draft is edited, a body, auth or settings nobody touched follows a delivery, and only
+While a draft is edited, a body, auth or setting nobody touched follows a delivery, and only
 its chosen kind's fields change, so text held for another kind stays. A credential
 with no stored value stays editable, with "Not available on this Mac yet" as its
 placeholder, because an import saves nothing for an empty credential.
@@ -660,7 +660,8 @@ Each send takes a `SendPolicy`, built from the request's settings. With redirect
 off, `willPerformHTTPRedirection` answers `nil`, so URLSession returns the 3xx with
 its status, headers and body. On a hop to another origin (scheme, host or port),
 it removes the policy's `credentialHeaders`, `Authorization` and `Cookie` by
-default, so a secret never follows a redirect to another server. URLSession itself
+default, so a secret never follows a redirect to another server, and they stay off
+for the rest of the chain, even back on the first origin. URLSession itself
 drops `Authorization` on every redirect, same origin included, and keeps custom
 headers. Issue #80 adds the API Key header and `X-Amz-Security-Token` to that set,
 from the built request.
@@ -668,9 +669,9 @@ from the built request.
 With verification off, the task's delegate accepts the server's trust, and the send
 runs in a `URLSession` of its own, so no verified send can reuse a connection whose
 certificate nobody checked. URLSession on macOS 27.2 also declines to reuse such a
-connection within one session, but that is not documented. A response then notes
-that it was sent without verifying the certificate, if the request or its final URL
-was HTTPS. `URLSessionTLSTests` serves a self-signed certificate on loopback, imported
+connection within one session, but that is not documented. Every response to such
+a send notes that it was sent without verifying the certificate, plain HTTP included,
+because a redirect can pass through HTTPS. `URLSessionTLSTests` serves a self-signed certificate on loopback, imported
 into memory only, so no keychain is touched.
 
 URLSession merges a repeated response header into one comma-separated value,

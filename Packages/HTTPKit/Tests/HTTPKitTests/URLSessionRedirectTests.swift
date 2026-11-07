@@ -122,6 +122,23 @@ struct URLSessionRedirectTests {
         #expect(try #require(target.request(to: "/final")).contains("\r\nCookie: t=2\r\n"))
     }
 
+    @Test("Once a redirect has left the origin, the typed Cookie doesn't come back to it, with a jar or without")
+    func leftOriginStaysLeft() async throws {
+        let home = try await LoopbackServer(routes: ["/final": Self.hello])
+        let away = try await LoopbackServer(routes: [
+            "/bounce": Self.redirect(to: home.url(path: "/final").absoluteString)
+        ])
+        try home.route("/start", to: Self.redirect(to: away.url(path: "/bounce", host: "localhost").absoluteString))
+
+        for jar in [nil, InMemoryCookieJar()] {
+            _ = try await transport.send(Self.withCredentials(home.url(path: "/start")), cookies: jar)
+        }
+
+        let returns = home.requests.filter { $0.hasPrefix("GET /final ") }
+        #expect(returns.count == 2)
+        #expect(!returns.contains { $0.contains("Cookie:") || $0.contains("Authorization:") })
+    }
+
     @Test("A redirect on the same origin keeps the typed Cookie, and URLSession drops Authorization on any redirect")
     func sameOriginKeepsCredentials() async throws {
         let server = try await LoopbackServer(routes: ["/start": Self.redirect(to: "/final"), "/final": Self.hello])

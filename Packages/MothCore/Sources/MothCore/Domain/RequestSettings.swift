@@ -32,8 +32,13 @@ public nonisolated struct RequestSettings: Sendable, Hashable, Codable {
         return .seconds(seconds)
     }
 
+    /// `nil` while the text still shows `stored`, so showing a fractional timeout doesn't rewrite it.
+    public static func timeout(fromText text: String, replacing stored: Duration) -> Duration? {
+        text == timeoutText(for: stored) ? nil : timeout(fromText: text)
+    }
+
     public static func timeoutText(for timeout: Duration) -> String {
-        String(Int((timeout / .seconds(1)).rounded()))
+        String(timeout.components.seconds)
     }
 
 }

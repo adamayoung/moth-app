@@ -44,7 +44,7 @@ struct SettingsEditor: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .onAppear(perform: showStoredTimeout)
         .onChange(of: timeoutText) {
-            if let timeout = RequestSettings.timeout(fromText: timeoutText), timeout != settings.timeout {
+            if let timeout = RequestSettings.timeout(fromText: timeoutText, replacing: settings.timeout) {
                 update { $0.timeout = timeout }
             }
         }

@@ -15,6 +15,11 @@ final class LoopbackServer: Sendable {
     private final class Received: Sendable {
 
         let requests = Mutex<[String]>([])
+        let routes: Mutex<[String: String]>
+
+        init(routes: [String: String]) {
+            self.routes = Mutex(routes)
+        }
 
     }
 
@@ -30,13 +35,11 @@ final class LoopbackServer: Sendable {
         parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
         let listener = try NWListener(using: parameters)
         let queue = DispatchQueue(label: "LoopbackServer")
-        let received = Received()
+        let received = Received(routes: routes)
 
         listener.newConnectionHandler = { connection in
             connection.start(queue: queue)
-            Self.serve(connection, routes: routes, fallback: fallback) { request in
-                received.requests.withLock { $0.append(request) }
-            }
+            Self.serve(connection, received: received, fallback: fallback)
         }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
             listener.stateUpdateHandler = { state in
@@ -81,30 +84,30 @@ final class LoopbackServer: Sendable {
         return try components.url ?? { throw URLError(.badURL) }()
     }
 
+    /// For a reply that names a server started after this one.
+    func route(_ path: String, to reply: String) {
+        received.routes.withLock { $0[path] = reply }
+    }
+
     func request(to path: String) -> String? {
         requests.last { Self.path(of: Data($0.utf8)) == path }
     }
 
-    private static func serve(
-        _ connection: NWConnection,
-        routes: [String: String],
-        fallback: String?,
-        record: @escaping @Sendable (String) -> Void
-    ) {
+    private static func serve(_ connection: NWConnection, received: Received, fallback: String?) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, _, _ in
             guard let data, !data.isEmpty else {
                 connection.cancel()
                 return
             }
-            record(String(bytes: data, encoding: .utf8) ?? "")
-            guard let reply = routes[path(of: data)] ?? fallback else {
-                serve(connection, routes: routes, fallback: fallback, record: record)
+            received.requests.withLock { $0.append(String(bytes: data, encoding: .utf8) ?? "") }
+            guard let reply = received.routes.withLock({ $0[path(of: data)] }) ?? fallback else {
+                serve(connection, received: received, fallback: fallback)
                 return
             }
             connection.send(
                 content: Data(reply.utf8),
                 completion: .contentProcessed { _ in
-                    serve(connection, routes: routes, fallback: fallback, record: record)
+                    serve(connection, received: received, fallback: fallback)
                 }
             )
         }

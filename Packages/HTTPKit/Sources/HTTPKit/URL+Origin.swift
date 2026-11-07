@@ -19,15 +19,7 @@ public extension URL {
         guard let scheme = scheme?.lowercased(), let host = host()?.lowercased() else {
             return nil
         }
-        return "\(scheme)://\(host):\(port ?? Self.defaultPort(of: scheme) ?? -1)"
-    }
-
-    private static func defaultPort(of scheme: String) -> Int? {
-        switch scheme {
-        case "http": 80
-        case "https": 443
-        default: nil
-        }
+        return "\(scheme)://\(host):\(port ?? HTTPDefaultPort.of(scheme: scheme) ?? -1)"
     }
 
 }

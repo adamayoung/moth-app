@@ -50,7 +50,7 @@ struct RequestDraftsSettingsTests: RequestDraftsTesting {
         #expect(drafts.draft(for: request.id)?.url == "https://example.com/edited")
     }
 
-    @Test("A sync change to the settings leaves settings the draft changed alone")
+    @Test("A sync change to one setting follows, and a setting the draft changed stays")
     func editedSettingsStay() throws {
         let (_, drafts) = try stored(request, secretStore: RecordingSecretStore())
         drafts.update(request.id) { $0.settings.followsRedirects = false }
@@ -59,7 +59,10 @@ struct RequestDraftsSettingsTests: RequestDraftsTesting {
 
         drafts.savedRequestDidChange(synced)
 
-        #expect(drafts.draft(for: request.id)?.settings == RequestSettings(followsRedirects: false))
+        #expect(drafts.draft(for: request.id)?.settings == RequestSettings(
+            timeout: .seconds(5),
+            followsRedirects: false
+        ))
     }
 
 }

@@ -5,8 +5,7 @@
 
 import XCTest
 
-/// List Users is seeded with the default settings: 60 seconds, redirects followed, TLS verified. Its URL is replaced
-/// with an HTTPS one before a send, because the TLS note covers HTTPS only.
+/// List Users is seeded with the default settings: 60 seconds, redirects followed, TLS verified.
 final class RequestSettingsTests: MothTestCase {
 
     @MainActor
@@ -89,7 +88,6 @@ final class RequestSettingsTests: MothTestCase {
     func testAnUnsavedSendWithoutVerificationShowsTheNote() {
         let (screen, editor) = openListUsersSettings()
         let response = ResponseScreen(app: app)
-        editor.replaceURL(with: "https://example.com/users")
         editor.verifyTLSToggle.click()
         XCTAssertTrue(screen.editedDot(on: "List Users").waitForExistence(timeout: 10))
 

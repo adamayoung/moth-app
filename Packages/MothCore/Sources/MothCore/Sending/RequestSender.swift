@@ -155,7 +155,7 @@ public nonisolated struct RequestSender: Sendable {
         let start = clock.now
         do {
             let sent = try await timedSend(request, delivery: delivery)
-            let notes = delivery.notes(notes, after: sent.response, to: request)
+            let notes = delivery.notes(notes)
             guard sent.response.status == 401, let digest else {
                 return Transmission(sent.response, measured: sent.measured, notes: notes)
             }
@@ -266,10 +266,9 @@ private nonisolated struct Delivery {
         self.policy = SendPolicy(followsRedirects: settings.followsRedirects, verifiesTLS: settings.verifiesTLS)
     }
 
-    /// Plain HTTP has no certificate to skip, unless a redirect took it to HTTPS.
-    func notes(_ notes: [ResponseNote], after response: HTTPResponse, to request: URLRequest) -> [ResponseNote] {
-        let reachedHTTPS = [request.url, response.url].contains { $0?.isSecureScheme == true }
-        return policy.verifiesTLS || !reachedHTTPS ? notes : notes + [.sentWithoutTLSVerification]
+    /// On plain HTTP too, because a redirect can pass through HTTPS on its way.
+    func notes(_ notes: [ResponseNote]) -> [ResponseNote] {
+        policy.verifiesTLS ? notes : notes + [.sentWithoutTLSVerification]
     }
 
 }

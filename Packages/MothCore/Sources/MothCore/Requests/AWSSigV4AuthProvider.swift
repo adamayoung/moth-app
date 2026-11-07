@@ -4,6 +4,7 @@
 //  Copyright © 2026 Adam Young.
 
 import Foundation
+import HTTPKit
 
 public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
 

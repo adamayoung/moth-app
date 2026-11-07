@@ -32,11 +32,11 @@ public struct URLSessionHTTPTransport: HTTPTransport {
     ) async throws -> HTTPResponse {
         let cookies = jar.map { CookieExchange(jar: $0, request: request) }
         let request = await cookies?.preparing(request) ?? request
-        let recorder = TaskMetricsRecorder(cookies: cookies, policy: policy, origin: request.url)
+        let delegate = SendTaskDelegate(cookies: cookies, policy: policy, origin: request.url)
         let body: Data
         let response: URLResponse
         do {
-            (body, response) = try await data(for: request, delegate: recorder, verifyingTLS: policy.verifiesTLS)
+            (body, response) = try await data(for: request, delegate: delegate, verifyingTLS: policy.verifiesTLS)
         } catch {
             throw HTTPTransportError.translating(error)
         }
@@ -50,7 +50,7 @@ public struct URLSessionHTTPTransport: HTTPTransport {
             status: httpResponse.statusCode,
             headers: httpResponse.stringHeaders,
             body: body,
-            metrics: recorder.metrics,
+            metrics: delegate.metrics,
             url: httpResponse.url
         )
     }
@@ -59,7 +59,7 @@ public struct URLSessionHTTPTransport: HTTPTransport {
     /// certificate nobody checked.
     private func data(
         for request: URLRequest,
-        delegate: TaskMetricsRecorder,
+        delegate: SendTaskDelegate,
         verifyingTLS: Bool
     ) async throws -> (Data, URLResponse) {
         guard !verifyingTLS else {

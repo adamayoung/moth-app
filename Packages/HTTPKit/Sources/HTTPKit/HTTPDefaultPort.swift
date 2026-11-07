@@ -1,11 +1,11 @@
 //  HTTPDefaultPort.swift
-//  MothCore
+//  HTTPKit
 //
 //  Copyright © 2026 Adam Young.
 
-nonisolated enum HTTPDefaultPort {
+public enum HTTPDefaultPort {
 
-    static func of(scheme: String?) -> Int? {
+    public static func of(scheme: String?) -> Int? {
         switch scheme?.lowercased() {
         case "http": 80
         case "https": 443

@@ -21,10 +21,20 @@ struct RequestSettingsTests {
         #expect(RequestSettings.timeout(fromText: text) == nil)
     }
 
-    @Test("A timeout shows as whole seconds")
+    @Test("A timeout shows as whole seconds, however large")
     func showsWholeSeconds() {
         #expect(RequestSettings.timeoutText(for: .seconds(60)) == "60")
-        #expect(RequestSettings.timeoutText(for: .milliseconds(2500)) == "3")
+        #expect(RequestSettings.timeoutText(for: .milliseconds(2500)) == "2")
+        #expect(RequestSettings.timeoutText(for: .seconds(Int64.max)) == String(Int64.max))
+    }
+
+    @Test("Text that still shows the stored timeout changes nothing, so a fractional one isn't rewritten")
+    func shownTextChangesNothing() {
+        let stored = Duration.milliseconds(2500)
+
+        #expect(RequestSettings.timeout(fromText: "2", replacing: stored) == nil)
+        #expect(RequestSettings.timeout(fromText: "0", replacing: stored) == nil)
+        #expect(RequestSettings.timeout(fromText: "3", replacing: stored) == .seconds(3))
     }
 
 }

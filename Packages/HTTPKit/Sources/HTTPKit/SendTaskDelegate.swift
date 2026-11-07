@@ -1,4 +1,4 @@
-//  TaskMetricsRecorder.swift
+//  SendTaskDelegate.swift
 //  HTTPKit
 //
 //  Copyright © 2026 Adam Young.
@@ -6,10 +6,10 @@
 import Foundation
 import Synchronization
 
-/// The task's delegate: it records metrics, and carries out the send's policy on redirects and server trust.
-final class TaskMetricsRecorder: NSObject, URLSessionTaskDelegate {
+final class SendTaskDelegate: NSObject, URLSessionTaskDelegate {
 
     private let recorded = Mutex<HTTPMetrics?>(nil)
+    private let hasLeftOrigin = Mutex(false)
     private let cookies: CookieExchange?
     private let policy: SendPolicy
     private let origin: URL?
@@ -29,9 +29,10 @@ final class TaskMetricsRecorder: NSObject, URLSessionTaskDelegate {
         recorded.withLock { $0 = mapped }
     }
 
-    /// Answering `nil` makes URLSession return the redirect response itself. The only place a redirect response's
-    /// cookies can be read, so the jar's `Cookie` header is worked out again for the new URL. Not the `async` form:
-    /// Swift 6.4.2's compiler crashes emitting its Objective-C thunk.
+    /// Answering `nil` makes URLSession return the redirect response itself. Credentials that leave the origin don't
+    /// come back to it later in the chain. The only place a redirect response's cookies can be read, so the jar's
+    /// `Cookie` header is worked out again for the new URL. Not the `async` form: Swift 6.4.2's compiler crashes
+    /// emitting its Objective-C thunk.
     func urlSession(
         _: URLSession,
         task _: URLSessionTask,
@@ -43,14 +44,18 @@ final class TaskMetricsRecorder: NSObject, URLSessionTaskDelegate {
             completionHandler(nil)
             return
         }
-        let request = request.url?.hasSameOrigin(as: origin) == true ? request : withoutCredentials(request)
+        let isAway = hasLeftOrigin.withLock { hasLeft in
+            hasLeft = hasLeft || request.url?.hasSameOrigin(as: origin) != true
+            return hasLeft
+        }
+        let request = isAway ? withoutCredentials(request) : request
         guard let cookies else {
             completionHandler(request)
             return
         }
         Task {
             await cookies.receive(response)
-            await completionHandler(cookies.preparing(request))
+            await completionHandler(cookies.preparing(request, withManualHeader: !isAway))
         }
     }
 

@@ -69,7 +69,7 @@ struct RequestSenderSettingsTests {
         #expect(transport.policies.allSatisfy { !$0.followsRedirects && !$0.verifiesTLS })
     }
 
-    @Test("With verification off, a response over HTTPS says it was sent without verifying the certificate")
+    @Test("With verification off, the response says it was sent without verifying the certificate")
     func unverifiedNote() async throws {
         let result = await send(Self.request(settings: Self.unverified), through: RecordingTransport())
 
@@ -83,22 +83,11 @@ struct RequestSenderSettingsTests {
         #expect(try notes(of: result).isEmpty)
     }
 
-    @Test("With verification off over plain HTTP, there's no note, because there was no certificate")
-    func plainHTTPHasNoNote() async throws {
+    @Test("With verification off, plain HTTP gets the note too, because a redirect can pass through HTTPS")
+    func plainHTTPHasTheNote() async throws {
         let request = Self.request("http://example.com/users", settings: Self.unverified)
 
         let result = await send(request, through: RecordingTransport())
-
-        #expect(try notes(of: result).isEmpty)
-    }
-
-    @Test("With verification off, plain HTTP redirected to HTTPS gets the note")
-    func redirectToHTTPSHasTheNote() async throws {
-        let final = try #require(URL(string: "https://example.com/users"))
-        let transport = ScriptedTransport(HTTPResponse(status: 200, headers: [:], body: Data(), url: final))
-        let request = Self.request("http://example.com/users", settings: Self.unverified)
-
-        let result = await send(request, through: transport)
 
         #expect(try notes(of: result) == [.sentWithoutTLSVerification])
     }
