@@ -177,6 +177,13 @@ struct AppStringCatalogTests {
                 "RESPONSE_NOTE_UNSENDABLE_HEADER_%@",
                 "Sent without header %@, because its name or value isn\u{2019}t valid."
             ),
+            ("RESPONSE_NOTE_EMPTY_HEADER_NAME_%@", "Sent without header %@, because its name is empty."),
+            ("RESPONSE_NOTE_EMPTY_FIELD_NAME_%@", "Sent without field %@, because its name is empty."),
+            (
+                "RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAME_%@",
+                "Sent without query parameter %@, because its name is empty."
+            ),
+            ("RESPONSE_NOTE_PATH_VARIABLE_WITHOUT_VALUE_%@", ":%@ has no value, so it was sent as written."),
             ("RESPONSE_NOTE_UNSUPPORTED_FILE_%@", "Sent without file %@, because Moth can\u{2019}t send files yet."),
             ("RESPONSE_NOTE_BODY_NOT_SENT_%@", "Sent without its body, because Moth can\u{2019}t send a body with %@."),
             (
@@ -265,6 +272,30 @@ extension AppStringCatalogTests {
                 "RESPONSE_NOTE_UNSENDABLE_HEADERS_%lld",
                 2,
                 "Sent without 2 headers, because their names or values aren\u{2019}t valid."
+            ),
+            ("RESPONSE_NOTE_EMPTY_HEADER_NAMES_%lld", 1, "Sent without 1 header, because its name is empty."),
+            ("RESPONSE_NOTE_EMPTY_HEADER_NAMES_%lld", 2, "Sent without 2 headers, because their names are empty."),
+            ("RESPONSE_NOTE_EMPTY_FIELD_NAMES_%lld", 1, "Sent without 1 field, because its name is empty."),
+            ("RESPONSE_NOTE_EMPTY_FIELD_NAMES_%lld", 2, "Sent without 2 fields, because their names are empty."),
+            (
+                "RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAMES_%lld",
+                1,
+                "Sent without 1 query parameter, because its name is empty."
+            ),
+            (
+                "RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAMES_%lld",
+                2,
+                "Sent without 2 query parameters, because their names are empty."
+            ),
+            (
+                "RESPONSE_NOTE_PATH_VARIABLES_WITHOUT_VALUES_%lld",
+                1,
+                "1 path variable has no value and was sent as written."
+            ),
+            (
+                "RESPONSE_NOTE_PATH_VARIABLES_WITHOUT_VALUES_%lld",
+                2,
+                "2 path variables have no value and were sent as written."
             ),
             (
                 "RESPONSE_NOTE_UNSUPPORTED_FILES_%lld",
