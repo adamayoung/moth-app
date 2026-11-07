@@ -9,8 +9,7 @@ nonisolated extension VariableResolution {
         var resolved = rows
 
         for index in resolved.indices where resolved[index].isEnabled {
-            part = .row(resolved[index].id)
-            resolved[index].key = try await resolve(resolved[index].key)
+            resolved[index].key = try await resolve(key: resolved[index].key, ofRow: resolved[index].id)
             resolved[index].value = try await resolve(resolved[index].value)
         }
 
@@ -79,10 +78,8 @@ nonisolated extension VariableResolution {
     }
 
     private mutating func resolve(_ field: FormDataField) async throws -> FormDataField {
-        part = .row(field.id)
-
         var resolved = field
-        resolved.key = try await resolve(field.key)
+        resolved.key = try await resolve(key: field.key, ofRow: field.id)
 
         if let contentType = field.contentType {
             resolved.contentType = try await resolve(contentType)

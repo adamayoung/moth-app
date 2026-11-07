@@ -17,12 +17,16 @@ nonisolated struct EncodedBody {
 
 nonisolated extension RequestBody {
 
-    var parts: Set<RequestPart> {
+    var rowIDs: [UUID] {
         switch self {
-        case .urlEncoded(let rows): Set(rows.map { .row($0.id) })
-        case .formData(let fields): Set(fields.map { .row($0.id) })
-        case .none, .raw, .binary, .graphQL: [.body]
+        case .urlEncoded(let rows): rows.map(\.id)
+        case .formData(let fields): fields.map(\.id)
+        case .none, .raw, .binary, .graphQL: []
         }
+    }
+
+    var parts: Set<RequestPart> {
+        Set(rowIDs.map { .row($0) }).union([.body])
     }
 
     func encoded(multipartBoundary: () -> String) -> EncodedBody {

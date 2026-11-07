@@ -12,9 +12,9 @@ nonisolated struct MultipartFormData {
 
     var encoded: EncodedBody {
         var body = ""
-        let sentFields = fields.filter { $0.isEnabled && !$0.key.isEmpty }
+        let sentFields = fields.filter(\.isSent)
         var omissions = BuildOmissions()
-        omissions.leftOut = Set(fields.filter { !sentFields.contains($0) }.map { .row($0.id) })
+        omissions.leftOut = Set(fields.filter { !$0.isSent }.map { .row($0.id) })
 
         for field in sentFields {
             switch field.value {

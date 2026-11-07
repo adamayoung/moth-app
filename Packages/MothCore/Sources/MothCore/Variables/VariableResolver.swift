@@ -46,6 +46,7 @@ public nonisolated struct VariableResolver: Sendable {
             unresolvedCredentials: resolution.unresolvedCredentials
         )
         resolved.unresolvedParts = resolution.unresolvedParts
+        resolved.emptiedKeys = resolution.emptiedKeys
 
         return resolved
     }

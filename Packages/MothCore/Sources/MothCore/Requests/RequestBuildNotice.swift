@@ -9,6 +9,9 @@ public nonisolated enum RequestBuildNotice: Sendable, Hashable {
     case unsupportedBody(UnsupportedBodyKind)
     case unsupportedFormDataFile(key: String)
     case unsendableHeader(name: String)
+    case emptyHeaderName(name: String)
+    case emptyQueryParameterName(name: String)
+    case emptyFieldName(name: String)
     case bodyNotSent(method: HTTPMethod)
     case formDataBoundaryNotDeclared
     case inheritNotReplaced

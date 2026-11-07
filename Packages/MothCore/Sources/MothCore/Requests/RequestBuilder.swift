@@ -30,6 +30,7 @@ public nonisolated struct RequestBuilder: Sendable {
         var omissions = address.omissions
         omissions.merge(Self.applyHeaders(request.headers, to: &urlRequest))
         omissions.merge(applyBody(of: request, to: &urlRequest))
+        omissions.notices += emptiedKeyNotices(of: request, bodyWasLeftOff: omissions.leftOut.contains(.body))
 
         let authProvider = request.authProvider
         try await authProvider?.apply(to: &urlRequest)
@@ -47,6 +48,16 @@ public nonisolated struct RequestBuilder: Sendable {
             notices: omissions.notices,
             unresolved: request.unresolved(outside: omissions.leftOut)
         )
+    }
+
+    private func emptiedKeyNotices(of request: ResolvedRequest, bodyWasLeftOff: Bool) -> [RequestBuildNotice] {
+        let headers = request.headers.compactMap { request.emptiedKeys[$0.id] }
+        let queryParameters = request.queryParameters.compactMap { request.emptiedKeys[$0.id] }
+        let fields = bodyWasLeftOff ? [] : request.body.rowIDs.compactMap { request.emptiedKeys[$0] }
+
+        return headers.map { .emptyHeaderName(name: $0) }
+            + queryParameters.map { .emptyQueryParameterName(name: $0) }
+            + fields.map { .emptyFieldName(name: $0) }
     }
 
     private static func applyHeaders(

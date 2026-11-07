@@ -14,3 +14,11 @@ nonisolated extension KeyValue {
     }
 
 }
+
+nonisolated extension FormDataField {
+
+    var isSent: Bool {
+        isEnabled && !key.isEmpty
+    }
+
+}

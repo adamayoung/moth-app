@@ -13,10 +13,16 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     case unresolvedVariables(Int)
     case unsendableHeader(String)
     case unsendableHeaders(Int)
+    case emptyHeaderName(String)
+    case emptyHeaderNames(Int)
+    case emptyQueryParameterName(String)
+    case emptyQueryParameterNames(Int)
     case missingCredential
     case unsupportedAuth
     case bodyNotSent(HTTPMethod)
     case unsupportedBody
+    case emptyFieldName(String)
+    case emptyFieldNames(Int)
     case unsupportedFile(String)
     case unsupportedFiles(Int)
     case formDataBoundaryReplaced
@@ -29,9 +35,12 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
         let notes: [ResponseNote?] = [
             variableNote(for: unresolved),
             headerNote(for: notices),
+            emptyHeaderNameNote(for: notices),
+            emptyQueryParameterNameNote(for: notices),
             authNote(for: notices, unresolvedCredentials: unresolvedCredentials),
             notices.lazy.compactMap(\.methodThatLeftBodyOff).first.map(ResponseNote.bodyNotSent),
             notices.contains(where: \.isUnsupportedBody) ? .unsupportedBody : nil,
+            emptyFieldNameNote(for: notices),
             fileNote(for: notices),
             notices.contains(.formDataBoundaryNotDeclared) ? .formDataBoundaryReplaced : nil
         ]
@@ -74,6 +83,30 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
             Set(notices.compactMap(\.unsupportedFileKey)),
             named: ResponseNote.unsupportedFile,
             counted: ResponseNote.unsupportedFiles
+        )
+    }
+
+    private static func emptyHeaderNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        namedOrCounted(
+            Set(notices.compactMap(\.headerWithEmptyName)),
+            named: ResponseNote.emptyHeaderName,
+            counted: ResponseNote.emptyHeaderNames
+        )
+    }
+
+    private static func emptyQueryParameterNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        namedOrCounted(
+            Set(notices.compactMap(\.queryParameterWithEmptyName)),
+            named: ResponseNote.emptyQueryParameterName,
+            counted: ResponseNote.emptyQueryParameterNames
+        )
+    }
+
+    private static func emptyFieldNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        namedOrCounted(
+            Set(notices.compactMap(\.fieldWithEmptyName)),
+            named: ResponseNote.emptyFieldName,
+            counted: ResponseNote.emptyFieldNames
         )
     }
 
@@ -121,6 +154,27 @@ private nonisolated extension RequestBuildNotice {
 
     var unsendableHeaderName: String? {
         if case .unsendableHeader(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var headerWithEmptyName: String? {
+        if case .emptyHeaderName(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var queryParameterWithEmptyName: String? {
+        if case .emptyQueryParameterName(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var fieldWithEmptyName: String? {
+        if case .emptyFieldName(let name) = self {
             return name
         }
         return nil
