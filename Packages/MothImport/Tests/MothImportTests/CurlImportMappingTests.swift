@@ -199,9 +199,10 @@ struct CurlImportMappingTests {
 
     @Test("-F makes form rows: text, a file by path, and a stated type")
     func form() async throws {
-        let request = try await CurlImportTesting.request(
-            #"curl -F a=b --form 'c=@/tmp/d.png;type=image/png' -F 'e="f;g";type=text/plain' -F 'h=@"i j.txt"' a.example"#
-        )
+        let request = try await CurlImportTesting.request(#"""
+        curl -F a=b --form 'c=@/tmp/d.png;type=image/png' -F 'e="f;g";type=text/plain' \
+          -F 'h=@"i j.txt"' a.example
+        """#)
 
         guard case .formData(let fields) = request.body else {
             Issue.record("Expected form-data")
