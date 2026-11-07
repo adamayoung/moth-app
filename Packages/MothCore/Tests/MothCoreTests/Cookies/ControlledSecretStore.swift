@@ -13,6 +13,7 @@ actor ControlledSecretStore: SecretStore {
 
     private var values: [String: String] = [:]
     private var failsReads = false
+    private var failsSaves = false
     private var removalsToFail = 0
     private var holdsSaves = false
     private var heldSave: CheckedContinuation<Void, Never>?
@@ -29,6 +30,10 @@ actor ControlledSecretStore: SecretStore {
 
     func failReads(_ fails: Bool) {
         failsReads = fails
+    }
+
+    func failSaves(_ fails: Bool) {
+        failsSaves = fails
     }
 
     func failRemovals(_ count: Int) {
@@ -50,7 +55,10 @@ actor ControlledSecretStore: SecretStore {
         heldSave = nil
     }
 
-    func save(_ value: String, for identifier: String) async {
+    func save(_ value: String, for identifier: String) async throws {
+        if failsSaves {
+            throw Failure()
+        }
         if holdsSaves {
             holdsSaves = false
             saveArrival.yield()

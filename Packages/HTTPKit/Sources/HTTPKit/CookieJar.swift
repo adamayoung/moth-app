@@ -9,7 +9,8 @@ public protocol CookieJar: Sendable {
 
     func cookies(for url: URL) async -> [Cookie]
 
-    func receive(_ cookies: [Cookie]) async
+    /// `url` is the response's, whose scheme decides whether it may replace a Secure cookie.
+    func receive(_ cookies: [Cookie], from url: URL) async
 
 }
 
@@ -31,14 +32,16 @@ public actor InMemoryCookieJar: CookieJar {
         list.sending(to: url, at: now())
     }
 
-    /// Dates each cookie by this jar's clock, which also decides expiry.
-    public func receive(_ cookies: [Cookie]) {
-        let now = now()
-        list.receive(cookies.map { cookie in
-            var cookie = cookie
-            cookie.createdAt = now
-            return cookie
-        }, at: now)
+    public func receive(_ cookies: [Cookie], from url: URL) {
+        list.receive(cookies, at: now(), overSecureScheme: url.isSecureScheme)
+    }
+
+}
+
+public extension URL {
+
+    var isSecureScheme: Bool {
+        scheme?.lowercased() == "https"
     }
 
 }

@@ -15,12 +15,12 @@ nonisolated enum CookieValues {
     }
 
     /// Tries every value, and names the rows whose value went, so a row is kept for each value that stays.
-    static func remove(_ records: [CookieRecord], from secretStore: any SecretStore) async -> Removal {
+    static func remove(_ ids: [UUID], from secretStore: any SecretStore) async -> Removal {
         var removal = Removal()
-        for record in records {
+        for id in ids {
             do {
-                try await secretStore.removeValue(for: record.valueIdentifier)
-                removal.ids.append(record.id)
+                try await secretStore.removeValue(for: CookieRecord.valueIdentifier(for: id))
+                removal.ids.append(id)
             } catch {
                 removal.failure = removal.failure ?? error
             }

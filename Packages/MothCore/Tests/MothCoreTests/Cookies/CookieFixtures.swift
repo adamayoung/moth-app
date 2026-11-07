@@ -38,3 +38,12 @@ nonisolated enum CookieFixtures {
     }
 
 }
+
+extension CookieJar {
+
+    /// As from an HTTPS response, which may set any cookie.
+    func receive(_ cookies: [Cookie]) async {
+        await receive(cookies, from: URL(string: "https://example.com/") ?? URL(filePath: "/"))
+    }
+
+}

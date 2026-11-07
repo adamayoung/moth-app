@@ -44,6 +44,12 @@ struct CookieHeaderTests {
         #expect(CookieHeader.merging(manual: "m=0", jar: jar(("a", "1"))) == "m=0; a=1")
     }
 
+    @Test("A manual header's trailing semicolon leaves no empty cookie between it and the jar's")
+    func trailingSemicolon() {
+        #expect(CookieHeader.merging(manual: "a=1; ", jar: jar(("b", "2"))) == "a=1; b=2")
+        #expect(CookieHeader.merging(manual: "a=1;", jar: []) == "a=1")
+    }
+
     @Test("A manual cookie wins over a jar cookie of the same name")
     func manualWins() {
         #expect(CookieHeader.merging(manual: "a=mine; b=2", jar: jar(("a", "jar"), ("c", "3"))) == "a=mine; b=2; c=3")

@@ -44,7 +44,7 @@ public actor WorkspaceCookieJar: CookieJar {
     public var all: [Cookie] {
         get async {
             await load()
-            try? await persist(removing: records(releasing: list.removeExpired(at: now())))
+            try? await persist(removing: rowIDs(releasing: list.removeExpired(at: now())), reloadsOnFailure: false)
             return list.cookies
         }
     }
@@ -54,26 +54,26 @@ public actor WorkspaceCookieJar: CookieJar {
         return list.sending(to: url, at: now())
     }
 
-    public func receive(_ cookies: [Cookie]) async {
+    /// A failure here leaves memory as it is, so a cookie whose value can't be saved is still sent until quit.
+    public func receive(_ cookies: [Cookie], from url: URL) async {
         await load()
-        let stamped = cookies.map { cookie in
-            var cookie = cookie
-            cookie.createdAt = now()
-            return cookie
-        }
-        let change = list.receive(stamped, at: now())
+        let change = list.receive(cookies, at: now(), overSecureScheme: url.isSecureScheme)
         let saved = change.saved.map { CookieRecord(id: rowID(for: $0.identity), cookie: $0) }
-        try? await persist(saving: saved, removing: records(releasing: change.removed))
+        try? await persist(saving: saved, removing: rowIDs(releasing: change.removed), reloadsOnFailure: false)
     }
 
     public func delete(_ identities: Set<Cookie.Identity>) async throws {
         await load()
-        try await persist(removing: records(releasing: list.remove { identities.contains($0.identity) }))
+        try await persist(removing: rowIDs(releasing: list.remove { identities.contains($0.identity) }))
     }
 
+    /// Reaches a row whose value couldn't be read too, which the list doesn't hold.
     public func deleteAll() async throws {
         await load()
-        try await persist(removing: records(releasing: list.remove { _ in true }))
+        list.remove { _ in true }
+        let ids = Array(rowIDs.values)
+        rowIDs = [:]
+        try await persist(removing: ids)
     }
 
     private func rowID(for identity: Cookie.Identity) -> UUID {
@@ -85,10 +85,8 @@ public actor WorkspaceCookieJar: CookieJar {
         return id
     }
 
-    private func records(releasing cookies: [Cookie]) -> [CookieRecord] {
-        cookies.compactMap { cookie in
-            rowIDs.removeValue(forKey: cookie.identity).map { CookieRecord(id: $0, cookie: cookie) }
-        }
+    private func rowIDs(releasing cookies: [Cookie]) -> [UUID] {
+        cookies.compactMap { rowIDs.removeValue(forKey: $0.identity) }
     }
 
     private func load() async {
@@ -102,7 +100,7 @@ public actor WorkspaceCookieJar: CookieJar {
         await loading?.value
     }
 
-    /// A row whose value is gone, as after an ad hoc build quits, is dropped, and so is a second row for one cookie.
+    /// A row whose value is gone, as after an ad hoc build quits, is dropped, and so is an older row for one cookie.
     /// A row whose value can't be read keeps its identifier, so setting that cookie again replaces it.
     private func read() async {
         rowIDs = [:]
@@ -112,11 +110,11 @@ public actor WorkspaceCookieJar: CookieJar {
             return
         }
         var found: [Cookie] = []
-        var dropped: [CookieRecord] = []
-        for record in rows {
+        var dropped: [UUID] = []
+        for record in rows.sorted(by: { $0.cookie.createdAt > $1.cookie.createdAt }) {
             let identity = record.cookie.identity
             guard rowIDs[identity] == nil else {
-                dropped.append(record)
+                dropped.append(record.id)
                 continue
             }
             let stored: String?
@@ -127,7 +125,7 @@ public actor WorkspaceCookieJar: CookieJar {
                 continue
             }
             guard let value = stored else {
-                dropped.append(record)
+                dropped.append(record.id)
                 continue
             }
             var cookie = record.cookie
@@ -136,10 +134,18 @@ public actor WorkspaceCookieJar: CookieJar {
             rowIDs[identity] = record.id
         }
         list = CookieList(found)
-        try? await persist(removing: dropped + records(releasing: list.removeExpired(at: now())))
+        try? await persist(
+            removing: dropped + rowIDs(releasing: list.removeExpired(at: now())),
+            reloadsOnFailure: false
+        )
     }
 
-    private func persist(saving: [CookieRecord] = [], removing: [CookieRecord] = []) async throws {
+    /// A failed change makes the jar read the store again on its next use, unless the caller keeps memory as it is.
+    private func persist(
+        saving: [CookieRecord] = [],
+        removing: [UUID] = [],
+        reloadsOnFailure: Bool = true
+    ) async throws {
         guard !saving.isEmpty || !removing.isEmpty else {
             return
         }
@@ -157,7 +163,9 @@ public actor WorkspaceCookieJar: CookieJar {
         }
         pending = Task { _ = await applying.value }
         if case .failure(let error) = await applying.value {
-            loading = nil
+            if reloadsOnFailure {
+                loading = nil
+            }
             throw error
         }
     }
@@ -170,7 +178,7 @@ private nonisolated struct CookieStoreChange: Sendable {
     let writer: StoreWriter
     let secretStore: any SecretStore
     let saving: [CookieRecord]
-    let removing: [CookieRecord]
+    let removing: [UUID]
 
     func apply() async -> Result<Void, any Error> {
         var failure: any Error?

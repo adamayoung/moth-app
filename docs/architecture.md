@@ -651,7 +651,9 @@ cookies. A send takes a `CookieJar`, and `URLSessionHTTPTransport` joins the jar
 cookies to any manual `Cookie` header with `; `, a manual value winning by name,
 and stores what each response sets. `HTTPCookie` splits the merged `Set-Cookie`,
 and `Cookie` refuses a `Domain` the host isn't in, or with no dot, as there is no
-public suffix list. `CookieList` applies RFC 6265's rules for storing and sending.
+public suffix list. `CookieList` applies RFC 6265's rules for storing and sending,
+and RFC 6265bis's, so a plain HTTP response can neither set nor replace a Secure
+cookie.
 
 A redirect response's cookies can only be read in `willPerformHTTPRedirection`,
 which also works `Cookie` out again for the new URL, so jar cookies never follow a

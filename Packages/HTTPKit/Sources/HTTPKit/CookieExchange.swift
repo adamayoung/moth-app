@@ -34,7 +34,7 @@ struct CookieExchange: Sendable {
         }
         let cookies = Cookie.received(in: response.stringHeaders, from: url, at: Date())
         if !cookies.isEmpty {
-            await jar.receive(cookies)
+            await jar.receive(cookies, from: url)
         }
     }
 

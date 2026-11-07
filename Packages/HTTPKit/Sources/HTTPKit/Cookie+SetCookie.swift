@@ -49,7 +49,7 @@ public extension Cookie {
         )
     }
 
-    /// RFC 6265 section 5.1.4: the request path up to, and not including, its last slash.
+    /// RFC 6265 section 5.1.4.
     private static func defaultPath(of url: URL) -> String {
         let path = requestPath(of: url)
         guard let lastSlash = path.lastIndex(of: "/"), lastSlash != path.startIndex else {

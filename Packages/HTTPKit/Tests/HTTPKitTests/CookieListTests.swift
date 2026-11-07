@@ -100,6 +100,39 @@ struct CookieListTests {
         #expect(try list.sending(to: url, at: start).map(\.name) == ["api", "root-old", "root-new"])
     }
 
+    @Test("A received cookie is dated by the time it arrived")
+    func datedOnArrival() {
+        var list = CookieList()
+
+        list.receive([cookie("a", createdAt: .distantPast)], at: start)
+
+        #expect(list.cookies.map(\.createdAt) == [start])
+    }
+
+    @Test("A cookie set again unchanged is not saved again")
+    func unchangedIsNotSaved() {
+        var list = CookieList([cookie("a")])
+
+        let change = list.receive([cookie("a")], at: start.addingTimeInterval(60))
+
+        #expect(change.isEmpty)
+        #expect(list.cookies == [cookie("a")])
+    }
+
+    @Test("A plain HTTP response can't replace a Secure cookie, and an HTTPS one can")
+    func secureCookieNeedsHTTPS() {
+        var secure = cookie("sid", "real")
+        secure.isSecure = true
+        var list = CookieList([secure])
+
+        let overHTTP = list.receive([cookie("sid", "planted")], at: start, overSecureScheme: false)
+        #expect(overHTTP.isEmpty)
+        #expect(list.cookies == [secure])
+
+        list.receive([cookie("sid", "fresh")], at: start, overSecureScheme: true)
+        #expect(list.cookies.map(\.value) == ["fresh"])
+    }
+
     @Test("Removing expired cookies returns them")
     func removesExpired() {
         var list = CookieList([cookie("a", expiresAt: start), cookie("b")])

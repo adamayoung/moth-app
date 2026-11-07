@@ -25,18 +25,33 @@ public struct CookieList: Sendable, Hashable {
         self.cookies = cookies
     }
 
+    /// A cookie is dated `now`. A plain HTTP response can't replace a Secure cookie, as RFC 6265bis section 5.7 says,
+    /// and a cookie set again unchanged is left out of the change.
     @discardableResult
-    public mutating func receive(_ incoming: [Cookie], at now: Date) -> CookieChange {
+    public mutating func receive(_ incoming: [Cookie], at now: Date, overSecureScheme: Bool = true) -> CookieChange {
         var change = CookieChange()
         for var cookie in incoming {
-            let replaced = cookies.firstIndex { $0.identity == cookie.identity }.map { cookies.remove(at: $0) }
-            if cookie.isExpired(at: now) {
-                change.removed += replaced.map { [$0] } ?? []
+            let index = cookies.firstIndex { $0.identity == cookie.identity }
+            let replaced = index.map { cookies[$0] }
+            if replaced?.isSecure == true, !overSecureScheme {
                 continue
             }
-            cookie.createdAt = replaced?.createdAt ?? cookie.createdAt
-            cookies.append(cookie)
-            change.saved.append(cookie)
+            cookie.createdAt = replaced?.createdAt ?? now
+            switch (index, cookie.isExpired(at: now)) {
+            case (let index?, true):
+                cookies.remove(at: index)
+                change.removed += replaced.map { [$0] } ?? []
+            case (_, true):
+                continue
+            case (let index?, false):
+                cookies[index] = cookie
+                if cookie != replaced {
+                    change.saved.append(cookie)
+                }
+            case (nil, false):
+                cookies.append(cookie)
+                change.saved.append(cookie)
+            }
         }
         return change
     }
@@ -50,9 +65,7 @@ public struct CookieList: Sendable, Hashable {
 
     @discardableResult
     public mutating func removeExpired(at now: Date) -> [Cookie] {
-        let expired = cookies.filter { $0.isExpired(at: now) }
-        cookies.removeAll { $0.isExpired(at: now) }
-        return expired
+        remove { $0.isExpired(at: now) }
     }
 
     @discardableResult

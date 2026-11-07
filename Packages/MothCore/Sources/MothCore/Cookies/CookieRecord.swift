@@ -6,8 +6,7 @@
 import Foundation
 import HTTPKit
 
-/// A stored cookie: its row's identifier and the cookie. The value goes to the Keychain under `valueIdentifier`, and
-/// a record read from the store has an empty one.
+/// A record read from the store has an empty value: the value is in the Keychain under `valueIdentifier`.
 nonisolated struct CookieRecord: Sendable, Hashable {
 
     let id: UUID
@@ -19,6 +18,10 @@ nonisolated struct CookieRecord: Sendable, Hashable {
     }
 
     var valueIdentifier: String {
+        Self.valueIdentifier(for: id)
+    }
+
+    static func valueIdentifier(for id: UUID) -> String {
         "cookie.\(id.uuidString)"
     }
 

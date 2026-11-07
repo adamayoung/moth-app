@@ -9,7 +9,7 @@ public enum CookieHeader {
 
     /// A cookie the person typed wins over the jar's cookie of that name.
     public static func merging(manual: String?, jar: [Cookie]) -> String? {
-        let manual = manual?.trimmingCharacters(in: .whitespaces) ?? ""
+        let manual = manual?.trimmingCharacters(in: CharacterSet(charactersIn: ";").union(.whitespaces)) ?? ""
         let typedNames = Set(manual.split(separator: ";").map { pair in
             pair.split(separator: "=", maxSplits: 1).first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
         })

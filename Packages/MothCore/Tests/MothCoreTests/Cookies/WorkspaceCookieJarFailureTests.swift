@@ -87,7 +87,7 @@ struct WorkspaceCookieJarFailureTests {
         let secrets = ControlledSecretStore()
         let records = [CookieRecord(cookie: CookieFixtures.cookie()), CookieRecord(cookie: CookieFixtures.cookie())]
         for record in records {
-            await secrets.save(record.cookie.value, for: record.valueIdentifier)
+            try await secrets.save(record.cookie.value, for: record.valueIdentifier)
         }
         try await dataModel.writer.saveCookies(records, in: workspaceID)
 
@@ -96,6 +96,50 @@ struct WorkspaceCookieJarFailureTests {
         #expect(try await jar.cookies(for: CookieFixtures.url).count == 1)
         #expect(try rows(in: dataModel).count == 1)
         #expect(await secrets.identifiers.count == 1)
+    }
+
+    @Test("Of two rows for one cookie, the one set later is kept")
+    func duplicateRowsKeepTheNewest() async throws {
+        let dataModel = try DataModel.inMemory()
+        let secrets = ControlledSecretStore()
+        var newer = CookieFixtures.cookie("sid", "new")
+        newer.createdAt = CookieFixtures.now.addingTimeInterval(60)
+        let records = [CookieRecord(cookie: CookieFixtures.cookie("sid", "old")), CookieRecord(cookie: newer)]
+        for record in records {
+            try await secrets.save(record.cookie.value, for: record.valueIdentifier)
+        }
+        try await dataModel.writer.saveCookies(records, in: workspaceID)
+
+        let jar = jars(dataModel, secrets: secrets).jar(for: workspaceID)
+
+        #expect(try await jar.cookies(for: CookieFixtures.url).map(\.value) == ["new"])
+    }
+
+    @Test("A cookie whose value can't be saved is still sent until quit")
+    func unsavedValueStaysInMemory() async throws {
+        let dataModel = try DataModel.inMemory()
+        let secrets = ControlledSecretStore()
+        let jar = jars(dataModel, secrets: secrets).jar(for: workspaceID)
+        await secrets.failSaves(true)
+
+        await jar.receive([CookieFixtures.cookie("sid")])
+        await jar.receive([CookieFixtures.cookie("other")])
+
+        #expect(try await jar.cookies(for: CookieFixtures.url).map(\.name).sorted() == ["other", "sid"])
+    }
+
+    @Test("Delete All also removes a row whose value couldn't be read, and its value")
+    func deleteAllReachesUnreadableRows() async throws {
+        let dataModel = try DataModel.inMemory()
+        let secrets = ControlledSecretStore()
+        await jars(dataModel, secrets: secrets).jar(for: workspaceID).receive([CookieFixtures.cookie()])
+        await secrets.failReads(true)
+        let jar = jars(dataModel, secrets: secrets).jar(for: workspaceID)
+
+        try await jar.deleteAll()
+
+        #expect(try rows(in: dataModel).isEmpty)
+        #expect(await secrets.identifiers.isEmpty)
     }
 
     @Test("A value that won't go keeps its row, the others go, and the jar shows what is still stored")
