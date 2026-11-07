@@ -13,7 +13,7 @@ public nonisolated extension HistoryEntryModel {
         self.requestID = entry.request.id
         self.requestData = try StoredJSON.encode(entry.request)
         self.method = entry.request.method.rawValue
-        self.url = entry.request.urlTemplate
+        self.url = RequestDraft(entry.request).url
         self.sentAt = entry.sentAt
         self.durationSeconds = entry.duration.components.seconds
         self.durationAttoseconds = entry.duration.components.attoseconds

@@ -9,7 +9,6 @@ import Foundation
 /// is stored. Its `variables` hold the secret variables it names, which Send Again reads from the Keychain.
 public nonisolated struct HistoryEntry: Identifiable, Sendable, Hashable {
 
-    /// Stands in for a row that can carry a credential, such as `Authorization`.
     public static let maskedValue = "••••••••"
 
     public let id: UUID

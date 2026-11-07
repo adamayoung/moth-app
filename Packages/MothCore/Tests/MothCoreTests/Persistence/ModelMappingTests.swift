@@ -122,7 +122,7 @@ struct ModelMappingTests {
         let summary = try Self.savedInStore(HistoryEntryModel(entry)) { ($0.method, $0.url) }
 
         #expect(summary.0 == entry.request.method.rawValue)
-        #expect(summary.1 == entry.request.urlTemplate)
+        #expect(summary.1 == RequestDraft(entry.request).url)
     }
 
     @Test("A history entry keeps its request's identifier in an attribute of its own")
