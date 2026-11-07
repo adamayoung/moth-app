@@ -10,6 +10,8 @@ public nonisolated enum RequestBuildError: LocalizedError, Equatable {
     case invalidURL
     case invalidMethod
     case invalidBearerToken
+    case incompleteAWSSignature
+    case unsendableAWSSignature
 
     public var errorDescription: String? {
         switch self {
@@ -19,6 +21,10 @@ public nonisolated enum RequestBuildError: LocalizedError, Equatable {
             String(localized: "REQUEST_BUILD_INVALID_METHOD", bundle: .module)
         case .invalidBearerToken:
             String(localized: "REQUEST_BUILD_INVALID_BEARER_TOKEN", bundle: .module)
+        case .incompleteAWSSignature:
+            String(localized: "REQUEST_BUILD_INCOMPLETE_AWS_SIGNATURE", bundle: .module)
+        case .unsendableAWSSignature:
+            String(localized: "REQUEST_BUILD_UNSENDABLE_AWS_SIGNATURE", bundle: .module)
         }
     }
 

@@ -25,7 +25,6 @@ public nonisolated enum UnsupportedAuthKind: Sendable, Hashable {
     case apiKey
     case digest
     case oauth2
-    case awsSigV4
 
 }
 

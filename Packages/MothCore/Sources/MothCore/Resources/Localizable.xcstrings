@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "REQUEST_BUILD_INCOMPLETE_AWS_SIGNATURE" : {
+      "comment" : "Shown when a request cannot be sent because an AWS Signature field is empty.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AWS Signature needs an access key, secret key, region and service."
+          }
+        }
+      }
+    },
     "REQUEST_BUILD_INVALID_BEARER_TOKEN" : {
       "comment" : "Shown when a request cannot be sent because its Bearer token has characters a header cannot hold, such as a line break.",
       "localizations" : {
@@ -30,6 +41,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This URL isn’t valid."
+          }
+        }
+      }
+    },
+    "REQUEST_BUILD_UNSENDABLE_AWS_SIGNATURE" : {
+      "comment" : "Shown when a request cannot be sent because an AWS Signature field has characters a header cannot hold, such as a line break.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This AWS Signature can’t be sent in a header."
           }
         }
       }

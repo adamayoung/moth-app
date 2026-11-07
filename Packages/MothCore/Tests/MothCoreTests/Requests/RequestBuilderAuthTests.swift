@@ -57,8 +57,7 @@ struct RequestBuilderAuthTests {
                 UnsupportedAuthKind.apiKey
             ),
             (.digest(DigestAuth(username: "user", password: SecretReference(identifier: "secret"))), .digest),
-            (.oauth2(RequestBuilderAuthTests.oauth2), .oauth2),
-            (.awsSigV4(RequestBuilderAuthTests.sigV4), .awsSigV4)
+            (.oauth2(RequestBuilderAuthTests.oauth2), .oauth2)
         ]
     )
     func unsupportedAuth(auth: Auth, kind: UnsupportedAuthKind) async throws {
@@ -142,18 +141,6 @@ struct RequestBuilderAuthTests {
             password: reference,
             accessToken: reference,
             refreshToken: reference
-        )
-    }
-
-    private nonisolated static var sigV4: AWSSigV4Auth {
-        let reference = SecretReference(identifier: "secret")
-
-        return AWSSigV4Auth(
-            accessKeyID: reference,
-            secretAccessKey: reference,
-            sessionToken: reference,
-            region: "",
-            service: ""
         )
     }
 

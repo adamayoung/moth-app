@@ -11,9 +11,14 @@ public nonisolated struct RequestBuilder: Sendable {
     private static let methodsWithoutBodies: Set<String> = ["GET", "HEAD"]
 
     private let multipartBoundary: @Sendable () -> String
+    private let now: @Sendable () -> Date
 
-    public init(multipartBoundary: @escaping @Sendable () -> String = { "moth-\(UUID().uuidString)" }) {
+    public init(
+        multipartBoundary: @escaping @Sendable () -> String = { "moth-\(UUID().uuidString)" },
+        now: @escaping @Sendable () -> Date = { Date() }
+    ) {
         self.multipartBoundary = multipartBoundary
+        self.now = now
     }
 
     @concurrent
@@ -32,11 +37,11 @@ public nonisolated struct RequestBuilder: Sendable {
         omissions.merge(applyBody(of: request, to: &urlRequest))
         omissions.notices += emptiedKeyNotices(of: request, bodyWasLeftOff: omissions.leftOut.contains(.body))
 
-        let authProvider = request.authProvider
+        let authProvider = request.authProvider(signingAt: now())
         try await authProvider?.apply(to: &urlRequest)
 
         omissions.leftOut.formUnion(
-            authProvider == nil ? [.auth] : Self.manualAuthorizationRows(of: request)
+            authProvider == nil ? [.auth] : Self.rowsReplacedByAuth(of: request)
         )
 
         if let authNotice = request.authNotice {
@@ -50,12 +55,10 @@ public nonisolated struct RequestBuilder: Sendable {
         )
     }
 
-    private static func manualAuthorizationRows(of request: ResolvedRequest) -> Set<RequestPart> {
-        Set(
-            request.headers
-                .filter { $0.key.caseInsensitiveCompare("Authorization") == .orderedSame }
-                .map { .row($0.id) }
-        )
+    private static func rowsReplacedByAuth(of request: ResolvedRequest) -> Set<RequestPart> {
+        let replaced = request.headersReplacedByAuth
+
+        return Set(request.headers.filter { replaced.contains($0.key.lowercased()) }.map { .row($0.id) })
     }
 
     private func emptiedKeyNotices(of request: ResolvedRequest, bodyWasLeftOff: Bool) -> [RequestBuildNotice] {

@@ -25,10 +25,16 @@ public nonisolated struct RequestSender: Sendable {
 
     private let transport: any HTTPTransport
     private let secretStore: any SecretStore
+    private let now: @Sendable () -> Date
 
-    public init(transport: any HTTPTransport, secretStore: any SecretStore) {
+    public init(
+        transport: any HTTPTransport,
+        secretStore: any SecretStore,
+        now: @escaping @Sendable () -> Date = { Date() }
+    ) {
         self.transport = transport
         self.secretStore = secretStore
+        self.now = now
     }
 
     @concurrent
@@ -37,7 +43,7 @@ public nonisolated struct RequestSender: Sendable {
         let notes: [ResponseNote]
         do {
             let resolved = try await resolve(outgoing, scopes: scopes)
-            let built = try await RequestBuilder().build(resolved)
+            let built = try await RequestBuilder(now: now).build(resolved)
             urlRequest = built.urlRequest
             notes = ResponseNote.notes(
                 unresolved: built.unresolved,
