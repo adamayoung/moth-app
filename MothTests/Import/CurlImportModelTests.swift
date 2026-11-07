@@ -22,13 +22,13 @@ final class CurlImportModelTests {
     private let suiteName = "CurlImportModelTests.\(UUID().uuidString)"
     private let defaults: UserDefaults
     private let dataModel: DataModel
-    private let sidebar: SidebarModel
+    let sidebar: SidebarModel
     private let environments: EnvironmentsModel
     private let tabs: RequestTabsModel
 
     private let top = Request(name: "Top")
     private let folder = Folder(name: "Folder")
-    private let collection: RequestCollection
+    let collection: RequestCollection
     private let second = RequestCollection(name: "Second")
 
     /// API > (Folder, Top), then Second.
@@ -61,7 +61,7 @@ final class CurlImportModelTests {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
-    private func makeModel(
+    func makeModel(
         secretStore: any SecretStore = InMemorySecretStore(),
         createRequest: (@Sendable (Request, TreeContainerID) async throws -> Void)? = nil
     ) -> ImportModel {
@@ -78,7 +78,7 @@ final class CurlImportModelTests {
     }
 
     /// Stands in for `@Query`, which delivers a writer's save to the views some time after the write returns.
-    private func deliverRows() throws {
+    func deliverRows() throws {
         let context = ModelContext(dataModel.container)
         let requests = try context.fetch(FetchDescriptor<RequestModel>())
         let tree = try CollectionTree(
@@ -90,7 +90,7 @@ final class CurlImportModelTests {
         tabs.collectionDidChange(CollectionSnapshot(tree: tree, requestIDs: Set(requests.map(\.id))))
     }
 
-    private func importing(_ text: String, into model: ImportModel) async {
+    func importing(_ text: String, into model: ImportModel) async {
         model.beginCurlImport()
         model.curlText = text
         await model.importCurl()
@@ -282,59 +282,6 @@ final class CurlImportModelTests {
         await importing("curl -u user:pass https://a.example/users", into: makeModel(secretStore: secretStore))
 
         #expect(Array(secretStore.values.values) == ["pass"])
-    }
-
-    @Test("File > Import… is unavailable while the sheet is up, and Import cURL… too")
-    func theSheetBlocksOtherImports() throws {
-        try deliverRows()
-        let model = makeModel()
-
-        model.beginCurlImport()
-
-        #expect(!model.canImport)
-        #expect(!model.canImportCurl)
-    }
-
-    @Test("Import cURL… is unavailable while the Authorization sheet is up")
-    func theAuthorizationSheetBlocksTheSheet() throws {
-        try deliverRows()
-        let model = makeModel()
-        let node = try #require(sidebar.tree.node(.collection(collection.id)))
-
-        sidebar.presentAuthorization(of: node)
-
-        #expect(!model.canImportCurl)
-    }
-
-    @Test("Cancel does nothing once an import is running, because the import can't be stopped")
-    func cancelWaitsForARunningImport() async throws {
-        try deliverRows()
-        let secretStore = ThreadHoldingSecretStore()
-        let model = makeModel(secretStore: secretStore)
-        model.beginCurlImport()
-        model.curlText = "curl -u user:pass https://a.example/users"
-
-        let running = Task { await model.importCurl() }
-        await secretStore.waitUntilHolding()
-        model.cancelCurlImport()
-        let stayedOpen = model.isEnteringCurl
-        secretStore.letGo()
-        await running.value
-
-        #expect(stayedOpen)
-        #expect(!model.isEnteringCurl)
-    }
-
-    @Test("Import cURL… is unavailable while a result is showing")
-    func aResultBlocksTheSheet() async throws {
-        try deliverRows()
-        let model = makeModel()
-
-        await importing("curl -s https://a.example/users", into: model)
-
-        #expect(!model.canImportCurl)
-        model.beginCurlImport()
-        #expect(!model.isEnteringCurl)
     }
 
 }

@@ -280,7 +280,7 @@ private nonisolated struct ANSIText {
     }
 
     private mutating func flushBytes() {
-        units += String(decoding: bytes, as: UTF8.self).utf16
+        units += (String(bytes: bytes, encoding: .utf8) ?? String(bytes: bytes, encoding: .isoLatin1) ?? "").utf16
         bytes = []
     }
 
