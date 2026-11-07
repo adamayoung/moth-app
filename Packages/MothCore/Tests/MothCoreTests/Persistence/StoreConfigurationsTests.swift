@@ -62,7 +62,7 @@ struct StoreConfigurationsTests {
 
         #expect(synced == ["CollectionModel", "EnvironmentModel", "FolderModel", "RequestModel", "VariableModel",
                            "WorkspaceModel"])
-        #expect(local == ["HistoryEntryModel"])
+        #expect(local == ["CookieModel", "HistoryEntryModel"])
     }
 
 }

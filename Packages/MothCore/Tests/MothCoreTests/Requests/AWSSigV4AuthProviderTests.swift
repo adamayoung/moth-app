@@ -110,6 +110,13 @@ struct AWSSigV4AuthProviderTests {
         #expect(try signature(of: request) == Self.vanillaSignature)
     }
 
+    @Test("A Cookie header isn't signed, because the transport adds the jar's cookies after signing")
+    func cookieIsLeftOut() async throws {
+        let request = try await signed { $0.setValue("a=1", forHTTPHeaderField: "Cookie") }
+
+        #expect(try signature(of: request) == Self.vanillaSignature)
+    }
+
     @Test("A header row is signed")
     func headersAreSigned() async throws {
         let request = try await signed { $0.setValue("1", forHTTPHeaderField: "X-Custom") }

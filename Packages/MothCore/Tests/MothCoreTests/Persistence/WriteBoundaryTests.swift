@@ -90,7 +90,18 @@ struct WriteBoundaryTests {
         "HistoryEntryModel.statusCode": isWritable(\HistoryEntryModel.statusCode),
         "HistoryEntryModel.responseHeadersData": isWritable(\HistoryEntryModel.responseHeadersData),
         "HistoryEntryModel.failure": isWritable(\HistoryEntryModel.failure),
-        "HistoryEntryModel.responseBody": isWritable(\HistoryEntryModel.responseBody)
+        "HistoryEntryModel.responseBody": isWritable(\HistoryEntryModel.responseBody),
+        "CookieModel.id": isWritable(\CookieModel.id),
+        "CookieModel.workspaceID": isWritable(\CookieModel.workspaceID),
+        "CookieModel.name": isWritable(\CookieModel.name),
+        "CookieModel.domain": isWritable(\CookieModel.domain),
+        "CookieModel.isHostOnly": isWritable(\CookieModel.isHostOnly),
+        "CookieModel.path": isWritable(\CookieModel.path),
+        "CookieModel.expiresAt": isWritable(\CookieModel.expiresAt),
+        "CookieModel.isSecure": isWritable(\CookieModel.isSecure),
+        "CookieModel.isHTTPOnly": isWritable(\CookieModel.isHTTPOnly),
+        "CookieModel.createdAt": isWritable(\CookieModel.createdAt),
+        "CookieModel.valueIdentifier": isWritable(\CookieModel.valueIdentifier)
     ]
 
     private static var dataModelSources: URL {
@@ -115,7 +126,7 @@ struct WriteBoundaryTests {
 
     @Test("The writability check covers every stored property in the schema")
     func everyStoredPropertyIsChecked() {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(versionedSchema: SchemaV2.self)
 
         let stored = schema.entities.flatMap { entity in
             entity.storedProperties.map { "\(entity.name).\($0.name)" }

@@ -56,6 +56,22 @@ struct RequestSenderTests {
         #expect(url.absoluteString == "https://collection.example.com/global")
     }
 
+    @Test("The workspace's cookie jar goes to the transport with the request")
+    func passesTheCookieJar() async throws {
+        let transport = RecordingTransport()
+        let jar = InMemoryCookieJar()
+        let sender = RequestSender(transport: transport, secretStore: secretStore)
+
+        _ = await sender.send(
+            OutgoingRequest(request: Request(name: "List", urlTemplate: "https://example.com/users")),
+            scopes: VariableScopes(),
+            cookies: jar
+        )
+
+        let sent = try #require(transport.cookieJars.first as? InMemoryCookieJar)
+        #expect(sent === jar)
+    }
+
     @Test("A response comes back with its status")
     func response() async {
         let transport = RecordingTransport {

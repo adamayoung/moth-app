@@ -38,7 +38,11 @@ public nonisolated struct RequestSender: Sendable {
     }
 
     @concurrent
-    public func send(_ outgoing: OutgoingRequest, scopes: VariableScopes) async -> SendResult {
+    public func send(
+        _ outgoing: OutgoingRequest,
+        scopes: VariableScopes,
+        cookies: any CookieJar? = nil
+    ) async -> SendResult {
         let urlRequest: URLRequest
         let notes: [ResponseNote]
         do {
@@ -55,7 +59,7 @@ public nonisolated struct RequestSender: Sendable {
         } catch {
             return .failed(SendFailure(notSent: error), notes: [])
         }
-        return await transmit(urlRequest, notes: notes)
+        return await transmit(urlRequest, cookies: cookies, notes: notes)
     }
 
     private func resolve(_ outgoing: OutgoingRequest, scopes: VariableScopes) async throws -> ResolvedRequest {
@@ -68,11 +72,15 @@ public nonisolated struct RequestSender: Sendable {
         )
     }
 
-    private func transmit(_ request: URLRequest, notes: [ResponseNote]) async -> SendResult {
+    private func transmit(
+        _ request: URLRequest,
+        cookies: any CookieJar?,
+        notes: [ResponseNote]
+    ) async -> SendResult {
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            let response = try await transport.send(request)
+            let response = try await transport.send(request, cookies: cookies)
             return .response(SentResponse(response, measured: start.duration(to: clock.now), notes: notes))
         } catch is CancellationError {
             return .cancelled

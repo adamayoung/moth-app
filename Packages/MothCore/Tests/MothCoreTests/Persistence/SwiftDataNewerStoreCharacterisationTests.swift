@@ -120,7 +120,7 @@ struct SwiftDataNewerStoreCharacterisationTests {
 
         let configurations = StoreConfigurations(location: .directory(directory), containerIdentifier: nil)
         _ = try ModelContainer(
-            for: Schema(versionedSchema: SchemaV1.self),
+            for: Schema(versionedSchema: CurrentSchema.self),
             migrationPlan: MothMigrationPlan.self,
             configurations: configurations.all
         )

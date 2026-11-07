@@ -8,8 +8,10 @@ import Foundation
 public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
 
     /// URLSession reserves these and can rewrite them, and a server rejects a signature over a value it never received.
+    /// The transport adds the cookie jar's cookies to `Cookie` after signing.
     private static let unsignedHeaders: Set<String> = [
-        "authorization", "connection", "content-length", "proxy-authenticate", "proxy-authorization", "www-authenticate"
+        "authorization", "connection", "content-length", "cookie", "proxy-authenticate", "proxy-authorization",
+        "www-authenticate"
     ]
 
     private static let defaultPorts = ["http": 80, "https": 443]
