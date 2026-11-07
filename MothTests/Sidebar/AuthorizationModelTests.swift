@@ -81,6 +81,36 @@ struct AuthorizationModelTests {
         #expect(try !#require(String(bytes: authJSON, encoding: .utf8)).contains("s3cret-token"))
     }
 
+    @Test("A folder's AWS Signature credentials reach the secret store, and no row holds them")
+    func savesAWSSignatureOnAFolder() async throws {
+        let secretStore = RecordingSecretStore()
+        let model = model(of: .folder(folder.id), holding: .inherit, secretStore: secretStore)
+        model.update { draft in
+            draft.kind = .awsSigV4
+            draft.awsSigV4.region = "eu-west-2"
+            draft.awsSigV4.service = "s3"
+            draft.setCredential("access-value", for: draft.awsSigV4.accessKeyReference)
+            draft.setCredential("secret-value", for: draft.awsSigV4.secretKeyReference)
+        }
+
+        #expect(await model.save())
+
+        guard case .awsSigV4(let auth) = model.draft.requestAuth else {
+            Issue.record("Expected AWS Signature")
+            return
+        }
+        #expect(secretStore.values == [
+            auth.accessKeyID.identifier: "access-value",
+            auth.secretAccessKey.identifier: "secret-value"
+        ])
+        let row = try savedFolder()
+        #expect(try row.asDomain().auth == .awsSigV4(auth))
+        let authJSON = try #require(row.authData)
+        let text = try #require(String(bytes: authJSON, encoding: .utf8))
+        #expect(!text.contains("access-value"))
+        #expect(!text.contains("secret-value"))
+    }
+
     @Test("A collection's auth is saved")
     func savesACollection() async throws {
         let model = model(of: .collection(collection.id), holding: .none, secretStore: RecordingSecretStore())

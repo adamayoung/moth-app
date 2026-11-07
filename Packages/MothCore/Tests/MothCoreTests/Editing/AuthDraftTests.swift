@@ -22,12 +22,6 @@ struct AuthDraftTests {
             clientID: "client",
             clientSecret: SecretReference(identifier: "client-secret"),
             scope: ""
-        )),
-        .awsSigV4(AWSSigV4Auth(
-            accessKeyID: SecretReference(identifier: "access"),
-            secretAccessKey: SecretReference(identifier: "secret"),
-            region: "eu-west-2",
-            service: "s3"
         ))
     ]
 
@@ -47,9 +41,9 @@ struct AuthDraftTests {
 
     @Test("The kinds are the editable ones, plus a stored kind the editor can't change")
     func kinds() throws {
-        #expect(AuthDraft(.none).kinds == [.inherit, .none, .basic, .bearer, .apiKey])
+        #expect(AuthDraft(.none).kinds == AuthKind.editable)
         let digest = try #require(Self.unsupported.first)
-        #expect(AuthDraft(digest).kinds == [.inherit, .none, .basic, .bearer, .apiKey, .digest])
+        #expect(AuthDraft(digest).kinds == AuthKind.editable + [.digest])
     }
 
     @Test("Choosing another kind and back keeps an auth the editor can't change", arguments: unsupported)
@@ -263,7 +257,7 @@ struct AuthDraftTests {
 
         draft.rebaseCredentials(onto: AuthDraft(.none))
 
-        #expect(draft.kinds == [.inherit, .none, .basic, .bearer, .apiKey])
+        #expect(draft.kinds == AuthKind.editable)
         #expect(draft.requestAuth == .none)
     }
 
