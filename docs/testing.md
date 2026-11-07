@@ -141,7 +141,13 @@ can do:
 | `xcodebuild test` | Refused: "Cannot test target … on My Mac" |
 
 This table was measured locally, with a 27.2.1 minimum on macOS 27.2. A package
-that calls an API added in 27.2 could still fail at run time on 27.0.1.
+that calls an API added in 27.2 could still fail at run time on 27.0.1. `Date`'s
+`<=`, `>=` and `>` are such APIs: the 27.2 SDK binds each to a symbol the runner's
+Foundation lacks, so a test bundle that uses one, or links package code that does,
+fails to load with `Symbol not found`. `<` and `==` are safe. Package code compares
+dates through `timeIntervalSince` where it would need the others. To check a built
+bundle, `nm -u <bundle> | grep -E 's10Foundation4DateV(2le|2ge|1g)oi'` prints
+nothing when none remains.
 
 So `.github/workflows/ci.yml` runs these jobs on every pull request to `main`:
 
