@@ -52,8 +52,8 @@ final class ImportModel {
     }
 
     private var isAnotherPresentationUp: Bool {
-        isEnteringCurl || sidebar.presentedVariables != nil || sidebar.pendingDeletion != nil
-            || environments.pendingDeletion != nil
+        isEnteringCurl || sidebar.presentedVariables != nil || sidebar.presentedAuthorization != nil
+            || sidebar.pendingDeletion != nil || environments.pendingDeletion != nil
     }
 
     var canImportCurl: Bool {
@@ -73,8 +73,11 @@ final class ImportModel {
         isEnteringCurl = true
     }
 
+    /// Refused once an import runs, because a request would still appear after the sheet had said it wouldn't.
     func cancelCurlImport() {
-        isEnteringCurl = false
+        if !isImporting {
+            isEnteringCurl = false
+        }
     }
 
     /// A failure keeps the sheet, because closing it would lose the pasted text.

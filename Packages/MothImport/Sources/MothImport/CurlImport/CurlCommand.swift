@@ -39,9 +39,7 @@ nonisolated struct CurlCommand {
         while let word = words.popFirst() {
             try read(word)
         }
-        for url in urls.dropFirst() {
-            ignore(url)
-        }
+        (urls.dropFirst() + shell.redirections).forEach { ignore($0) }
         if let rest = shell.rest {
             ignore(rest)
         }

@@ -115,8 +115,37 @@ struct CurlImportAuthTests {
     func otherSchemesStayHeaders(header: String) async throws {
         let request = try await CurlImportTesting.request("curl -H '\(header)' https://a.example")
 
-        #expect(request.auth == .inherit)
+        #expect(request.auth == .none)
         #expect(request.headers.count == 1)
+    }
+
+    @Test("A header Moth can't convert wins over -u, because a provider would replace the row")
+    func unconvertedHeaderWinsOverUser() async throws {
+        let store = RecordingSecretStore()
+        let request = try await CurlImportTesting.importing(
+            "curl -u user:pass -H 'Authorization: ApiKey x' https://a.example",
+            secretStore: store
+        ).request
+
+        #expect(request.auth == .none)
+        #expect(request.headers.pairs == [Pair("Authorization", "ApiKey x")])
+        #expect(await store.values.isEmpty)
+    }
+
+    @Test("A URL's user splits before it decodes, so an encoded colon stays in the name")
+    func urlUserinfoSplitsBeforeDecoding() async throws {
+        let auth = try await basic("curl https://a%3Ab:pw@a.example")
+
+        #expect(auth.username == "a:b")
+        #expect(auth.password == "pw")
+    }
+
+    @Test("An empty user in a URL is no credential")
+    func emptyUserinfo() async throws {
+        let request = try await CurlImportTesting.request("curl https://@a.example/x")
+
+        #expect(request.urlTemplate == "https://a.example/x")
+        #expect(request.auth == .inherit)
     }
 
     @Test("A URL's user and password leave the template and become Basic Auth")

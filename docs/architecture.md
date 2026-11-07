@@ -214,13 +214,14 @@ launches no process, and reads no file the command names.
 
 `ShellWords` reads the text as a shell reads one command, with no expansion, so
 `$TOKEN` stays those characters. The command ends where a shell ends it, at an
-unquoted newline, `|`, `&`, `;`, `<` or `>`. `CurlCommand` walks the words, and
+unquoted newline, `|`, `&` or `;`, and a redirection is set aside, so the words
+after it still count. `CurlCommand` walks the words, and
 `IgnoredCurlOptions` lists the ignored flags that take a value, because that value
 would otherwise read as the URL. `CurlMapper` builds the request, and secrets save
 and roll back as a Postman import's do.
 
-- A flag Moth doesn't read, a further URL, what follows the command, and anything
-  that names a file to read, such as `--data @file`, `-H @file`, `-b file` or
+- A flag Moth doesn't read, a further URL, a redirection, what follows the command,
+  and anything that names a file to read, such as `--data @file`, `-H @file`, `-b file` or
   `-F a=<file`, go in `CurlCommand.ignored`, and the result sheet lists them. With
   nothing ignored, no sheet appears. `-F a=@file` keeps its path in a file row.
 - A query leaves the template for rows, as in a [Postman import](#postman-import).
@@ -231,7 +232,8 @@ and roll back as a Postman import's do.
   or `Bearer` header goes to the secret store. A header wins, then `-u`, then the
   URL, as in curl. A second credential header is dropped, because an auth provider
   replaces a manual one. A Basic value that won't decode, and any other scheme,
-  stays a plain header, so that secret stays in the row.
+  stays a plain header, so that secret stays in the row, and the request's auth is
+  `.none`, or inherited auth would replace the header.
 - `followsRedirects` is true only with `-L`, because curl doesn't follow redirects,
   and `verifiesTLS` is false only with `-k`. Sending doesn't read either setting
   yet.

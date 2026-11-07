@@ -151,6 +151,16 @@ struct CurlImportMappingTests {
         #expect(rows(of: request.body) == [Pair("a", "1")])
     }
 
+    @Test(
+        "Form text that rows can't send back unchanged stays raw",
+        arguments: ["name=caf%E9", "a=1 ", "a=1\n"]
+    )
+    func unsendableFormTextStaysRaw(text: String) async throws {
+        let request = try await CurlImportTesting.request("curl --data-raw '\(text)' https://a.example")
+
+        #expect(request.body == .raw(content: text, contentType: Self.formType))
+    }
+
     @Test("Pairs under another type stay raw")
     func otherTypeStaysRaw() async throws {
         let request = try await CurlImportTesting.request(

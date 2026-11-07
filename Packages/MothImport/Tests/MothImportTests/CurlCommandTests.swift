@@ -105,6 +105,14 @@ struct CurlCommandTests {
         #expect(result.ignored == ["https://b.example"])
     }
 
+    @Test("A redirection is listed, and the flags after it still count")
+    func listsRedirections() async throws {
+        let result = try await CurlImportTesting.importing("curl -L https://a.example > out.json -H 'a: b'")
+
+        #expect(result.ignored == ["> out.json"])
+        #expect(result.request.headers.pairs == [Pair("a", "b")])
+    }
+
     @Test("What follows the command is listed")
     func listsTheRest() async throws {
         #expect(try await CurlImportTesting.ignored("curl https://a.example | jq .") == ["| jq ."])

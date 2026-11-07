@@ -15,6 +15,7 @@ nonisolated enum ShellWordsError: Error, Equatable {
 nonisolated struct ShellWords: Sendable, Equatable {
 
     let words: [String]
+    let redirections: [String]
     /// What follows the command, from the operator or newline that ended it.
     let rest: String?
 
@@ -23,6 +24,7 @@ nonisolated struct ShellWords: Sendable, Equatable {
         try scanner.scan()
 
         self.words = scanner.words
+        self.redirections = scanner.redirections
         self.rest = scanner.rest
     }
 
@@ -30,13 +32,16 @@ nonisolated struct ShellWords: Sendable, Equatable {
 
 private nonisolated struct ShellScanner {
 
-    private static let commandEnders: Set<Character> = ["|", "&", ";", "<", ">"]
+    private static let commandEnders: Set<Character> = ["|", "&", ";"]
+    private static let redirectionStarters: Set<Character> = ["<", ">"]
+    private static let redirectionOperators: Set<Character> = ["<", ">", "&", "|"]
     private static let doubleQuoteEscapable: Set<Character> = ["$", "`", "\"", "\\"]
 
     private let characters: [Character]
     private var position = 0
     private var word: String?
     private(set) var words: [String] = []
+    private(set) var redirections: [String] = []
 
     var rest: String? {
         let text = String(characters[position...]).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -54,6 +59,10 @@ private nonisolated struct ShellScanner {
             }
             if Self.commandEnders.contains(character) {
                 break
+            }
+            if Self.redirectionStarters.contains(character) {
+                try consumeRedirection()
+                continue
             }
             try consume(character)
         }
@@ -93,7 +102,9 @@ private nonisolated struct ShellScanner {
     }
 
     private mutating func append(_ text: String) {
-        word = (word ?? "") + text
+        var extended = word.take() ?? ""
+        extended += text
+        word = extended
     }
 
     private mutating func finishWord() {
@@ -101,6 +112,27 @@ private nonisolated struct ShellScanner {
             words.append(word)
         }
         word = nil
+    }
+
+    /// A redirection sits anywhere in a command, so the words after it still count. The digits of `2>` aren't a word.
+    private mutating func consumeRedirection() throws {
+        if word?.allSatisfy(\.isNumber) == true {
+            word = nil
+        }
+        finishWord()
+
+        let start = position
+        while let character = current, Self.redirectionOperators.contains(character) {
+            position += 1
+        }
+        while current == " " || current == "\t" {
+            position += 1
+        }
+        while let character = current, !character.isWhitespace, !Self.commandEnders.contains(character) {
+            try consume(character)
+        }
+        word = nil
+        redirections.append(String(characters[start ..< position]))
     }
 
     private mutating func skipComment() {
@@ -152,38 +184,49 @@ private nonisolated struct ShellScanner {
         try closeQuote()
     }
 
-    /// Browsers' Copy as cURL writes this form, and Firefox escapes each UTF-16 unit, so `\u` can be half a pair.
     private mutating func consumeANSIQuoted() throws {
         position += 1
-        var units: [UInt16] = []
+        var text = ANSIText()
         while let character = current, character != "'" {
             position += 1
             if character == "\\" {
-                units += consumeANSIEscape()
+                consumeANSIEscape(into: &text)
             } else {
-                units += String(character).utf16
+                text.append(String(character))
             }
         }
-        append(String(decoding: units, as: UTF16.self))
+        append(text.finished())
         try closeQuote()
     }
 
-    private mutating func consumeANSIEscape() -> [UInt16] {
+    /// An escape with no digits stays literal, as it does in bash.
+    private mutating func consumeANSIEscape(into text: inout ANSIText) {
         guard let escaped = current else {
-            return Array("\\".utf16)
+            text.append("\\")
+            return
         }
         position += 1
 
         switch escaped {
-        case "x": return [UInt16(number(radix: 16, maxDigits: 2) ?? 0)]
-        case "u": return [UInt16(number(radix: 16, maxDigits: 4) ?? 0)]
-        case "U": return number(radix: 16, maxDigits: 8).flatMap(Unicode.Scalar.init)
-            .map { Array(String($0).utf16) } ?? []
+        case "x":
+            if let value = number(radix: 16, maxDigits: 2) {
+                text.append(byte: UInt8(truncatingIfNeeded: value))
+            } else {
+                text.append("\\x")
+            }
+        case "u":
+            if let value = number(radix: 16, maxDigits: 4) {
+                text.append(unit: UInt16(truncatingIfNeeded: value))
+            } else {
+                text.append("\\u")
+            }
+        case "U":
+            text.append(number(radix: 16, maxDigits: 8).flatMap(Unicode.Scalar.init).map(String.init) ?? "\\U")
         case "0" ... "7":
             position -= 1
-            return [UInt16(number(radix: 8, maxDigits: 3) ?? 0)]
+            text.append(byte: UInt8(truncatingIfNeeded: number(radix: 8, maxDigits: 3) ?? 0))
         default:
-            return Array((Self.ansiEscapes[escaped] ?? "\\\(escaped)").utf16)
+            text.append(Self.ansiEscapes[escaped] ?? "\\\(escaped)")
         }
     }
 
@@ -206,6 +249,39 @@ private nonisolated struct ShellScanner {
             throw ShellWordsError.unclosedQuote
         }
         position += 1
+    }
+
+}
+
+/// `\x` and octal escapes are bytes, and several can spell one UTF-8 character. Browsers' Copy as cURL writes this
+/// quoting, and Firefox escapes each UTF-16 unit, so a `\u` can be half a pair.
+private nonisolated struct ANSIText {
+
+    private var units: [UInt16] = []
+    private var bytes: [UInt8] = []
+
+    mutating func append(_ text: String) {
+        flushBytes()
+        units += text.utf16
+    }
+
+    mutating func append(unit: UInt16) {
+        flushBytes()
+        units.append(unit)
+    }
+
+    mutating func append(byte: UInt8) {
+        bytes.append(byte)
+    }
+
+    mutating func finished() -> String {
+        flushBytes()
+        return String(decoding: units, as: UTF16.self)
+    }
+
+    private mutating func flushBytes() {
+        units += String(decoding: bytes, as: UTF8.self).utf16
+        bytes = []
     }
 
 }

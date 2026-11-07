@@ -47,6 +47,7 @@ struct CurlImportSheet: View {
                 model.cancelCurlImport()
             }
             .keyboardShortcut(.cancelAction)
+            .disabled(model.isImporting)
             .accessibilityIdentifier("curlImport.cancel")
 
             Button("CURL_IMPORT_IMPORT") {

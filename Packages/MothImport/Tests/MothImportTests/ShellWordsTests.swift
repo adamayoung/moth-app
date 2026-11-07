@@ -68,7 +68,13 @@ struct ShellWordsTests {
             (#"$'\x21'"#, "!"),
             (#"$'\U0001F600'"#, "😀"),
             (#"$'😀'"#, "😀"),
-            (#"$'\q'"#, #"\q"#)
+            (#"$'\q'"#, #"\q"#),
+            (#"$'\xe2\x82\xac'"#, "€"),
+            (#"$'\342\202\254'"#, "€"),
+            (#"$'caf\xc3\xa9!'"#, "café!"),
+            (#"$'C:\users'"#, #"C:\users"#),
+            (#"$'\x'"#, #"\x"#),
+            (#"$'\U'"#, #"\U"#)
         ]
     )
     func readsANSIQuoting(text: String, expected: String) throws {
@@ -115,7 +121,6 @@ struct ShellWordsTests {
             ("curl a|jq", ["curl", "a"], "|jq"),
             ("curl a; echo b", ["curl", "a"], "; echo b"),
             ("curl a && echo b", ["curl", "a"], "&& echo b"),
-            ("curl a > out.json", ["curl", "a"], "> out.json"),
             ("curl a?b=1&c=2", ["curl", "a?b=1"], "&c=2"),
             ("curl a\ncurl b\n", ["curl", "a"], "curl b")
         ]
@@ -125,6 +130,35 @@ struct ShellWordsTests {
 
         #expect(shell.words == words)
         #expect(shell.rest == rest)
+    }
+
+    @Test(
+        "A redirection stays inside the command, and what it names isn't a word",
+        arguments: [
+            ("curl a > out.json", ["curl", "a"], ["> out.json"]),
+            ("curl a 2>/dev/null", ["curl", "a"], [">/dev/null"]),
+            ("curl 2>/dev/null a", ["curl", "a"], [">/dev/null"]),
+            ("curl a > out.json -H 'b: c'", ["curl", "a", "-H", "b: c"], ["> out.json"]),
+            ("curl a < in.txt", ["curl", "a"], ["< in.txt"]),
+            ("curl a >> 'my out.json' -s", ["curl", "a", "-s"], [">> 'my out.json'"]),
+            ("curl a2>b", ["curl", "a2"], [">b"])
+        ]
+    )
+    func readsRedirections(text: String, words: [String], redirections: [String]) throws {
+        let shell = try ShellWords(text)
+
+        #expect(shell.words == words)
+        #expect(shell.redirections == redirections)
+        #expect(shell.rest == nil)
+    }
+
+    @Test("A redirection doesn't hide the operator after it")
+    func redirectionBeforeAPipe() throws {
+        let shell = try ShellWords("curl a 2>&1 | jq .")
+
+        #expect(shell.words == ["curl", "a"])
+        #expect(shell.redirections == [">&1"])
+        #expect(shell.rest == "| jq .")
     }
 
     @Test("An operator in quotes is text", arguments: ["'a|b'", #""a;b""#, #"a\&b"#])

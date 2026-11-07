@@ -21,21 +21,37 @@ nonisolated struct CurlMapper {
 
         let method = Self.method(of: command)
         let headers = Self.headers(of: command)
-        let credentials = headers.compactMap(CurlCredential.init)
+        let headerRows = headers.filter { CurlCredential($0) == nil }
 
         return Request(
             name: "\(method.rawValue) \(Self.path(of: url.address))",
             method: method,
             urlTemplate: queryRows.isEmpty ? address : url.withoutQuery,
             queryParameters: queryRows,
-            headers: headers.filter { CurlCredential($0) == nil },
+            headers: headerRows,
             body: Self.body(of: command, text: dataText, headers: headers),
-            auth: auth(credentials.first ?? command.user.map(CurlCredential.init) ?? userinfo),
+            auth: auth(headers: headers, keptRows: headerRows, user: command.user, userinfo: userinfo),
             settings: RequestSettings(followsRedirects: command.followsRedirects, verifiesTLS: command.verifiesTLS)
         )
     }
 
-    private mutating func auth(_ credential: CurlCredential?) -> Auth {
+    /// A header wins, as in curl. A kept `Authorization` row needs `.none`, because any provider would replace it.
+    private mutating func auth(
+        headers: [KeyValue],
+        keptRows: [KeyValue],
+        user: String?,
+        userinfo: CurlCredential?
+    ) -> Auth {
+        if let credential = headers.lazy.compactMap(CurlCredential.init).first {
+            return auth(credential)
+        }
+        if keptRows.contains(named: "Authorization") {
+            return .none
+        }
+        return (user.map(CurlCredential.init) ?? userinfo).map { auth($0) } ?? .inherit
+    }
+
+    private mutating func auth(_ credential: CurlCredential) -> Auth {
         switch credential {
         case .basic(let username, let password):
             let reference = SecretReference()
@@ -45,8 +61,6 @@ nonisolated struct CurlMapper {
             let reference = SecretReference()
             pendingSecrets.append(PendingSecret(reference: reference, value: token))
             return .bearer(BearerAuth(token: reference))
-        case nil:
-            return .inherit
         }
     }
 
@@ -62,7 +76,7 @@ nonisolated struct CurlMapper {
             return (url, nil)
         }
         let address = String((match.scheme ?? "") + url[match.range.upperBound...])
-        return (address, CurlCredential(user: String(match.userinfo).removingPercentEncoding ?? String(match.userinfo)))
+        return (address, CurlCredential(userinfo: match.userinfo))
     }
 
     private static func path(of address: String) -> String {
@@ -98,9 +112,11 @@ nonisolated struct CurlMapper {
         return .raw(content: text, contentType: contentType)
     }
 
+    /// Only text that rows can send back unchanged: an escape that isn't UTF-8 can't be decoded, and a template trims.
     private static func isFormText(_ text: String) -> Bool {
-        text.split(separator: "&", omittingEmptySubsequences: false)
-            .allSatisfy { $0.wholeMatch(of: /[\w.~%\[\]\-]+=.*/) != nil }
+        text.last?.isWhitespace != true && text.split(separator: "&", omittingEmptySubsequences: false).allSatisfy {
+            $0.wholeMatch(of: /[\w.~%\[\]\-]+=.*/) != nil && $0.removingPercentEncoding != nil
+        }
     }
 
     /// Decoded as a query is, because `RequestBuilder` encodes rows. A `#` here is text, not a fragment.
@@ -119,6 +135,16 @@ private nonisolated enum CurlCredential: Equatable {
     init(user: String) {
         let parts = user.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
         self = .basic(username: String(parts[0]), password: parts.count > 1 ? String(parts[1]) : "")
+    }
+
+    /// Splits before decoding, so an encoded colon stays in the name.
+    init?(userinfo: Substring) {
+        guard !userinfo.isEmpty else {
+            return nil
+        }
+        let parts = userinfo.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            .map { $0.removingPercentEncoding ?? String($0) }
+        self = .basic(username: parts[0], password: parts.count > 1 ? parts[1] : "")
     }
 
     /// Nil for what stays a header: any other name or scheme, and a Basic value that doesn't decode to `user:password`.
