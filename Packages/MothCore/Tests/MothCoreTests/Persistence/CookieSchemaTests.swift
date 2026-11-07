@@ -35,11 +35,11 @@ struct CookieSchemaTests {
 
     @Test("SchemaV2 keeps every SchemaV1 model as it was, and adds cookies")
     func schemaV2AddsCookies() {
-        let v1 = Set(SchemaV1.models.map { "\($0)" })
-        let v2 = Set(SchemaV2.models.map { "\($0)" })
+        let earlier = Set(SchemaV1.models.map { "\($0)" })
+        let later = Set(SchemaV2.models.map { "\($0)" })
 
-        #expect(v2.subtracting(v1) == ["CookieModel"])
-        #expect(v1.isSubset(of: v2))
+        #expect(later.subtracting(earlier) == ["CookieModel"])
+        #expect(earlier.isSubset(of: later))
     }
 
     @Test("The migration plan holds SchemaV1 then SchemaV2, with no stages")

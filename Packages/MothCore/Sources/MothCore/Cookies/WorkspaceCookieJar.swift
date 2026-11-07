@@ -120,8 +120,11 @@ public actor WorkspaceCookieJar: CookieJar {
     private func store(_ records: [CookieRecord]) async {
         var saved: [CookieRecord] = []
         for record in records {
-            if await (try? secretStore.save(record.cookie.value, for: record.valueIdentifier)) != nil {
+            do {
+                try await secretStore.save(record.cookie.value, for: record.valueIdentifier)
                 saved.append(record)
+            } catch {
+                continue
             }
         }
         try? await writer.saveCookies(saved, in: workspaceID)

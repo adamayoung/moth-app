@@ -87,7 +87,7 @@ final class LoopbackServer: Sendable {
                 connection.cancel()
                 return
             }
-            record(String(decoding: data, as: UTF8.self))
+            record(String(bytes: data, encoding: .utf8) ?? "")
             guard let reply = routes[path(of: data)] ?? fallback else {
                 serve(connection, routes: routes, fallback: fallback, record: record)
                 return
