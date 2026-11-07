@@ -40,7 +40,7 @@ public nonisolated struct RequestSender: Sendable {
             let built = try await RequestBuilder().build(resolved)
             urlRequest = built.urlRequest
             notes = ResponseNote.notes(
-                unresolved: resolved.unresolved,
+                unresolved: built.unresolved,
                 notices: built.notices.map { $0.namingRow(of: outgoing.request, resolvedAs: resolved) },
                 unresolvedCredentials: resolved.unresolvedCredentials
             )
@@ -91,9 +91,26 @@ private nonisolated extension RequestBuildNotice {
             }
             let row = zip(written, fields).first { $0.1.key == key }
             return .unsupportedFormDataFile(key: row?.0.key ?? key)
+        case .pathVariableWithoutValue(let name):
+            return namingPathVariable(name, of: request, resolvedAs: resolved)
         default:
             return self
         }
+    }
+
+    private func namingPathVariable(
+        _ name: String,
+        of request: Request,
+        resolvedAs resolved: ResolvedRequest
+    ) -> RequestBuildNotice {
+        let rows = zip(request.pathParameters, resolved.pathParameters)
+
+        if let row = rows.first(where: { $0.0.isEnabled && $0.1.key == name }) {
+            return .pathVariableWithoutValue(name: row.0.key)
+        }
+
+        let isShownInTheURL = URLTemplateText(request.urlTemplate).pathVariableNames.contains(name)
+        return isShownInTheURL ? self : .unnamedPathVariableWithoutValue
     }
 
 }

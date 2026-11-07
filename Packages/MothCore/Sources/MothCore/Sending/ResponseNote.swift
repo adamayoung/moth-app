@@ -11,12 +11,20 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     case variableNotExpanded(String)
     case undefinedVariables(Int)
     case unresolvedVariables(Int)
+    case pathVariableWithoutValue(String)
+    case pathVariablesWithoutValues(Int)
     case unsendableHeader(String)
     case unsendableHeaders(Int)
+    case emptyHeaderName(String)
+    case emptyHeaderNames(Int)
+    case emptyQueryParameterName(String)
+    case emptyQueryParameterNames(Int)
     case missingCredential
     case unsupportedAuth
     case bodyNotSent(HTTPMethod)
     case unsupportedBody
+    case emptyFieldName(String)
+    case emptyFieldNames(Int)
     case unsupportedFile(String)
     case unsupportedFiles(Int)
     case formDataBoundaryReplaced
@@ -28,10 +36,14 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
     ) -> [ResponseNote] {
         let notes: [ResponseNote?] = [
             variableNote(for: unresolved),
+            pathVariableNote(for: notices),
             headerNote(for: notices),
+            emptyHeaderNameNote(for: notices),
+            emptyQueryParameterNameNote(for: notices),
             authNote(for: notices, unresolvedCredentials: unresolvedCredentials),
             notices.lazy.compactMap(\.methodThatLeftBodyOff).first.map(ResponseNote.bodyNotSent),
             notices.contains(where: \.isUnsupportedBody) ? .unsupportedBody : nil,
+            emptyFieldNameNote(for: notices),
             fileNote(for: notices),
             notices.contains(.formDataBoundaryNotDeclared) ? .formDataBoundaryReplaced : nil
         ]
@@ -49,6 +61,21 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
         return unresolved.allSatisfy { $0.reason == .undefined }
             ? .undefinedVariables(unresolved.count)
             : .unresolvedVariables(unresolved.count)
+    }
+
+    private static func pathVariableNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        let names = Set(notices.compactMap(\.namedPathVariableWithoutValue))
+        let unnamedCount = notices.count { $0 == .unnamedPathVariableWithoutValue }
+
+        guard unnamedCount == 0 else {
+            return .pathVariablesWithoutValues(names.count + unnamedCount)
+        }
+
+        return namedOrCounted(
+            names,
+            named: ResponseNote.pathVariableWithoutValue,
+            counted: ResponseNote.pathVariablesWithoutValues
+        )
     }
 
     private static func authNote(
@@ -77,8 +104,32 @@ public nonisolated enum ResponseNote: Sendable, Hashable {
         )
     }
 
+    private static func emptyHeaderNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        namedOrCounted(
+            notices.compactMap(\.headerWithEmptyName),
+            named: ResponseNote.emptyHeaderName,
+            counted: ResponseNote.emptyHeaderNames
+        )
+    }
+
+    private static func emptyQueryParameterNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        namedOrCounted(
+            notices.compactMap(\.queryParameterWithEmptyName),
+            named: ResponseNote.emptyQueryParameterName,
+            counted: ResponseNote.emptyQueryParameterNames
+        )
+    }
+
+    private static func emptyFieldNameNote(for notices: [RequestBuildNotice]) -> ResponseNote? {
+        namedOrCounted(
+            notices.compactMap(\.fieldWithEmptyName),
+            named: ResponseNote.emptyFieldName,
+            counted: ResponseNote.emptyFieldNames
+        )
+    }
+
     private static func namedOrCounted(
-        _ names: Set<String>,
+        _ names: some Collection<String>,
         named: (String) -> ResponseNote,
         counted: (Int) -> ResponseNote
     ) -> ResponseNote? {
@@ -121,6 +172,34 @@ private nonisolated extension RequestBuildNotice {
 
     var unsendableHeaderName: String? {
         if case .unsendableHeader(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var namedPathVariableWithoutValue: String? {
+        if case .pathVariableWithoutValue(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var headerWithEmptyName: String? {
+        if case .emptyHeaderName(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var queryParameterWithEmptyName: String? {
+        if case .emptyQueryParameterName(let name) = self {
+            return name
+        }
+        return nil
+    }
+
+    var fieldWithEmptyName: String? {
+        if case .emptyFieldName(let name) = self {
             return name
         }
         return nil

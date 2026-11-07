@@ -1036,6 +1036,108 @@
         }
       }
     },
+    "RESPONSE_NOTE_EMPTY_FIELD_NAME_%@" : {
+      "comment" : "Shown above a response when one form field was left out, because a variable in its name resolved to nothing. The argument is its name as the tab shows it. RESPONSE_NOTE_EMPTY_FIELD_NAMES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without field %@, because its name is empty."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_EMPTY_FIELD_NAMES_%lld" : {
+      "comment" : "Shown above a response when form fields were left out, because variables in their names resolved to nothing. The argument is how many. RESPONSE_NOTE_EMPTY_FIELD_NAME_%@ covers one, by name.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld field, because its name is empty."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld fields, because their names are empty."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_EMPTY_HEADER_NAME_%@" : {
+      "comment" : "Shown above a response when one header was left out, because a variable in its name resolved to nothing. The argument is its name as the tab shows it. RESPONSE_NOTE_EMPTY_HEADER_NAMES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without header %@, because its name is empty."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_EMPTY_HEADER_NAMES_%lld" : {
+      "comment" : "Shown above a response when headers were left out, because variables in their names resolved to nothing. The argument is how many. RESPONSE_NOTE_EMPTY_HEADER_NAME_%@ covers one, by name.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld header, because its name is empty."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld headers, because their names are empty."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAME_%@" : {
+      "comment" : "Shown above a response when one query parameter was left out, because a variable in its name resolved to nothing. The argument is its name as the tab shows it. RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAMES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without query parameter %@, because its name is empty."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAMES_%lld" : {
+      "comment" : "Shown above a response when query parameters were left out, because variables in their names resolved to nothing. The argument is how many. RESPONSE_NOTE_EMPTY_QUERY_PARAMETER_NAME_%@ covers one, by name.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld query parameter, because its name is empty."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld query parameters, because their names are empty."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "RESPONSE_NOTE_FORM_DATA_BOUNDARY_REPLACED" : {
       "comment" : "Shown above a response when a manual Content-Type header stood in for the one that names a form-data body's boundary.",
       "localizations" : {
@@ -1054,6 +1156,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sent without auth, because its credential has no value."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_PATH_VARIABLES_WITHOUT_VALUES_%lld" : {
+      "comment" : "Shown above a response when path variables had no value, so the URL went out with them as written. The argument is how many. RESPONSE_NOTE_PATH_VARIABLE_WITHOUT_VALUE_%@ covers one, by name.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld path variable has no value and was sent as written."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld path variables have no value and were sent as written."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_PATH_VARIABLE_WITHOUT_VALUE_%@" : {
+      "comment" : "Shown above a response when one path variable had no value, so the URL went out with it as written. The argument is its name without the colon, as the tab shows it. RESPONSE_NOTE_PATH_VARIABLES_WITHOUT_VALUES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ":%@ has no value, so it was sent as written."
           }
         }
       }

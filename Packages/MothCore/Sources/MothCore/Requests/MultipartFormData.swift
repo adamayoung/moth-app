@@ -12,16 +12,17 @@ nonisolated struct MultipartFormData {
 
     var encoded: EncodedBody {
         var body = ""
-        var notices: [RequestBuildNotice] = []
-
-        let sentFields = fields.filter { $0.isEnabled && !$0.key.isEmpty }
+        let sentFields = fields.filter(\.isSent)
+        var omissions = BuildOmissions()
+        omissions.leftOut = Set(fields.filter { !$0.isSent }.map { .row($0.id) })
 
         for field in sentFields {
             switch field.value {
             case .text(let text):
                 body += part(for: field, text: text)
             case .file:
-                notices.append(.unsupportedFormDataFile(key: field.key))
+                omissions.notices.append(.unsupportedFormDataFile(key: field.key))
+                omissions.leftOut.insert(.row(field.id))
             }
         }
 
@@ -30,7 +31,7 @@ nonisolated struct MultipartFormData {
         return EncodedBody(
             data: Data(body.utf8),
             contentType: "multipart/form-data; boundary=\(boundary)",
-            notices: notices,
+            omissions: omissions,
             needsItsContentType: true,
             isFormWithNoRows: sentFields.isEmpty
         )

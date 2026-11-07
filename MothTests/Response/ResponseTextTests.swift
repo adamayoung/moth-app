@@ -99,6 +99,42 @@ struct ResponseTextTests {
     }
 
     @Test(
+        "A note on an empty name says which row and why",
+        arguments: [
+            (ResponseNote.emptyHeaderName("{{x}}"), "Sent without header {{x}}, because its name is empty."),
+            (ResponseNote.emptyHeaderNames(2), "Sent without 2 headers, because their names are empty."),
+            (ResponseNote.emptyHeaderNames(1), "Sent without 1 header, because its name is empty."),
+            (ResponseNote.emptyFieldName("{{x}}"), "Sent without field {{x}}, because its name is empty."),
+            (ResponseNote.emptyFieldNames(2), "Sent without 2 fields, because their names are empty."),
+            (ResponseNote.emptyFieldNames(1), "Sent without 1 field, because its name is empty."),
+            (
+                ResponseNote.emptyQueryParameterName("{{x}}"),
+                "Sent without query parameter {{x}}, because its name is empty."
+            ),
+            (
+                ResponseNote.emptyQueryParameterNames(2),
+                "Sent without 2 query parameters, because their names are empty."
+            ),
+            (ResponseNote.emptyQueryParameterNames(1), "Sent without 1 query parameter, because its name is empty.")
+        ]
+    )
+    func emptyNameNoteMessage(note: ResponseNote, message: String) {
+        #expect(note.message == message)
+    }
+
+    @Test(
+        "A note on a path variable says it went out as written",
+        arguments: [
+            (ResponseNote.pathVariableWithoutValue("id"), ":id has no value, so it was sent as written."),
+            (ResponseNote.pathVariablesWithoutValues(2), "2 path variables have no value and were sent as written."),
+            (ResponseNote.pathVariablesWithoutValues(1), "1 path variable has no value and was sent as written.")
+        ]
+    )
+    func pathVariableNoteMessage(note: ResponseNote, message: String) {
+        #expect(note.message == message)
+    }
+
+    @Test(
         "Each timing phase has its title",
         arguments: [
             (TimingPhase.dns, "DNS"),

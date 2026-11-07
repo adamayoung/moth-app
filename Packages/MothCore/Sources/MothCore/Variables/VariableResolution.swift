@@ -3,6 +3,8 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import Foundation
+
 nonisolated struct VariableResolution {
 
     private static let maximumDepth = 10
@@ -22,7 +24,11 @@ nonisolated struct VariableResolution {
 
     private var remainingExpansionBudget = Self.expansionBudget
 
+    var part = RequestPart.address
+
     private(set) var unresolved: [UnresolvedVariable] = []
+    private(set) var unresolvedParts: [String: Set<RequestPart>] = [:]
+    private(set) var emptiedKeys: [UUID: String] = [:]
     private(set) var credentials: [SecretReference: String] = [:]
     private(set) var unresolvedCredentials: [SecretReference] = []
 
@@ -41,6 +47,17 @@ nonisolated struct VariableResolution {
         }
 
         return expanded
+    }
+
+    mutating func resolve(key written: String, ofRow id: UUID) async throws -> String {
+        part = .row(id)
+        let key = try await resolve(written)
+
+        if key.isEmpty, !written.isEmpty {
+            emptiedKeys[id] = written
+        }
+
+        return key
     }
 
     mutating func resolveCredentials(_ references: SecretReference?...) async throws {
@@ -138,6 +155,8 @@ nonisolated struct VariableResolution {
     }
 
     private mutating func report(_ name: String, _ reason: UnresolvedReason) {
+        unresolvedParts[name, default: []].insert(part)
+
         guard !unresolved.contains(where: { $0.name == name }) else {
             return
         }

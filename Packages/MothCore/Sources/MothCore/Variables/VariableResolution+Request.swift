@@ -9,7 +9,7 @@ nonisolated extension VariableResolution {
         var resolved = rows
 
         for index in resolved.indices where resolved[index].isEnabled {
-            resolved[index].key = try await resolve(resolved[index].key)
+            resolved[index].key = try await resolve(key: resolved[index].key, ofRow: resolved[index].id)
             resolved[index].value = try await resolve(resolved[index].value)
         }
 
@@ -17,6 +17,8 @@ nonisolated extension VariableResolution {
     }
 
     mutating func resolve(_ body: RequestBody) async throws -> RequestBody {
+        part = .body
+
         switch body {
         case .none, .binary:
             return body
@@ -26,6 +28,7 @@ nonisolated extension VariableResolution {
             return try await .urlEncoded(resolve(rows))
         case .raw(let content, let contentType):
             let content = try await resolve(content)
+            part = .bodyContentType
             return try await .raw(content: content, contentType: resolve(contentType))
         case .graphQL(let query, let variables):
             let query = try await resolve(query)
@@ -35,6 +38,8 @@ nonisolated extension VariableResolution {
 
     /// Stays an ``Auth``. `.inherit` passes through with no credentials, so a caller replaces it before resolving.
     mutating func resolve(_ auth: Auth) async throws -> Auth {
+        part = .auth
+
         switch auth {
         case .inherit, .none:
             return auth
@@ -75,7 +80,7 @@ nonisolated extension VariableResolution {
 
     private mutating func resolve(_ field: FormDataField) async throws -> FormDataField {
         var resolved = field
-        resolved.key = try await resolve(field.key)
+        resolved.key = try await resolve(key: field.key, ofRow: field.id)
 
         if let contentType = field.contentType {
             resolved.contentType = try await resolve(contentType)

@@ -22,38 +22,74 @@ public nonisolated struct RequestBuilder: Sendable {
             throw RequestBuildError.invalidMethod
         }
 
-        var urlRequest = try URLRequest(url: request.sendableURL())
+        let address = try request.sendableAddress()
+        var urlRequest = URLRequest(url: address.url)
         urlRequest.httpMethod = request.method.rawValue
         urlRequest.timeoutInterval = request.settings.timeout / .seconds(1)
 
-        var notices = Self.applyHeaders(request.headers, to: &urlRequest)
-        notices += applyBody(of: request, to: &urlRequest)
+        var omissions = address.omissions
+        omissions.merge(Self.applyHeaders(request.headers, to: &urlRequest))
+        omissions.merge(applyBody(of: request, to: &urlRequest))
+        omissions.notices += emptiedKeyNotices(of: request, bodyWasLeftOff: omissions.leftOut.contains(.body))
 
-        try await request.authProvider?.apply(to: &urlRequest)
+        let authProvider = request.authProvider
+        try await authProvider?.apply(to: &urlRequest)
+
+        omissions.leftOut.formUnion(
+            authProvider == nil ? [.auth] : Self.manualAuthorizationRows(of: request)
+        )
 
         if let authNotice = request.authNotice {
-            notices.append(authNotice)
+            omissions.notices.append(authNotice)
         }
 
-        return BuiltRequest(urlRequest: urlRequest, notices: notices)
+        return BuiltRequest(
+            urlRequest: urlRequest,
+            notices: omissions.notices,
+            unresolved: request.unresolved(outside: omissions.leftOut)
+        )
+    }
+
+    private static func manualAuthorizationRows(of request: ResolvedRequest) -> Set<RequestPart> {
+        Set(
+            request.headers
+                .filter { $0.key.caseInsensitiveCompare("Authorization") == .orderedSame }
+                .map { .row($0.id) }
+        )
+    }
+
+    private func emptiedKeyNotices(of request: ResolvedRequest, bodyWasLeftOff: Bool) -> [RequestBuildNotice] {
+        let headers = request.headers.compactMap { request.emptiedKeys[$0.id] }
+        let queryParameters = request.queryParameters.compactMap { request.emptiedKeys[$0.id] }
+        let fields = bodyWasLeftOff ? [] : request.body.rowIDs.compactMap { request.emptiedKeys[$0] }
+
+        return headers.map { .emptyHeaderName(name: $0) }
+            + queryParameters.map { .emptyQueryParameterName(name: $0) }
+            + fields.map { .emptyFieldName(name: $0) }
     }
 
     private static func applyHeaders(
         _ headers: [KeyValue],
         to urlRequest: inout URLRequest
-    ) -> [RequestBuildNotice] {
-        var notices: [RequestBuildNotice] = []
+    ) -> BuildOmissions {
+        var omissions = BuildOmissions()
 
-        for header in headers where header.isSent {
+        for header in headers {
+            guard header.isSent else {
+                omissions.leftOut.insert(.row(header.id))
+                continue
+            }
+
             guard header.key.isHTTPToken, header.value.isSendableHeaderValue else {
-                notices.append(.unsendableHeader(name: header.key))
+                omissions.notices.append(.unsendableHeader(name: header.key))
+                omissions.leftOut.insert(.row(header.id))
                 continue
             }
 
             add(header, to: &urlRequest)
         }
 
-        return notices
+        return omissions
     }
 
     /// `addValue` joins with a comma, which RFC 6265 reads as part of the first cookie's value.
@@ -67,26 +103,35 @@ public nonisolated struct RequestBuilder: Sendable {
         }
     }
 
-    private func applyBody(of request: ResolvedRequest, to urlRequest: inout URLRequest) -> [RequestBuildNotice] {
+    private func applyBody(of request: ResolvedRequest, to urlRequest: inout URLRequest) -> BuildOmissions {
         let body = request.body.encoded(multipartBoundary: multipartBoundary)
+        var omissions = body.omissions
 
         if body.data?.isEmpty == false, Self.methodsWithoutBodies.contains(request.method.rawValue.uppercased()) {
-            return body.isFormWithNoRows ? body.notices : body.notices + [.bodyNotSent(method: request.method)]
+            if !body.isFormWithNoRows {
+                omissions.notices.append(.bodyNotSent(method: request.method))
+                omissions.leftOut = request.body.parts
+            }
+            return omissions
         }
 
         urlRequest.httpBody = body.data
 
         guard let contentType = body.contentType else {
-            return body.notices
+            return omissions
         }
 
         guard urlRequest.value(forHTTPHeaderField: "Content-Type") == nil else {
-            return body.needsItsContentType ? body.notices + [.formDataBoundaryNotDeclared] : body.notices
+            if body.needsItsContentType {
+                omissions.notices.append(.formDataBoundaryNotDeclared)
+            }
+            omissions.leftOut.insert(.bodyContentType)
+            return omissions
         }
 
         urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
 
-        return body.notices
+        return omissions
     }
 
 }

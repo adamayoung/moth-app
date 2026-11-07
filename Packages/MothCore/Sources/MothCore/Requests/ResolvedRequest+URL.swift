@@ -5,12 +5,19 @@
 
 import Foundation
 
+nonisolated struct SendableAddress {
+
+    let url: URL
+    let omissions: BuildOmissions
+
+}
+
 nonisolated extension ResolvedRequest {
 
     private static let sendableSchemes: Set<String> = ["http", "https"]
     private static let sendablePorts = 1 ... 65535
 
-    func sendableURL() throws -> URL {
+    func sendableAddress() throws -> SendableAddress {
         let address = url.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !address.isEmpty, var components = URLComponents(string: Self.withScheme(address)),
@@ -22,14 +29,15 @@ nonisolated extension ResolvedRequest {
             throw RequestBuildError.invalidURL
         }
 
-        components.percentEncodedPath = substitutingPathVariables(in: components.percentEncodedPath)
+        var omissions = fillPathVariables(of: &components)
+        omissions.leftOut.formUnion(queryParameters.filter { !$0.isSent }.map { .row($0.id) })
         components.percentEncodedQuery = appendingQueryParameters(to: components.percentEncodedQuery)
 
         guard let url = components.url else {
             throw RequestBuildError.invalidURL
         }
 
-        return url
+        return SendableAddress(url: url, omissions: omissions)
     }
 
     /// Only digits make `name:` a port. `URLComponents` reads the `localhost` of `localhost:8080` as a scheme,
@@ -38,21 +46,35 @@ nonisolated extension ResolvedRequest {
         address.prefixMatch(of: /[A-Za-z][A-Za-z0-9+.\-]*:(?!\d)/) == nil ? "http://\(address)" : address
     }
 
-    private func substitutingPathVariables(in path: String) -> String {
-        path.split(separator: "/", omittingEmptySubsequences: false)
-            .map(substitutingPathVariable)
+    private func fillPathVariables(of components: inout URLComponents) -> BuildOmissions {
+        var unusedRows = pathParameters
+        var namesWithoutValues: [String] = []
+
+        components.percentEncodedPath = components.percentEncodedPath
+            .split(separator: "/", omittingEmptySubsequences: false)
+            .map { segment in
+                guard let name = segment.pathVariableName else {
+                    return String(segment)
+                }
+
+                guard
+                    let row = pathParameters.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
+                else {
+                    if !namesWithoutValues.contains(name) {
+                        namesWithoutValues.append(name)
+                    }
+                    return String(segment)
+                }
+
+                unusedRows.removeAll { $0.id == row.id }
+                return row.value.percentEncoded
+            }
             .joined(separator: "/")
-    }
 
-    private func substitutingPathVariable(in segment: Substring) -> String {
-        guard
-            let name = segment.pathVariableName,
-            let variable = pathParameters.first(where: { $0.isSent && $0.key == name && !$0.value.isEmpty })
-        else {
-            return String(segment)
-        }
-
-        return variable.value.percentEncoded
+        return BuildOmissions(
+            notices: namesWithoutValues.map { .pathVariableWithoutValue(name: $0) },
+            leftOut: Set(unusedRows.map { .row($0.id) })
+        )
     }
 
     private func appendingQueryParameters(to query: String?) -> String? {
