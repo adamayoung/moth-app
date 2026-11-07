@@ -57,11 +57,10 @@ public struct CookieList: Sendable, Hashable {
         return change
     }
 
-    /// Longer paths first, then older cookies, as RFC 6265 section 5.4 recommends.
     public func sending(to url: URL, at now: Date) -> [Cookie] {
         cookies
             .filter { $0.matches(url, at: now) }
-            .sorted { $0.path.count == $1.path.count ? $0.createdAt < $1.createdAt : $0.path.count > $1.path.count }
+            .sorted { $0.sendsBefore($1) }
     }
 
     @discardableResult

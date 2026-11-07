@@ -52,7 +52,7 @@ struct CookieParsingTests {
         let expires = try #require(received("a=1; Expires=Wed, 21 Oct 2015 07:28:00 GMT", from: "http://example.com/")
             .first)
 
-        #expect(try now < #require(maxAge.expiresAt))
+        #expect(try #require(maxAge.expiresAt).timeIntervalSince(now) > 0)
         #expect(expires.expiresAt == Date(timeIntervalSince1970: 1_445_412_480))
     }
 
