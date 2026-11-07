@@ -4,6 +4,7 @@
 //  Copyright © 2026 Adam Young.
 
 import Foundation
+import HTTPKit
 @testable import Moth
 import MothCore
 import SwiftData
@@ -74,6 +75,22 @@ struct SeedDataTests {
         ).dependencies
 
         #expect(dependencies.activeEnvironment.id == SeedData.workspace.activeEnvironmentID)
+    }
+
+    @Test("A seeded launch's jar holds the cookies the Cookies sheet tests expect, on two domains")
+    func seededLaunchHoldsCookies() async throws {
+        let dependencies = try DependencyProvider(
+            launchMode: .uiTesting,
+            infoDictionary: [:],
+            signature: signature,
+            openLiveDataModel: { _ in try .inMemory() }
+        ).dependencies
+
+        let cookies = await dependencies.cookieJars.jar(for: SeedData.workspace.id).all
+
+        #expect(cookies.map(\.name) == ["session", "csrf", "theme"])
+        #expect(Set(cookies.map(\.domain)) == ["api.example.com", "example.org"])
+        #expect(cookies.map(\.path) == ["/", "/v1", "/"])
     }
 
     @Test("The test host's store is empty")

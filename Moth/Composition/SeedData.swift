@@ -4,6 +4,7 @@
 //  Copyright © 2026 Adam Young.
 
 import Foundation
+import HTTPKit
 import MothCore
 
 /// Fixed identifiers and names, so a UI test can rely on them. `MothUITests` mirrors what it uses by hand.
@@ -108,6 +109,39 @@ enum SeedData {
             activeEnvironmentID: environment.id
         )
     }()
+
+    /// Two domains, one holding two cookies, so the Cookies sheet can delete one cookie and one domain apart.
+    static let cookies = [
+        Cookie(
+            name: "session",
+            value: "seeded-session-value",
+            domain: "api.example.com",
+            isHostOnly: true,
+            path: "/",
+            expiresAt: nil,
+            isSecure: true,
+            isHTTPOnly: true,
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000)
+        ),
+        Cookie(
+            name: "csrf",
+            value: "seeded-csrf-value",
+            domain: "api.example.com",
+            isHostOnly: true,
+            path: "/v1",
+            expiresAt: Date(timeIntervalSince1970: 2_051_222_400),
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000)
+        ),
+        Cookie(
+            name: "theme",
+            value: "seeded-theme-value",
+            domain: "example.org",
+            isHostOnly: false,
+            path: "/",
+            expiresAt: nil,
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+    ]
 
     private static let listUsers = Request(
         id: identifier(3),

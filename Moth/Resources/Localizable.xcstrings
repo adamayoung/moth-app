@@ -419,6 +419,149 @@
         }
       }
     },
+    "COOKIES_CANCEL" : {
+      "comment" : "Button that closes the Delete All alert without deleting anything.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "COOKIES_DELETE" : {
+      "comment" : "Button in the Cookies sheet that deletes the selected cookie.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "COOKIES_DELETE_ALL" : {
+      "comment" : "Button in the Cookies sheet that asks before deleting every cookie.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete All…"
+          }
+        }
+      }
+    },
+    "COOKIES_DELETE_ALL_CONFIRM" : {
+      "comment" : "Destructive button that deletes every cookie.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete All"
+          }
+        }
+      }
+    },
+    "COOKIES_DELETE_ALL_MESSAGE" : {
+      "comment" : "Message of the alert that confirms deleting every cookie.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can’t undo this action."
+          }
+        }
+      }
+    },
+    "COOKIES_DELETE_ALL_TITLE" : {
+      "comment" : "Title of the alert that confirms deleting every cookie.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all cookies?"
+          }
+        }
+      }
+    },
+    "COOKIES_DELETE_DOMAIN_%@" : {
+      "comment" : "VoiceOver label and tooltip of a domain's delete button in the Cookies sheet. The argument is the domain.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Cookies for %@"
+          }
+        }
+      }
+    },
+    "COOKIES_DONE" : {
+      "comment" : "Button that closes the Cookies sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "COOKIES_EMPTY" : {
+      "comment" : "Shown in the Cookies sheet when no cookies are stored.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Cookies"
+          }
+        }
+      }
+    },
+    "COOKIES_EXPIRES_SESSION" : {
+      "comment" : "Expiry shown for a cookie with no expiry date, which lasts until it is deleted or replaced.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session"
+          }
+        }
+      }
+    },
+    "COOKIES_NO_SELECTION" : {
+      "comment" : "Shown in the Cookies sheet where the selected cookie's value goes, when nothing is selected.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a cookie to see its value."
+          }
+        }
+      }
+    },
+    "COOKIES_TITLE" : {
+      "comment" : "Title of the Cookies sheet, which lists the cookies Moth keeps for this workspace.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies"
+          }
+        }
+      }
+    },
+    "COOKIES_VALUE" : {
+      "comment" : "Label above the selected cookie's value in the Cookies sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Value"
+          }
+        }
+      }
+    },
     "CURL_IMPORT_CANCEL" : {
       "comment" : "The button that closes the Import cURL sheet without importing.",
       "localizations" : {
@@ -789,6 +932,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Import cURL…"
+          }
+        }
+      }
+    },
+    "MENU_MANAGE_COOKIES" : {
+      "comment" : "File menu command that opens the Cookies sheet.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Cookies…"
           }
         }
       }

@@ -14,6 +14,7 @@ struct MacScene: Scene {
             MainWindowView(
                 dataModel: dependencies.dataModel,
                 secretStore: dependencies.secretStore,
+                cookieJars: dependencies.cookieJars,
                 transport: dependencies.transport,
                 activeEnvironment: dependencies.activeEnvironment,
                 tabStore: dependencies.requestTabStore,
@@ -29,6 +30,7 @@ struct MacScene: Scene {
             SidebarCommands()
             RequestTabCommands()
             ImportCommands()
+            CookieCommands()
             RequestCommands()
         }
     }

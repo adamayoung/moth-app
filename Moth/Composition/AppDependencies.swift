@@ -12,6 +12,8 @@ protocol AppDependencies: AnyObject {
 
     var secretStore: any SecretStore { get }
 
+    var cookieJars: CookieJars { get }
+
     var dataModel: DataModel { get }
 
     var requestTabStore: RequestTabStore { get }

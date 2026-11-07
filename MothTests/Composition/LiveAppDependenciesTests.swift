@@ -194,6 +194,69 @@ struct LiveAppDependenciesTests {
         #expect(workspaces.count == 1)
     }
 
+    @Test("An ad hoc build keeps cookie values in memory, so its jar works until quit")
+    func adHocBuildKeepsCookiesInMemory() throws {
+        let dependencies = try makeDependencies(infoDictionary: [:], signature: adHoc)
+
+        #expect(dependencies.cookieSecretStore is InMemorySecretStore)
+    }
+
+    @Test("A team-signed build with no container keeps cookie values on the login keychain, under their own service")
+    func teamSignedBuildKeepsCookiesLocal() throws {
+        let dependencies = try makeDependencies(infoDictionary: [:], signature: teamSigned)
+
+        let store = try #require(dependencies.cookieSecretStore as? KeychainSecretStore)
+
+        #expect(store.mode == .localOnly)
+        #expect(store.service == "uk.co.adam-young.Moth.cookies.ABCDE12345")
+    }
+
+    @Test("A build that syncs secrets still keeps cookie values on this Mac only")
+    func syncedBuildKeepsCookiesOnThisMac() throws {
+        let dependencies = try makeDependencies(
+            infoDictionary: ["MothICloudContainer": "iCloud.moth"],
+            signature: teamSignedForICloud
+        )
+
+        let store = try #require(dependencies.cookieSecretStore as? KeychainSecretStore)
+
+        #expect(store.mode == .deviceOnly(accessGroup: "ABCDE12345.moth"))
+        #expect(store.service == "uk.co.adam-young.Moth.cookies.ABCDE12345")
+    }
+
+    @Test("A live launch removes the cookies of a workspace the merge deleted")
+    func liveLaunchRemovesAMergedWorkspacesCookies() async throws {
+        let dataModel = try DataModel.inMemory()
+        let context = ModelContext(dataModel.container)
+        let workspaces = [WorkspaceModel(), WorkspaceModel()]
+        workspaces.forEach(context.insert)
+        try context.save()
+        for workspace in workspaces {
+            try await dataModel.writer.saveCookies([CookieRecord(cookie: Self.cookie)], in: workspace.id)
+        }
+
+        let dependencies = try LiveAppDependencies(
+            infoDictionary: [:],
+            signature: adHoc,
+            openDataModel: { _ in dataModel }
+        )
+        await dependencies.launchReconcile.value
+
+        let survivor = try #require(workspaces.map(\.id).min())
+        let rows = try ModelContext(dataModel.container).fetch(FetchDescriptor<CookieModel>())
+        #expect(rows.map(\.workspaceID) == [survivor])
+    }
+
+    private static let cookie = Cookie(
+        name: "sid",
+        value: "",
+        domain: "example.com",
+        isHostOnly: true,
+        path: "/",
+        expiresAt: nil,
+        createdAt: .distantPast
+    )
+
     private func containerOpened(configured: String, signature: AppSignature) throws -> String? {
         var opened: [String?] = []
 
