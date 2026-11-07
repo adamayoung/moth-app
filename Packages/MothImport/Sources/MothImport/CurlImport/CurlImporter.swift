@@ -18,10 +18,6 @@ public nonisolated struct CurlImportResult: Sendable, Hashable {
     public let ignored: [String]
     public let secrets: [SecretReference]
 
-    private static var listLocale: Locale {
-        Locale(identifier: Bundle.module.preferredLocalizations.first ?? "en-GB")
-    }
-
     public var importedSummary: String {
         String(localized: "CURL_IMPORT_SUMMARY_\(request.name)", bundle: .module)
     }
@@ -30,8 +26,7 @@ public nonisolated struct CurlImportResult: Sendable, Hashable {
         guard !ignored.isEmpty else {
             return nil
         }
-        let list = ignored.formatted(.list(type: .and).locale(Self.listLocale))
-        return String(localized: "CURL_IGNORED_\(list)", bundle: .module)
+        return String(localized: "CURL_IGNORED_\(ignored.catalogList)", bundle: .module)
     }
 
 }
@@ -54,33 +49,14 @@ public nonisolated struct CurlImporter: Sendable {
         let request = mapper.request(command)
         let secrets = mapper.pendingSecrets.map(\.reference)
 
-        try await save(mapper.pendingSecrets)
+        try await secretStore.save(mapper.pendingSecrets)
         do {
             try await store(request)
         } catch {
-            await remove(secrets)
+            await secretStore.removeValues(of: secrets)
             throw error
         }
         return CurlImportResult(request: request, ignored: command.ignored, secrets: secrets)
-    }
-
-    private func save(_ secrets: [PendingSecret]) async throws {
-        var saved: [SecretReference] = []
-        do {
-            for secret in secrets {
-                try await secretStore.save(secret.value, for: secret.reference.identifier)
-                saved.append(secret.reference)
-            }
-        } catch {
-            await remove(saved)
-            throw error
-        }
-    }
-
-    private func remove(_ secrets: [SecretReference]) async {
-        for reference in secrets {
-            try? await secretStore.removeValue(for: reference.identifier)
-        }
     }
 
 }

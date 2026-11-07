@@ -27,18 +27,12 @@ public nonisolated extension PostmanImportResult {
 
 nonisolated extension PostmanSkippedCounts {
 
-    /// The list follows the catalog's language, not the Mac's region, or one sentence could mix two styles of English.
-    private static var listLocale: Locale {
-        Locale(identifier: Bundle.module.preferredLocalizations.first ?? "en-GB")
-    }
-
     var summary: String? {
         let items = countedKinds + skippedAuth
         guard !items.isEmpty else {
             return nil
         }
-        let list = items.formatted(.list(type: .and).locale(Self.listLocale))
-        return String(localized: "IMPORT_SKIPPED_\(list)", bundle: .module)
+        return String(localized: "IMPORT_SKIPPED_\(items.catalogList)", bundle: .module)
     }
 
     private var countedKinds: [String] {

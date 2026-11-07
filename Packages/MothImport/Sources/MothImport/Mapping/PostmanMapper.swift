@@ -134,13 +134,6 @@ nonisolated struct PostmanMapper {
 
 }
 
-nonisolated struct PendingSecret: Sendable {
-
-    let reference: SecretReference
-    let value: String
-
-}
-
 /// Postman sends a URL's rows as typed, and `RequestBuilder` encodes them, so a typed `%20` would go out as `%2520`.
 private nonisolated extension KeyValue {
 

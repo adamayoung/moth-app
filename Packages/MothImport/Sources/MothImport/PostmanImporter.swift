@@ -33,7 +33,7 @@ public nonisolated struct PostmanImporter: Sendable {
             .environment(mapper.environment(environment, avoiding: existingEnvironmentNames))
         }
 
-        try await save(mapper.pendingSecrets)
+        try await secretStore.save(mapper.pendingSecrets)
 
         return PostmanImportResult(
             content: content,
@@ -58,29 +58,10 @@ public nonisolated struct PostmanImporter: Sendable {
         do {
             try await store(result.content)
         } catch {
-            await remove(result.secrets)
+            await secretStore.removeValues(of: result.secrets)
             throw error
         }
         return result
-    }
-
-    private func save(_ secrets: [PendingSecret]) async throws {
-        var saved: [SecretReference] = []
-        do {
-            for secret in secrets {
-                try await secretStore.save(secret.value, for: secret.reference.identifier)
-                saved.append(secret.reference)
-            }
-        } catch {
-            await remove(saved)
-            throw error
-        }
-    }
-
-    private func remove(_ secrets: [SecretReference]) async {
-        for reference in secrets {
-            try? await secretStore.removeValue(for: reference.identifier)
-        }
     }
 
 }
