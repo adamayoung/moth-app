@@ -24,15 +24,23 @@ final class RequestTabsModel {
     let drafts: RequestDrafts
     let responses: RequestResponses
     let code: RequestCodeModel
+    let accessTokens: AccessTokens
     var pendingClose: RequestTab?
     /// A count the editor watches, because focus is the view's to move and the menu has no view in reach.
     private(set) var urlFocusRequests = 0
 
-    init(store: RequestTabStore, drafts: RequestDrafts, responses: RequestResponses, code: RequestCodeModel) {
+    init(
+        store: RequestTabStore,
+        drafts: RequestDrafts,
+        responses: RequestResponses,
+        code: RequestCodeModel,
+        accessTokens: AccessTokens = .preview
+    ) {
         self.store = store
         self.drafts = drafts
         self.responses = responses
         self.code = code
+        self.accessTokens = accessTokens
         self.tabs = store.load()
     }
 
@@ -115,9 +123,28 @@ final class RequestTabsModel {
         return draft.hasURL ? .send(id) : .unavailable
     }
 
+    /// Reads the tokens on show again once the send ends, because a send can store a new one.
     @discardableResult
     func send(_ id: Request.ID) -> Task<Void, Never>? {
-        drafts.draft(for: id).map { responses.send(id, draft: $0, tree: tree) }
+        guard let draft = drafts.draft(for: id) else {
+            return nil
+        }
+        let sending = responses.send(id, draft: draft, tree: tree)
+        return Task { [accessTokens] in
+            await sending.value
+            await accessTokens.reloadLoaded()
+        }
+    }
+
+    /// The source is read when the button is pressed, so it carries what the editor holds then.
+    func accessTokenControls(for id: Request.ID) -> AccessTokenControls {
+        guard let draft = drafts.draft(for: id) else {
+            return AccessTokenControls()
+        }
+        let tree = tree
+        return accessTokens.controls(for: draft.auth.oauth2.accessTokenReference) { [drafts] in
+            .request(id, drafts.draft(for: id) ?? draft, tree)
+        }
     }
 
     func cancelSend(_ id: Request.ID) {

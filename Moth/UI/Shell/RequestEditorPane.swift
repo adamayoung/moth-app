@@ -15,6 +15,7 @@ struct RequestEditorPane: View {
     var send: (Request.ID) -> Void = { _ in }
     var cancelSend: (Request.ID) -> Void = { _ in }
     var urlFocusRequests = 0
+    var accessToken: (Request.ID) -> AccessTokenControls = { _ in AccessTokenControls() }
 
     @State private var section = RequestEditorSection.params
 
@@ -60,7 +61,8 @@ struct RequestEditorPane: View {
                 isSending: isSending,
                 send: { send(tab.id) },
                 cancelSend: { cancelSend(tab.id) },
-                urlFocusRequests: urlFocusRequests
+                urlFocusRequests: urlFocusRequests,
+                accessToken: accessToken(tab.id)
             )
             .id(tab.id)
         }

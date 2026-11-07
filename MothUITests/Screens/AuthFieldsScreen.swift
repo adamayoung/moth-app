@@ -79,6 +79,55 @@ struct AuthFieldsScreen {
         root.staticTexts["auth.notSupported"]
     }
 
+    var grantTypePicker: XCUIElement {
+        root.popUpButtons["auth.grantType"]
+    }
+
+    var tokenURLField: XCUIElement {
+        root.textFields["auth.tokenURL"]
+    }
+
+    var clientIDField: XCUIElement {
+        root.textFields["auth.clientID"]
+    }
+
+    var secureClientSecretField: XCUIElement {
+        root.secureTextFields["auth.clientSecret"]
+    }
+
+    var scopeField: XCUIElement {
+        root.textFields["auth.scope"]
+    }
+
+    var tokenStateText: XCUIElement {
+        root.staticTexts["auth.tokenState"]
+    }
+
+    var getNewTokenButton: XCUIElement {
+        root.buttons["auth.getNewToken"]
+    }
+
+    var clearTokenButton: XCUIElement {
+        root.buttons["auth.clearToken"]
+    }
+
+    var tokenFailureText: XCUIElement {
+        root.staticTexts["auth.tokenFailure"]
+    }
+
+    var tokenFailureReasonText: XCUIElement {
+        root.staticTexts["auth.tokenFailureReason"]
+    }
+
+    /// A predicate, because "Expires in 59 minutes" depends on how long the run took.
+    func waitForTokenState(beginningWith prefix: String) -> Bool {
+        let matches = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value BEGINSWITH %@", prefix),
+            object: tokenStateText
+        )
+        return XCTWaiter.wait(for: [matches], timeout: 10) == .completed
+    }
+
     func openKinds() {
         kindPicker.click()
     }

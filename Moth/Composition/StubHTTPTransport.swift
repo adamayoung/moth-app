@@ -25,8 +25,19 @@ final nonisolated class StubHTTPTransport: HTTPTransport {
         "WWW-Authenticate": #"Digest realm="stub", nonce="stub-nonce", qop="auth", algorithm=SHA-256"#
     ]
 
+    /// One per token state the OAuth 2.0 pane shows: expiring, expired, with no expiry, and refused.
+    private static let tokenAnswers = [
+        "/token": (200, #"{"access_token":"stub-access-token","expires_in":3600,"token_type":"Bearer"}"#),
+        "/token/expired": (200, #"{"access_token":"stub-access-token","expires_in":0,"token_type":"Bearer"}"#),
+        "/token/forever": (200, #"{"access_token":"stub-access-token","token_type":"Bearer"}"#),
+        "/token/refused": (401, #"{"error":"invalid_client","error_description":"Client authentication failed."}"#)
+    ]
+
     @concurrent
     func send(_ request: URLRequest, cookies _: any CookieJar?, policy _: SendPolicy) async throws -> HTTPResponse {
+        if let path = request.url?.path(), let (status, body) = Self.tokenAnswers[path] {
+            return HTTPResponse(status: status, headers: ["Content-Type": "application/json"], body: Data(body.utf8))
+        }
         switch request.url?.path() {
         case "/digest" where request.value(forHTTPHeaderField: "Authorization") == nil:
             return HTTPResponse(status: 401, headers: Self.digestChallenge, body: Data())

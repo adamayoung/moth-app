@@ -58,6 +58,27 @@ struct StubHTTPTransportTests {
         #expect(answered.status == 200)
     }
 
+    @Test(
+        "The /token routes answer as an OAuth 2.0 token endpoint, for each token state",
+        arguments: [
+            ("/token", 200, #"{"access_token":"stub-access-token","expires_in":3600,"token_type":"Bearer"}"#),
+            ("/token/expired", 200, #"{"access_token":"stub-access-token","expires_in":0,"token_type":"Bearer"}"#),
+            ("/token/forever", 200, #"{"access_token":"stub-access-token","token_type":"Bearer"}"#),
+            (
+                "/token/refused",
+                401,
+                #"{"error":"invalid_client","error_description":"Client authentication failed."}"#
+            )
+        ]
+    )
+    func tokenRoutes(path: String, status: Int, body: String) async throws {
+        let response = try await StubHTTPTransport().send(request("https://stub.invalid\(path)"))
+
+        #expect(response.status == status)
+        #expect(response.value(forHeader: "Content-Type") == "application/json")
+        #expect(String(decoding: response.body, as: UTF8.self) == body)
+    }
+
     @Test("/refused fails to connect")
     func refused() async throws {
         let request = try request("https://stub.invalid/refused")

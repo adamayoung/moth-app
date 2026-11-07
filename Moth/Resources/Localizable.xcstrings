@@ -188,6 +188,215 @@
         }
       }
     },
+    "AUTH_OAUTH2_ACCESS_TOKEN" : {
+      "comment" : "Label beside the state of the OAuth 2.0 token Moth holds, such as No Token or Token Expired.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access Token"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_CLEAR_TOKEN" : {
+      "comment" : "Button that removes the stored OAuth 2.0 token, so the next send gets a new one.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Token"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_CLIENT_ID" : {
+      "comment" : "Label of the field holding the OAuth 2.0 client identifier.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client ID"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_CLIENT_SECRET" : {
+      "comment" : "Label of the secret field holding the OAuth 2.0 client secret.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client Secret"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_GET_NEW_TOKEN" : {
+      "comment" : "Button that asks the token endpoint for a new OAuth 2.0 token now.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get New Access Token"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_GRANT_AUTHORIZATION_CODE" : {
+      "comment" : "An OAuth 2.0 grant type in the Grant Type picker, listed when an imported auth uses it.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authorization Code"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_GRANT_AUTHORIZATION_CODE_PKCE" : {
+      "comment" : "An OAuth 2.0 grant type in the Grant Type picker, listed when an imported auth uses it. PKCE is a proper name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authorization Code (With PKCE)"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_GRANT_CLIENT_CREDENTIALS" : {
+      "comment" : "An OAuth 2.0 grant type in the Grant Type picker: a service gets a token with its own client ID and secret.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client Credentials"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_GRANT_IMPLICIT" : {
+      "comment" : "An OAuth 2.0 grant type in the Grant Type picker, listed when an imported auth uses it.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Implicit"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_GRANT_PASSWORD" : {
+      "comment" : "An OAuth 2.0 grant type in the Grant Type picker, listed when an imported auth uses it.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password Credentials"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_GRANT_TYPE" : {
+      "comment" : "Label of the OAuth 2.0 Grant Type picker in the Auth editor.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grant Type"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_NO_TOKEN" : {
+      "comment" : "Shown beside Access Token when Moth holds no OAuth 2.0 token for this auth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Token"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_SCOPE" : {
+      "comment" : "Label of the field holding the OAuth 2.0 scopes to ask for.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scope"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_SCOPE_PROMPT" : {
+      "comment" : "Placeholder in the empty Scope field, saying it can be left empty.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_TOKEN_EXPIRED" : {
+      "comment" : "Shown beside Access Token when the token's expiry has passed. The next send gets a new one.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token Expired"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_TOKEN_EXPIRES %@" : {
+      "comment" : "Shown beside Access Token for a token that is still valid. The argument is a relative time, such as “in 59 minutes” or “tomorrow”.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expires %@"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_TOKEN_FAILED" : {
+      "comment" : "Shown under the token buttons when Get New Access Token failed. The server's error shows under it.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Get Access Token"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_TOKEN_NO_EXPIRY" : {
+      "comment" : "Shown beside Access Token for a token the server gave no expiry. It is used until it is cleared.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doesn’t Expire"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_TOKEN_URL" : {
+      "comment" : "Label of the field holding the OAuth 2.0 token endpoint's address.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token URL"
+          }
+        }
+      }
+    },
     "AUTHORIZATION_CANCEL" : {
       "comment" : "Button that closes the Authorization sheet without saving.",
       "localizations" : {

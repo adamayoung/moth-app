@@ -56,6 +56,12 @@ struct MainWindowView: View {
                 dataModel: dataModel,
                 activeEnvironment: activeEnvironment,
                 clipboard: clipboard
+            ),
+            accessTokens: AccessTokens(
+                dataModel: dataModel,
+                transport: transport,
+                secretStore: secretStore,
+                activeEnvironment: activeEnvironment
             )
         )
         self.tabs = tabs

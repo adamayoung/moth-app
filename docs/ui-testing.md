@@ -45,7 +45,10 @@ hand. A demo launch uses the General pasteboard.
 path, so a test reaches each case by typing a URL, and `{{host}}/wait` proves the
 active environment too. `/wait` stays in flight until it is cancelled, `/refused`
 fails to connect and `/timeout` times out. `/digest` answers 401 with a SHA-256
-Digest challenge until a request carries `Authorization`. Any other path, and
+Digest challenge until a request carries `Authorization`. `/token` answers as an
+OAuth 2.0 token endpoint with a token expiring in an hour, `/token/expired` with
+one already expired, `/token/forever` with one that has no expiry, and
+`/token/refused` with a 401 `invalid_client` error. Any other path, and
 `/digest` with `Authorization`, returns 200 with one JSON
 body and fixed metrics: 142 ms in all, with no TLS phase.
 
@@ -57,8 +60,8 @@ collection holds a variable, `apiVersion`, a folder, "Users", then a request,
 a delete alert can count four or one. "List Users" has `limit=10`, a disabled
 `offset=0`, and two headers, one disabled. "Update User" has `:id` set to 42. So
 that the editor has what it can't change yet to show, "Create User" has form-data
-with a text row and a file row, "Update User" a GraphQL body, "Delete Admin" OAuth2
-auth, and "Health" a binary body. "Update User" also has Digest auth, and "Health"
+with a text row and a file row, "Update User" a GraphQL body, "Delete Admin" OAuth
+2.0 with the Implicit grant, and "Health" a binary body. "Update User" also has Digest auth, and "Health"
 API key auth. There are no globals. `SeedData.cookies` puts "session" and "csrf"
 on api.example.com and "theme" on example.org into the workspace's jar, so the
 Cookies sheet can delete one cookie and one domain apart. Its identifiers are fixed. UI-test and demo launches load it, and the test host's

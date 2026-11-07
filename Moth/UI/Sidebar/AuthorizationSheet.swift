@@ -10,9 +10,13 @@ struct AuthorizationSheet: View {
 
     @State private var model: AuthorizationModel
     @Environment(\.dismiss) private var dismiss
+    private let accessTokens: AccessTokens
+    private let tree: CollectionTree
 
-    init(model: AuthorizationModel) {
+    init(model: AuthorizationModel, accessTokens: AccessTokens = .preview, tree: CollectionTree = .empty) {
         self._model = State(initialValue: model)
+        self.accessTokens = accessTokens
+        self.tree = tree
     }
 
     var body: some View {
@@ -26,7 +30,8 @@ struct AuthorizationSheet: View {
                 inherited: model.target.inherited,
                 credential: model.credential,
                 load: { await model.loadCredential($0) },
-                update: { model.update($0) }
+                update: { model.update($0) },
+                accessToken: accessTokenControls
             )
             .disabled(model.isSaving)
 
@@ -60,6 +65,13 @@ struct AuthorizationSheet: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(model.isSaving)
                 .accessibilityIdentifier("authorization.save")
+        }
+    }
+
+    /// The source is read when the button is pressed, so it carries what the sheet holds then.
+    private var accessTokenControls: AccessTokenControls {
+        accessTokens.controls(for: model.draft.oauth2.accessTokenReference) { [model, tree] in
+            .container(model.target.container, model.draft, tree)
         }
     }
 

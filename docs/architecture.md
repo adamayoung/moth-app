@@ -136,6 +136,28 @@ be `async throws`: OAuth2 refreshes tokens, and SigV4 has to sign the final
 body. Digest's provider only removes an `Authorization` header, because Digest
 answers a 401 challenge, and [sending](#sending-a-request) does that.
 
+OAuth 2.0 runs the Client Credentials grant (RFC 6749 section 4.4). `RequestSender`
+gets a token after resolution and before the build, and `BearerAuthProvider` sends
+it. A send with no token, or one expiring within 60 seconds, asks the Token URL
+for a new one first, with the client credentials in a Basic header, each
+form-encoded as section 2.3.1 says. A token with no expiry is used until it is
+cleared, and a 401 doesn't renew one. A failed token request stops the send with
+"Couldn't Get Access Token" and the server's `error` and `error_description`. The
+token request carries no cookies and goes to no History. Two sends that both need
+a token both ask for one, and the last stored wins. Any other grant sends no auth
+and is noted, as an unsupported kind is.
+
+`OAuth2Tokens` keeps the token, with its expiry, as JSON under the auth's
+`accessToken` reference, so the stored JSON needs no new field. A request that
+inherits the auth resolves to the same `OAuth2Auth`, so it shares that token. A
+stored value that isn't that JSON, such as a Postman import's token, has no expiry.
+`VariableResolver` resolves only an OAuth 2.0 auth's Client Secret and password, so
+a missing token isn't reported as a missing credential, and a token is never
+expanded. `OAuth2Draft` mints a token reference for a row that holds none, and the
+row takes it on its next Save. Until then a send gets a token each time and stores
+none. Each window's `AccessTokens` shows the token's state, runs Get New Access
+Token and Clear Token, and reads the tokens it shows again after each send.
+
 `RequestBuilder` applies the provider last, so `AWSSigV4AuthProvider` signs the
 final URL, headers and body, with the time the send started, which History records
 too. `AWSSigV4Signer` works on the wire form of a request, and AWS's published
@@ -206,7 +228,9 @@ Moth keeps what it can store and counts the rest:
 - A credential goes to the secret store as written. An empty one saves nothing, so
   it is reported as missing. Basic and Digest always save a password, because they
   can send a username alone.
-- OAuth2 is stored by kind and counted as unsupported until it has a provider.
+- OAuth 2.0 keeps every field Postman exports, and gets a token reference when
+  it has no token. A grant other than Client Credentials is counted as
+  unsupported.
 - AWS takes Postman's own defaults for a blank region or service, `us-east-1` and
   `execute-api`, so an export that worked there signs here with no edit. An export
   leaves a blank `service` out altogether.
@@ -391,9 +415,11 @@ A failed Save keeps the draft and leaves its tab open.
 `BodyDraft` and `AuthDraft` keep each kind's fields while a draft is open, so
 trying another kind loses nothing, and only the chosen kind is saved. What the
 editor can't change yet stays as it came and shows Not Supported Yet: a binary or
-GraphQL body, a form-data file row, and OAuth2 auth. Such a body or
-auth keeps an entry of its own in the picker, and a Save writes the same
-bytes. Choosing another kind and saving replaces it.
+GraphQL body, and a form-data file row. Such a body keeps an entry of its own in
+the picker, and a Save writes the same bytes. Choosing another kind and saving
+replaces it. An OAuth 2.0 grant Moth can't run yet keeps its entry in the Grant
+Type picker and shows Not Supported Yet in the same way. `OAuth2Draft` carries
+the fields its pane doesn't show through a Save unchanged.
 
 A typed credential stays on the `AuthDraft`. `RequestEdit` holds references, so
 the text has no route to a row. A changed credential takes a new reference, and a
@@ -408,6 +434,8 @@ was typed. `AWSSigV4Draft`
 keeps these rules for its three credentials. The Access Key is one of them, in the
 Keychain like the others, though its field shows the text. Clearing the optional
 Session Token leaves the row with no reference, so its old item is released.
+OAuth 2.0's Client Secret follows the Session Token's rule, because RFC 6749 lets
+a client have an empty secret. `DraftCredential` holds these rules for both drafts.
 `RequestDrafts` runs Saves and reads one at a time, because Keychain calls finish in
 no set order.
 
@@ -577,6 +605,10 @@ Keychain item unless another variable holds that reference.
 Replacing a credential on a request, folder or collection removes its Keychain item
 once the row has changed, unless another row's auth holds that reference. Deleting
 one leaves the item behind as a stray.
+
+An OAuth 2.0 token syncs like any other secret, under the auth's `accessToken`
+reference. Clear Token removes the item. A token fetched under a reference that a
+draft minted, then never saved, is a stray.
 
 ### Cookie Values
 
@@ -781,7 +813,7 @@ references, and rows named `Authorization` or `Proxy-Authorization`, and the row
 
 Send Again resolves the snapshot against its own variables and the Keychain. A
 secret or credential with no value, or a masked row that no auth provider replaces,
-as under OAuth2 today, sends nothing and shows "Secret unavailable". Otherwise it
+as under an OAuth 2.0 grant Moth can't run, sends nothing and shows "Secret unavailable". Otherwise it
 sends and records as Send does.
 
 History belongs to this Mac's one implicit workspace, and its rows carry no

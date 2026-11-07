@@ -13,6 +13,7 @@ struct AuthEditor: View {
     let credential: (SecretReference) -> SecretValue
     let load: (SecretReference) async -> Void
     let update: ((inout AuthDraft) -> Void) -> Void
+    var accessToken = AccessTokenControls()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -94,9 +95,7 @@ struct AuthEditor: View {
                 }
             }
         case .oauth2:
-            Text("NOT_SUPPORTED_YET")
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("auth.notSupported")
+            oauth2Fields
         }
     }
 
@@ -138,7 +137,7 @@ struct AuthEditor: View {
         }
     }
 
-    private func credentialField(
+    func credentialField(
         _ label: LocalizedStringKey,
         identifier: String,
         for reference: SecretReference,
@@ -205,6 +204,7 @@ private struct AuthEditorPreview: View {
     @State var draft: AuthDraft
     var inherited = InheritedAuth.nothing
     var value = SecretValue.available("hunter2")
+    var accessToken = AccessTokenControls()
     var height: CGFloat = 160
 
     var body: some View {
@@ -213,7 +213,8 @@ private struct AuthEditorPreview: View {
             inherited: inherited,
             credential: { _ in value },
             load: { _ in },
-            update: { change in change(&draft) }
+            update: { change in change(&draft) },
+            accessToken: accessToken
         )
         .padding()
         .frame(width: 480, height: height, alignment: .top)
@@ -257,11 +258,44 @@ private struct AuthEditorPreview: View {
     AuthEditorPreview(draft: AuthDraft(.digest(DigestAuth(username: "ada", password: SecretReference()))))
 }
 
-#Preview("Not Supported") {
+#Preview("OAuth 2.0, Token Expiring") {
+    AuthEditorPreview(
+        draft: AuthDraft(.oauth2(OAuth2Auth(
+            grantType: .clientCredentials,
+            authorizationURL: "",
+            accessTokenURL: "https://example.com/token",
+            callbackURL: "",
+            clientID: "moth",
+            scope: ""
+        ))),
+        accessToken: AccessTokenControls(status: .token(OAuth2Token(
+            value: "token",
+            expiresAt: Date(timeIntervalSinceNow: 3540)
+        ))),
+        height: 300
+    )
+}
+
+#Preview("OAuth 2.0, Token Request Failed") {
+    AuthEditorPreview(
+        draft: AuthDraft(.oauth2(OAuth2Auth(
+            grantType: .clientCredentials,
+            authorizationURL: "",
+            accessTokenURL: "https://example.com/token",
+            callbackURL: "",
+            clientID: "moth",
+            scope: "read"
+        ))),
+        accessToken: AccessTokenControls(failure: "invalid_client: Client authentication failed."),
+        height: 320
+    )
+}
+
+#Preview("OAuth 2.0, Grant Not Supported") {
     AuthEditorPreview(draft: AuthDraft(.oauth2(OAuth2Auth(
-        grantType: .clientCredentials,
-        authorizationURL: "",
-        accessTokenURL: "https://example.com/token",
+        grantType: .implicit,
+        authorizationURL: "https://example.com/authorize",
+        accessTokenURL: "",
         callbackURL: "",
         clientID: "moth",
         scope: ""
