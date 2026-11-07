@@ -42,6 +42,63 @@ struct ResponseTextTests {
     }
 
     @Test(
+        "A variable's note gives its reason",
+        arguments: [
+            (
+                ResponseNote.secretWithNoValue("token"),
+                "{{token}} is a secret with no value, so it was sent as written."
+            ),
+            (ResponseNote.variableCycle("a"), "{{a}} refers to itself, so it was sent as written."),
+            (ResponseNote.variableNotExpanded("a"), "{{a}} couldn\u{2019}t be expanded, so it was sent as written."),
+            (ResponseNote.unresolvedVariables(3), "3 variables couldn\u{2019}t be resolved and were sent as written."),
+            (ResponseNote.unresolvedVariables(1), "1 variable couldn\u{2019}t be resolved and was sent as written.")
+        ]
+    )
+    func variableNoteMessage(note: ResponseNote, message: String) {
+        #expect(note.message == message)
+    }
+
+    @Test(
+        "A note on what was left out says what and why",
+        arguments: [
+            (
+                ResponseNote.unsendableHeader("X-Trace"),
+                "Sent without header X-Trace, because its name or value isn\u{2019}t valid."
+            ),
+            (
+                ResponseNote.unsendableHeaders(2),
+                "Sent without 2 headers, because their names or values aren\u{2019}t valid."
+            ),
+            (
+                ResponseNote.unsendableHeaders(1),
+                "Sent without 1 header, because its name or value isn\u{2019}t valid."
+            ),
+            (
+                ResponseNote.unsupportedFile("photo"),
+                "Sent without file photo, because Moth can\u{2019}t send files yet."
+            ),
+            (ResponseNote.unsupportedFiles(2), "Sent without 2 files, because Moth can\u{2019}t send files yet."),
+            (ResponseNote.unsupportedFiles(1), "Sent without 1 file, because Moth can\u{2019}t send files yet."),
+            (ResponseNote.bodyNotSent(.get), "Sent without its body, because Moth can\u{2019}t send a body with GET."),
+            (
+                ResponseNote.bodyNotSent(.head),
+                "Sent without its body, because Moth can\u{2019}t send a body with HEAD."
+            ),
+            (
+                ResponseNote.bodyNotSent(HTTPMethod(rawValue: "get")),
+                "Sent without its body, because Moth can\u{2019}t send a body with GET."
+            ),
+            (
+                ResponseNote.formDataBoundaryReplaced,
+                "Your Content-Type header replaced the form-data boundary, so the server may not read the body."
+            )
+        ]
+    )
+    func leftOutNoteMessage(note: ResponseNote, message: String) {
+        #expect(note.message == message)
+    }
+
+    @Test(
         "Each timing phase has its title",
         arguments: [
             (TimingPhase.dns, "DNS"),

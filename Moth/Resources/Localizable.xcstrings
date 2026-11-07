@@ -1025,6 +1025,28 @@
         }
       }
     },
+    "RESPONSE_NOTE_BODY_NOT_SENT_%@" : {
+      "comment" : "Shown above a response when a request's body was left off, because Moth can't send one with that method. The argument is the HTTP method, such as GET.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without its body, because Moth can’t send a body with %@."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_FORM_DATA_BOUNDARY_REPLACED" : {
+      "comment" : "Shown above a response when a manual Content-Type header stood in for the one that names a form-data body's boundary.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Content-Type header replaced the form-data boundary, so the server may not read the body."
+          }
+        }
+      }
+    },
     "RESPONSE_NOTE_MISSING_CREDENTIAL" : {
       "comment" : "Shown above a response when the request's password or token has no stored value, so it went out with no auth.",
       "localizations" : {
@@ -1036,8 +1058,19 @@
         }
       }
     },
+    "RESPONSE_NOTE_SECRET_WITHOUT_VALUE_%@" : {
+      "comment" : "Shown above a response when one variable is a secret with no stored value. The argument is its name. RESPONSE_NOTE_UNRESOLVED_VARIABLES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{{%@}} is a secret with no value, so it was sent as written."
+          }
+        }
+      }
+    },
     "RESPONSE_NOTE_UNDEFINED_VARIABLE_%@" : {
-      "comment" : "Shown above a response when one variable had no value. The argument is its name. RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld covers several.",
+      "comment" : "Shown above a response when one variable is undefined. The argument is its name. RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld covers several.",
       "localizations" : {
         "en-GB" : {
           "stringUnit" : {
@@ -1048,7 +1081,7 @@
       }
     },
     "RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld" : {
-      "comment" : "Shown above a response when several variables had no value. The argument is how many. RESPONSE_NOTE_UNDEFINED_VARIABLE_%@ covers one, by name.",
+      "comment" : "Shown above a response when several variables are all undefined. The argument is how many. RESPONSE_NOTE_UNDEFINED_VARIABLE_%@ covers one, by name, and RESPONSE_NOTE_UNRESOLVED_VARIABLES_%lld covers a mix of reasons.",
       "localizations" : {
         "en-GB" : {
           "variations" : {
@@ -1063,6 +1096,63 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld variables aren’t defined and were sent as written."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNRESOLVED_VARIABLES_%lld" : {
+      "comment" : "Shown above a response when several variables had no value, and not all because they are undefined. The argument is how many. RESPONSE_NOTE_UNDEFINED_VARIABLES_%lld covers several that are all undefined.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld variable couldn’t be resolved and was sent as written."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld variables couldn’t be resolved and were sent as written."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNSENDABLE_HEADER_%@" : {
+      "comment" : "Shown above a response when one header was left out, because its name or value isn't valid in HTTP. The argument is its name. RESPONSE_NOTE_UNSENDABLE_HEADERS_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without header %@, because its name or value isn’t valid."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNSENDABLE_HEADERS_%lld" : {
+      "comment" : "Shown above a response when several headers were left out, because their names or values aren't valid in HTTP. The argument is how many. RESPONSE_NOTE_UNSENDABLE_HEADER_%@ covers one, by name.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld header, because its name or value isn’t valid."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld headers, because their names or values aren’t valid."
                 }
               }
             }
@@ -1088,6 +1178,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sent without its unsupported body."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNSUPPORTED_FILE_%@" : {
+      "comment" : "Shown above a response when one form-data file was left out. The argument is its field name. RESPONSE_NOTE_UNSUPPORTED_FILES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent without file %@, because Moth can’t send files yet."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_UNSUPPORTED_FILES_%lld" : {
+      "comment" : "Shown above a response when several form-data files were left out. The argument is how many. RESPONSE_NOTE_UNSUPPORTED_FILE_%@ covers one, by name.",
+      "localizations" : {
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld file, because Moth can’t send files yet."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sent without %lld files, because Moth can’t send files yet."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_VARIABLE_CYCLE_%@" : {
+      "comment" : "Shown above a response when one variable's value leads back to itself. The argument is its name. RESPONSE_NOTE_UNRESOLVED_VARIABLES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{{%@}} refers to itself, so it was sent as written."
+          }
+        }
+      }
+    },
+    "RESPONSE_NOTE_VARIABLE_NOT_EXPANDED_%@" : {
+      "comment" : "Shown above a response when one variable was nested too deeply or expanded to too much text. The argument is its name. RESPONSE_NOTE_UNRESOLVED_VARIABLES_%lld covers several.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{{%@}} couldn’t be expanded, so it was sent as written."
           }
         }
       }
