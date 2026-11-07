@@ -26,4 +26,6 @@ protocol AppDependencies: AnyObject {
 
     var importFileSource: ImportFileSource { get }
 
+    var clipboard: Clipboard { get }
+
 }

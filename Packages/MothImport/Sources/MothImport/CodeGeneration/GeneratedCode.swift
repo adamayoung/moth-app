@@ -15,6 +15,11 @@ public nonisolated struct GeneratedCode: Sendable, Hashable {
     public let curl: String
     public let swift: String
 
+    public init(curl: String, swift: String) {
+        self.curl = curl
+        self.swift = swift
+    }
+
     public func text(in language: CodeLanguage) -> String {
         switch language {
         case .curl: curl

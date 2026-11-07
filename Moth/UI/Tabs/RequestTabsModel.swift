@@ -23,12 +23,19 @@ final class RequestTabsModel {
     private let store: RequestTabStore
     let drafts: RequestDrafts
     let responses: RequestResponses
+    let code: RequestCodeModel
     var pendingClose: RequestTab?
 
-    init(store: RequestTabStore, drafts: RequestDrafts, responses: RequestResponses) {
+    init(
+        store: RequestTabStore,
+        drafts: RequestDrafts,
+        responses: RequestResponses,
+        code: RequestCodeModel = .preview
+    ) {
         self.store = store
         self.drafts = drafts
         self.responses = responses
+        self.code = code
         self.tabs = store.load()
     }
 
@@ -66,6 +73,20 @@ final class RequestTabsModel {
 
     func cancelSend(_ id: Request.ID) {
         responses.cancel(id)
+    }
+
+    func copyCURL(_ id: Request.ID) async {
+        await code.copyCURL(id, draft: editedDraft(of: id), tree: tree)
+    }
+
+    func generateCode(_ id: Request.ID) async {
+        await code.presentCode(for: id, draft: editedDraft(of: id), tree: tree)
+    }
+
+    /// `nil` for a clean draft, which a tab that isn't selected leaves behind the store, and for one that outlived its
+    /// tab.
+    private func editedDraft(of id: Request.ID) -> RequestDraft? {
+        tabs.ids.contains(id) && drafts.isEdited(id) ? drafts.draft(for: id) : nil
     }
 
     func requestClose(_ id: Request.ID) {

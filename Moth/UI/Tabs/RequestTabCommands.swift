@@ -12,6 +12,7 @@ struct RequestTabCommandContext {
 
     let tabs: RequestTabsModel
     let hasOpenTabs: Bool
+    let selectedRequest: Request.ID?
     let savableRequest: Request.ID?
 
 }
