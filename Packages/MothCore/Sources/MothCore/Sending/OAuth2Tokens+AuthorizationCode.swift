@@ -106,7 +106,7 @@ nonisolated extension OAuth2TokenError {
     /// RFC 6749 section 5.2 answers a refused grant with 400, or 401 for the client. A server error or a rate limit
     /// says nothing about the refresh token.
     var refusesTheGrant: Bool {
-        guard case let .refused(status, _, _) = self else {
+        guard case .refused(let status, _, _) = self else {
             return false
         }
         return status == 400 || status == 401
