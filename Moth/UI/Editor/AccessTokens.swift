@@ -102,7 +102,7 @@ final class AccessTokens {
     func getNewToken(
         for reference: SecretReference,
         from source: Source,
-        signIn: @escaping OAuth2SignIn = { _, _ in throw CancellationError() }
+        signIn: @escaping OAuth2SignIn
     ) async {
         guard fetching.insert(reference).inserted else {
             return

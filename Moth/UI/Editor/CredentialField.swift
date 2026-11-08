@@ -13,6 +13,7 @@ struct CredentialField: View {
     let identifier: String
     var isConcealed = true
     let value: SecretValue
+    var placeholder: LocalizedStringKey?
     @Binding var text: String
 
     @State private var isRevealed = false
@@ -53,7 +54,7 @@ struct CredentialField: View {
     }
 
     private var prompt: Text? {
-        value == .notYetAvailable ? Text("VARIABLES_SECRET_UNAVAILABLE") : nil
+        value == .notYetAvailable ? Text("VARIABLES_SECRET_UNAVAILABLE") : placeholder.map { Text($0) }
     }
 
 }

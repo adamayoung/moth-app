@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import AuthenticationServices
 import MothCore
 import SwiftUI
 
@@ -14,7 +15,7 @@ struct AccessTokenControls {
     var isFetching = false
     var failure: String?
     var load: () async -> Void = {}
-    var getNew: () -> Void = {}
+    var getNew: (@escaping OAuth2SignIn) -> Void = { _ in }
     var clear: () -> Void = {}
 
 }
@@ -27,7 +28,7 @@ extension AccessTokens {
             isFetching: isFetching(reference),
             failure: failure(of: reference),
             load: { await self.load(reference) },
-            getNew: { Task { await self.getNewToken(for: reference, from: source()) } },
+            getNew: { signIn in Task { await self.getNewToken(for: reference, from: source(), signIn: signIn) } },
             clear: { Task { await self.clear(reference) } }
         )
     }
@@ -50,7 +51,11 @@ extension AuthEditor {
                 .accessibilityIdentifier("auth.grantType")
             }
             if draft.oauth2.isSupported {
-                clientCredentialsRows
+                if draft.oauth2.grantType == .authorizationCodeWithPKCE {
+                    signInRows
+                }
+                clientRows
+                tokenRows
             } else {
                 GridRow {
                     Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
@@ -66,7 +71,32 @@ extension AuthEditor {
     }
 
     @ViewBuilder
-    private var clientCredentialsRows: some View {
+    private var signInRows: some View {
+        GridRow {
+            Text("AUTH_OAUTH2_AUTH_URL")
+            TextField("AUTH_OAUTH2_AUTH_URL", text: oauth2Field(\.authorizationURL))
+                .labelsHidden()
+                .accessibilityIdentifier("auth.authURL")
+        }
+        GridRow {
+            Text("AUTH_OAUTH2_CALLBACK_URL")
+            TextField("AUTH_OAUTH2_CALLBACK_URL", text: oauth2Field(\.callbackURL))
+                .labelsHidden()
+                .accessibilityIdentifier("auth.callbackURL")
+        }
+        if let problem = draft.oauth2.callbackURLProblem {
+            GridRow {
+                Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
+                Text(verbatim: problem)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("auth.callbackURLProblem")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var clientRows: some View {
         GridRow {
             Text("AUTH_OAUTH2_TOKEN_URL")
             TextField("AUTH_OAUTH2_TOKEN_URL", text: oauth2Field(\.tokenURL))
@@ -84,7 +114,8 @@ extension AuthEditor {
             credentialField(
                 "AUTH_OAUTH2_CLIENT_SECRET",
                 identifier: "auth.clientSecret",
-                for: draft.oauth2.clientSecretReference
+                for: draft.oauth2.clientSecretReference,
+                placeholder: draft.oauth2.grantType == .clientCredentials ? nil : "AUTH_OAUTH2_CLIENT_SECRET_PROMPT"
             )
         }
         GridRow {
@@ -93,6 +124,10 @@ extension AuthEditor {
                 .labelsHidden()
                 .accessibilityIdentifier("auth.scope")
         }
+    }
+
+    @ViewBuilder
+    private var tokenRows: some View {
         GridRow {
             Text("AUTH_OAUTH2_ACCESS_TOKEN")
             TimelineView(.everyMinute) { context in
@@ -109,9 +144,11 @@ extension AuthEditor {
     private var tokenActions: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Button("AUTH_OAUTH2_GET_NEW_TOKEN", action: accessToken.getNew)
-                    .disabled(accessToken.isFetching)
-                    .accessibilityIdentifier("auth.getNewToken")
+                Button("AUTH_OAUTH2_GET_NEW_TOKEN") {
+                    accessToken.getNew(webAuthenticationSession.oauth2SignIn)
+                }
+                .disabled(accessToken.isFetching)
+                .accessibilityIdentifier("auth.getNewToken")
                 Button("AUTH_OAUTH2_CLEAR_TOKEN", action: accessToken.clear)
                     .disabled(!hasToken)
                     .accessibilityIdentifier("auth.clearToken")

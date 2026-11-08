@@ -3,6 +3,7 @@
 //
 //  Copyright © 2026 Adam Young.
 
+import AuthenticationServices
 import MothCore
 import SwiftUI
 
@@ -14,6 +15,8 @@ struct AuthEditor: View {
     let load: (SecretReference) async -> Void
     let update: ((inout AuthDraft) -> Void) -> Void
     var accessToken = AccessTokenControls()
+
+    @Environment(\.webAuthenticationSession) var webAuthenticationSession
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -141,7 +144,8 @@ struct AuthEditor: View {
         _ label: LocalizedStringKey,
         identifier: String,
         for reference: SecretReference,
-        isConcealed: Bool = true
+        isConcealed: Bool = true,
+        placeholder: LocalizedStringKey? = nil
     ) -> some View {
         let value = credential(reference)
         return CredentialField(
@@ -149,6 +153,7 @@ struct AuthEditor: View {
             identifier: identifier,
             isConcealed: isConcealed,
             value: value,
+            placeholder: placeholder,
             text: Binding {
                 draft.typedCredential(for: reference) ?? value.text
             } set: { text in
@@ -300,4 +305,19 @@ private struct AuthEditorPreview: View {
         clientID: "moth",
         scope: ""
     ))))
+}
+
+#Preview("OAuth 2.0, Authorization Code, Web Callback") {
+    AuthEditorPreview(
+        draft: AuthDraft(.oauth2(OAuth2Auth(
+            grantType: .authorizationCodeWithPKCE,
+            authorizationURL: "https://github.com/login/oauth/authorize",
+            accessTokenURL: "https://github.com/login/oauth/access_token",
+            callbackURL: "https://oauth.pstmn.io/v1/callback",
+            clientID: "moth",
+            scope: "read:user"
+        ))),
+        value: .available(""),
+        height: 420
+    )
 }

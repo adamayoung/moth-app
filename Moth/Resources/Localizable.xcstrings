@@ -199,6 +199,28 @@
         }
       }
     },
+    "AUTH_OAUTH2_AUTH_URL" : {
+      "comment" : "Label for the OAuth 2.0 authorization endpoint, where Get New Access Token opens the sign-in.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auth URL"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_CALLBACK_URL" : {
+      "comment" : "Label for the OAuth 2.0 redirect URI, where the sign-in returns to Moth.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Callback URL"
+          }
+        }
+      }
+    },
     "AUTH_OAUTH2_CLEAR_TOKEN" : {
       "comment" : "Button that removes the stored OAuth 2.0 token, so the next send gets a new one.",
       "localizations" : {
@@ -228,6 +250,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Client Secret"
+          }
+        }
+      }
+    },
+    "AUTH_OAUTH2_CLIENT_SECRET_PROMPT" : {
+      "comment" : "Placeholder in an empty OAuth 2.0 Client Secret field under the Authorization Code grant, where a client may have no secret.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional"
           }
         }
       }

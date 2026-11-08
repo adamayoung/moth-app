@@ -183,6 +183,36 @@ final class RequestAuthTests: MothTestCase {
     }
 
     @MainActor
+    func testAuthorizationCodeShowsItsFieldsAndTheDefaultCallbackURL() {
+        let (_, _, fields) = openAuth(of: "List Users")
+        fields.chooseKind("OAuth 2.0")
+        XCTAssertTrue(fields.grantTypePicker.waitForExistence(timeout: 10))
+
+        fields.grantTypePicker.click()
+        XCTAssertTrue(fields.grantTypePicker.menuItems["Authorization Code (With PKCE)"].waitForExistence(timeout: 10))
+        fields.grantTypePicker.menuItems["Authorization Code (With PKCE)"].click()
+
+        XCTAssertTrue(fields.authURLField.waitForExistence(timeout: 10))
+        XCTAssertEqual(fields.callbackURLField.value as? String, "moth://oauth/callback")
+        XCTAssertFalse(fields.callbackURLProblemText.exists)
+        XCTAssertTrue(fields.tokenURLField.exists)
+        XCTAssertTrue(fields.clientIDField.exists)
+        XCTAssertEqual(fields.secureClientSecretField.placeholderValue, "Optional")
+        XCTAssertTrue(fields.scopeField.exists)
+        XCTAssertTrue(fields.getNewTokenButton.exists)
+        XCTAssertTrue(RequestEditorScreen(app: app).waitForValue("No Token", of: fields.tokenStateText))
+
+        fields.callbackURLField.click()
+        fields.callbackURLField.typeKey("a", modifierFlags: .command)
+        app.typeText("https://example.com/callback")
+        XCTAssertTrue(fields.callbackURLProblemText.waitForExistence(timeout: 10))
+        XCTAssertEqual(
+            fields.callbackURLProblemText.value as? String,
+            "Moth can only receive a sign-in at a custom URL scheme."
+        )
+    }
+
+    @MainActor
     private func getToken(from path: String) -> AuthFieldsScreen {
         let (_, _, fields) = openAuth(of: "List Users")
         fields.chooseKind("OAuth 2.0")
