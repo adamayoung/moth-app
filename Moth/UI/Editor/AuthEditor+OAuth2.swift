@@ -115,7 +115,7 @@ extension AuthEditor {
                 "AUTH_OAUTH2_CLIENT_SECRET",
                 identifier: "auth.clientSecret",
                 for: draft.oauth2.clientSecretReference,
-                placeholder: draft.oauth2.grantType == .clientCredentials ? nil : "AUTH_OAUTH2_CLIENT_SECRET_PROMPT"
+                placeholder: clientSecretPlaceholder
             )
         }
         GridRow {
@@ -123,6 +123,15 @@ extension AuthEditor {
             TextField("AUTH_OAUTH2_SCOPE", text: oauth2Field(\.scope), prompt: Text("AUTH_OAUTH2_SCOPE_PROMPT"))
                 .labelsHidden()
                 .accessibilityIdentifier("auth.scope")
+        }
+    }
+
+    /// Client Credentials authenticates the client, so only the Authorization Code grant may leave it empty.
+    private var clientSecretPlaceholder: LocalizedStringKey? {
+        if draft.oauth2.grantType == .clientCredentials {
+            nil
+        } else {
+            "AUTH_OAUTH2_CLIENT_SECRET_PROMPT"
         }
     }
 
