@@ -99,6 +99,12 @@ public nonisolated enum OAuth2TokenError: LocalizedError, Hashable {
     case noAccessToken
     case unsupportedGrant
     case refused(status: Int, error: String?, description: String?)
+    case invalidAuthorizationURL
+    case callbackNotCustomScheme
+    case stateMismatch
+    case noAuthorizationCode
+    case signInRefused(error: String, description: String?)
+    case tokenExpired
 
     public var errorDescription: String? {
         switch self {
@@ -114,6 +120,20 @@ public nonisolated enum OAuth2TokenError: LocalizedError, Hashable {
             error
         case .refused(let status, nil, _):
             String(localized: "OAUTH2_TOKEN_ERROR_STATUS_\(status)", bundle: .module)
+        case .invalidAuthorizationURL:
+            String(localized: "OAUTH2_SIGN_IN_ERROR_INVALID_URL", bundle: .module)
+        case .callbackNotCustomScheme:
+            String(localized: "OAUTH2_SIGN_IN_ERROR_CALLBACK_SCHEME", bundle: .module)
+        case .stateMismatch:
+            String(localized: "OAUTH2_SIGN_IN_ERROR_STATE", bundle: .module)
+        case .noAuthorizationCode:
+            String(localized: "OAUTH2_SIGN_IN_ERROR_NO_CODE", bundle: .module)
+        case .signInRefused(let error, let description?):
+            "\(error): \(description)"
+        case .signInRefused(let error, nil):
+            error
+        case .tokenExpired:
+            String(localized: "OAUTH2_TOKEN_ERROR_EXPIRED", bundle: .module)
         }
     }
 
