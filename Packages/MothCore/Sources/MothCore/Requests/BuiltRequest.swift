@@ -11,15 +11,18 @@ public nonisolated struct BuiltRequest: Sendable, Hashable {
     public var urlRequest: URLRequest
     public var notices: [RequestBuildNotice]
     public var unresolved: [UnresolvedVariable]
+    public var credentialHeaders: Set<String>
 
     public init(
         urlRequest: URLRequest,
         notices: [RequestBuildNotice] = [],
-        unresolved: [UnresolvedVariable] = []
+        unresolved: [UnresolvedVariable] = [],
+        credentialHeaders: Set<String> = []
     ) {
         self.urlRequest = urlRequest
         self.notices = notices
         self.unresolved = unresolved
+        self.credentialHeaders = credentialHeaders
     }
 
 }

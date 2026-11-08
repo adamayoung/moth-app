@@ -17,6 +17,10 @@ public nonisolated struct APIKeyAuthProvider: AuthProvider {
         self.location = location
     }
 
+    public var credentialHeaders: Set<String> {
+        location == .header ? [name] : []
+    }
+
     public func apply(to request: inout URLRequest) async throws {
         switch location {
         case .header:

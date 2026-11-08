@@ -126,7 +126,11 @@ public nonisolated struct RequestSender: Sendable {
             let built = try await RequestBuilder(now: { sentAt }).build(resolved)
             urlRequest = built.urlRequest
             digest = resolved.digestProvider
-            delivery = Delivery(cookies: cookies, settings: resolved.settings)
+            delivery = Delivery(
+                cookies: cookies,
+                settings: resolved.settings,
+                credentialHeaders: built.credentialHeaders
+            )
             notes = ResponseNote.notes(
                 unresolved: built.unresolved,
                 notices: built.notices.map { $0.namingRow(of: outgoing.request, resolvedAs: resolved) },
@@ -252,15 +256,17 @@ private nonisolated extension RequestSender {
 
 }
 
-/// How each send of one request travels: the workspace's jar, and the request's settings as the transport's policy.
+/// How each send of one request travels: the workspace's jar, and the request's settings and auth's credential headers
+/// as the transport's policy.
 private nonisolated struct Delivery {
 
     var cookies: any CookieJar?
     var policy: SendPolicy
 
-    init(cookies: any CookieJar?, settings: RequestSettings) {
+    init(cookies: any CookieJar?, settings: RequestSettings, credentialHeaders: Set<String>) {
         self.cookies = cookies
         self.policy = SendPolicy(followsRedirects: settings.followsRedirects, verifiesTLS: settings.verifiesTLS)
+        policy.credentialHeaders.formUnion(credentialHeaders.map { $0.lowercased() })
     }
 
     /// On plain HTTP too, because a redirect can pass through HTTPS on its way.

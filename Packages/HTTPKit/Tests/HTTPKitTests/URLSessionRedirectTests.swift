@@ -168,4 +168,44 @@ struct URLSessionRedirectTests {
         #expect(try !#require(target.request(to: "/final")).contains("X-API-Key:"))
     }
 
+    @Test("Auth's API Key and AWS session token stay behind on another host, with Authorization and Cookie")
+    func authCredentialHeadersStayBehind() async throws {
+        let target = try await LoopbackServer(routes: ["/final": Self.hello])
+        let start = try await LoopbackServer(routes: [
+            "/start": Self.redirect(to: target.url(path: "/final", host: "localhost").absoluteString)
+        ])
+        var request = try Self.withCredentials(start.url(path: "/start"))
+        request.setValue("token", forHTTPHeaderField: "X-Amz-Security-Token")
+
+        _ = try await transport.send(request, cookies: nil, policy: Self.namingAuthHeaders)
+
+        let first = try #require(start.request(to: "/start"))
+        #expect(first.contains("\r\nX-API-Key: key\r\n"))
+        #expect(first.contains("\r\nX-Amz-Security-Token: token\r\n"))
+        let second = try #require(target.request(to: "/final"))
+        for name in ["X-API-Key:", "X-Amz-Security-Token:", "Authorization:", "Cookie:"] {
+            #expect(!second.contains(name))
+        }
+        #expect(second.contains("\r\nX-Custom: kept\r\n"))
+    }
+
+    @Test("A redirect on the same host keeps auth's API Key and AWS session token")
+    func sameHostKeepsAuthCredentialHeaders() async throws {
+        let server = try await LoopbackServer(routes: ["/start": Self.redirect(to: "/final"), "/final": Self.hello])
+        var request = try Self.withCredentials(server.url(path: "/start"))
+        request.setValue("token", forHTTPHeaderField: "X-Amz-Security-Token")
+
+        _ = try await transport.send(request, cookies: nil, policy: Self.namingAuthHeaders)
+
+        let second = try #require(server.request(to: "/final"))
+        #expect(second.contains("\r\nX-API-Key: key\r\n"))
+        #expect(second.contains("\r\nX-Amz-Security-Token: token\r\n"))
+    }
+
+    private static var namingAuthHeaders: SendPolicy {
+        var policy = SendPolicy()
+        policy.credentialHeaders.formUnion(["x-api-key", "x-amz-security-token"])
+        return policy
+    }
+
 }

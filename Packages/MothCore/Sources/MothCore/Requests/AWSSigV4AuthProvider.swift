@@ -43,6 +43,10 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
             + (credentials.isS3 ? ["X-Amz-Content-Sha256"] : [])
     }
 
+    public var credentialHeaders: Set<String> {
+        sessionToken.isEmpty ? [] : ["X-Amz-Security-Token"]
+    }
+
     public func apply(to request: inout URLRequest) async throws {
         let fields = [credentials.accessKey, credentials.secretKey, credentials.region, credentials.service]
 
