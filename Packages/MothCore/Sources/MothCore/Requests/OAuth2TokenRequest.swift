@@ -6,13 +6,23 @@
 import Foundation
 import HTTPKit
 
-/// The client credentials grant, RFC 6749 section 4.4, with the client authenticated by a Basic header.
+/// A token request to RFC 6749's token endpoint: the client credentials grant (section 4.4), an authorization code
+/// exchange (section 4.1.3, with RFC 7636's verifier) or a refresh (section 6).
 nonisolated struct OAuth2TokenRequest: Sendable {
+
+    enum Grant: Sendable, Hashable {
+
+        case clientCredentials
+        case authorizationCode(code: String, redirectURI: String, verifier: String)
+        case refreshToken(String)
+
+    }
 
     let tokenURL: String
     let clientID: String
     let clientSecret: String
     let scope: String
+    var grant = Grant.clientCredentials
 
     var fingerprint: String {
         [tokenURL, clientID, scope].joined(separator: "\n")
@@ -32,9 +42,17 @@ nonisolated struct OAuth2TokenRequest: Sendable {
         request.timeoutInterval = timeout / .seconds(1)
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("Basic \(basicCredentials)", forHTTPHeaderField: "Authorization")
+        if sendsBasicCredentials {
+            request.setValue("Basic \(basicCredentials)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = Data(form.utf8)
         return request
+    }
+
+    /// A client with no secret is a public client, which names itself in the form (section 4.1.3). Client
+    /// Credentials always authenticates, because RFC 6749 lets that grant be used only by a confidential client.
+    private var sendsBasicCredentials: Bool {
+        grant == .clientCredentials || !clientSecret.isEmpty
     }
 
     /// Section 2.3.1: the identifier and secret are form-encoded before Basic joins them, so a colon survives.
@@ -43,8 +61,26 @@ nonisolated struct OAuth2TokenRequest: Sendable {
     }
 
     private var form: String {
-        let scopeField = scope.isEmpty ? [] : ["scope=\(scope.percentEncoded)"]
-        return (["grant_type=client_credentials"] + scopeField).joined(separator: "&")
+        let clientField = sendsBasicCredentials ? [] : [("client_id", clientID)]
+        return (grantFields + clientField)
+            .map { "\($0.percentEncoded)=\($1.percentEncoded)" }
+            .joined(separator: "&")
+    }
+
+    private var grantFields: [(String, String)] {
+        switch grant {
+        case .clientCredentials:
+            [("grant_type", "client_credentials")] + (scope.isEmpty ? [] : [("scope", scope)])
+        case .authorizationCode(let code, let redirectURI, let verifier):
+            [
+                ("grant_type", "authorization_code"),
+                ("code", code),
+                ("redirect_uri", redirectURI),
+                ("code_verifier", verifier)
+            ]
+        case .refreshToken(let refreshToken):
+            [("grant_type", "refresh_token"), ("refresh_token", refreshToken)]
+        }
     }
 
     static func token(from response: HTTPResponse, receivedAt: Date) throws -> OAuth2Token {
@@ -59,7 +95,11 @@ nonisolated struct OAuth2TokenRequest: Sendable {
         guard let value = answer?.accessToken, !value.isEmpty else {
             throw OAuth2TokenError.noAccessToken
         }
-        return OAuth2Token(value: value, expiresAt: answer?.expiresIn.map { receivedAt.addingTimeInterval($0) })
+        return OAuth2Token(
+            value: value,
+            expiresAt: answer?.expiresIn.map { receivedAt.addingTimeInterval($0) },
+            refreshToken: answer?.refreshToken.flatMap { $0.isEmpty ? nil : $0 }
+        )
     }
 
 }
@@ -69,6 +109,7 @@ private nonisolated struct TokenAnswer: Decodable {
     enum CodingKeys: String, CodingKey {
 
         case accessToken = "access_token"
+        case refreshToken = "refresh_token"
         case expiresIn = "expires_in"
         case error
         case errorDescription = "error_description"
@@ -76,6 +117,7 @@ private nonisolated struct TokenAnswer: Decodable {
     }
 
     var accessToken: String?
+    var refreshToken: String?
     var expiresIn: TimeInterval?
     var error: String?
     var errorDescription: String?
@@ -84,6 +126,7 @@ private nonisolated struct TokenAnswer: Decodable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.accessToken = try? container.decodeIfPresent(String.self, forKey: .accessToken)
+        self.refreshToken = try? container.decodeIfPresent(String.self, forKey: .refreshToken)
         self.expiresIn = (try? container.decodeIfPresent(TimeInterval.self, forKey: .expiresIn))
             ?? (try? container.decodeIfPresent(String.self, forKey: .expiresIn))
             .flatMap { $0.flatMap(TimeInterval.init) }

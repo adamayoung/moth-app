@@ -22,11 +22,13 @@ public nonisolated struct OAuth2Token: Sendable, Hashable, Codable {
     public var expiresAt: Date?
     /// The resolved Token URL, Client ID and Scope it was issued for, so another environment's token isn't sent.
     public var issuedFor: String?
+    public var refreshToken: String?
 
-    public init(value: String, expiresAt: Date?, issuedFor: String? = nil) {
+    public init(value: String, expiresAt: Date?, issuedFor: String? = nil, refreshToken: String? = nil) {
         self.value = value
         self.expiresAt = expiresAt
         self.issuedFor = issuedFor
+        self.refreshToken = refreshToken
     }
 
     /// Text that isn't a record is a token as an import saved it, which carries no expiry.
