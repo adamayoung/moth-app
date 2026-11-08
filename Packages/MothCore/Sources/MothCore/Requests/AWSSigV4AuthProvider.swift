@@ -37,14 +37,18 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
         self.date = date
     }
 
+    private var sessionTokenHeader: String? {
+        sessionToken.isEmpty ? nil : "X-Amz-Security-Token"
+    }
+
     var headersSet: [String] {
         ["Authorization", "X-Amz-Date"]
-            + (sessionToken.isEmpty ? [] : ["X-Amz-Security-Token"])
+            + [sessionTokenHeader].compactMap(\.self)
             + (credentials.isS3 ? ["X-Amz-Content-Sha256"] : [])
     }
 
     public var credentialHeaders: Set<String> {
-        sessionToken.isEmpty ? [] : ["X-Amz-Security-Token"]
+        Set(["Authorization"] + [sessionTokenHeader].compactMap(\.self))
     }
 
     public func apply(to request: inout URLRequest) async throws {
@@ -61,8 +65,8 @@ public nonisolated struct AWSSigV4AuthProvider: AuthProvider {
         let payloadHash = AWSSigV4Signer.hash(request.httpBody ?? Data())
 
         request.setValue(date.formatted(.awsSigV4Timestamp), forHTTPHeaderField: "X-Amz-Date")
-        if !sessionToken.isEmpty {
-            request.setValue(sessionToken, forHTTPHeaderField: "X-Amz-Security-Token")
+        if let sessionTokenHeader {
+            request.setValue(sessionToken, forHTTPHeaderField: sessionTokenHeader)
         }
         if credentials.isS3 {
             request.setValue(payloadHash, forHTTPHeaderField: "X-Amz-Content-Sha256")

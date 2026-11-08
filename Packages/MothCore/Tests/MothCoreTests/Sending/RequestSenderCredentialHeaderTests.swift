@@ -104,24 +104,28 @@ struct RequestSenderCredentialHeaderTests {
     }
 
     @Test("An API Key inherited from a folder or the collection is named the same way", arguments: [true, false])
-    func inheritedAPIKey(fromFolder: Bool) async {
+    func inheritedAPIKey(fromFolder: Bool) async throws {
         let apiKey = Auth.apiKey(APIKeyAuth(name: "X-API-Key", value: secret, location: .header))
-        let own = request(auth: .inherit)
+        let stored = request(auth: .inherit)
         let folder = Folder(
             name: "Folder",
             auth: fromFolder ? apiKey : .inherit,
-            children: [CollectionItem(sortOrder: 0, node: .request(own))]
+            children: [CollectionItem(sortOrder: 0, node: .request(stored))]
         )
         let collection = RequestCollection(
             name: "API",
             auth: fromFolder ? .none : apiKey,
             children: [CollectionItem(sortOrder: 0, node: .folder(folder))]
         )
-        var inheriting = own
-        inheriting.auth = collection.effectiveAuth(of: own)
+        let dataModel = try DataModel.inMemory(seed: Workspace(collections: [collection]))
+        let tree = try CollectionTree(savedIn: dataModel)
+        let outgoing = try RequestDraft(stored).outgoing(from: stored, in: tree)
 
-        let transport = await send(inheriting)
+        let transport = RecordingTransport()
+        _ = await RequestSender(transport: transport, secretStore: secretStore)
+            .send(outgoing, scopes: VariableScopes())
 
+        #expect(transport.requests.first?.value(forHTTPHeaderField: "X-API-Key") == "s3cret")
         #expect(transport.policies.map(\.credentialHeaders) == [["authorization", "cookie", "x-api-key"]])
     }
 

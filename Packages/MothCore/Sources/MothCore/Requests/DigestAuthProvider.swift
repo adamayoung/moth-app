@@ -18,6 +18,11 @@ public nonisolated struct DigestAuthProvider: AuthProvider {
         self.password = password
     }
 
+    /// Set on the answer to a challenge, not by `apply`.
+    public var credentialHeaders: Set<String> {
+        ["Authorization"]
+    }
+
     public func apply(to request: inout URLRequest) async throws {
         request.setValue(nil, forHTTPHeaderField: "Authorization")
     }

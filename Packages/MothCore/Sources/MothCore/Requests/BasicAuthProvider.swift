@@ -15,6 +15,10 @@ public nonisolated struct BasicAuthProvider: AuthProvider {
         self.password = password
     }
 
+    public var credentialHeaders: Set<String> {
+        ["Authorization"]
+    }
+
     public func apply(to request: inout URLRequest) async throws {
         let credentials = Data("\(username):\(password)".utf8).base64EncodedString()
 
