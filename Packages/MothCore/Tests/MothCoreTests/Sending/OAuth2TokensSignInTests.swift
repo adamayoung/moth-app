@@ -40,7 +40,7 @@ final class FakeSignIn {
 
     nonisolated static func form(of request: URLRequest?) -> [String: String] {
         var components = URLComponents()
-        components.percentEncodedQuery = request?.httpBody.map { String(decoding: $0, as: UTF8.self) }
+        components.percentEncodedQuery = request?.httpBody.flatMap { String(bytes: $0, encoding: .utf8) }
         return fields(components.queryItems ?? [])
     }
 
@@ -177,7 +177,7 @@ struct OAuth2TokensSignInTests {
             issuedFor: "https://auth.example.com/token\nmoth\nread",
             refreshToken: "r3fresh"
         )
-        let row = try String(decoding: JSONEncoder().encode(outgoing.request.auth), as: UTF8.self)
+        let row = try #require(String(bytes: JSONEncoder().encode(outgoing.request.auth), encoding: .utf8))
         #expect(token == expected)
         #expect(await storedToken() == expected)
         #expect(!row.contains("acc3ss"))
