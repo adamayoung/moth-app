@@ -7,7 +7,6 @@ import Foundation
 
 nonisolated extension OAuth2Tokens {
 
-    /// A fresh state and PKCE verifier for each sign-in, and no token request unless the callback carries that state.
     func signIn(
         for oauth2: OAuth2Auth,
         in resolved: ResolvedRequest,
