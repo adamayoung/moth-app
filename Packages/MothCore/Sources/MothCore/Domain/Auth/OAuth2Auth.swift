@@ -53,4 +53,11 @@ public nonisolated enum OAuth2GrantType: Sendable, Hashable, Codable {
     case passwordCredentials
     case clientCredentials
 
+    /// The grants Moth runs. Postman's Authorization Code without PKCE isn't one, because Moth always sends PKCE.
+    public static let supported: [OAuth2GrantType] = [.clientCredentials, .authorizationCodeWithPKCE]
+
+    public var isSupported: Bool {
+        Self.supported.contains(self)
+    }
+
 }

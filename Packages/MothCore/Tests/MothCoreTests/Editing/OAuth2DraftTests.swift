@@ -66,13 +66,13 @@ struct OAuth2DraftTests {
         #expect(draft.credentialWrites().isEmpty)
     }
 
-    @Test("The grant types are Client Credentials, plus a stored grant Moth can't run yet")
+    @Test("The grant types are Client Credentials and Authorization Code, plus a stored grant Moth can't run yet")
     func grantTypes() {
-        #expect(AuthDraft(.none).oauth2.grantTypes == [.clientCredentials])
-        #expect(AuthDraft(.oauth2(Self.oauth2())).oauth2.grantTypes == [.clientCredentials])
+        #expect(AuthDraft(.none).oauth2.grantTypes == [.clientCredentials, .authorizationCodeWithPKCE])
+        #expect(AuthDraft(.oauth2(Self.oauth2())).oauth2.grantTypes == [.clientCredentials, .authorizationCodeWithPKCE])
 
         let imported = AuthDraft(.oauth2(Self.oauth2(grantType: .implicit))).oauth2
-        #expect(imported.grantTypes == [.clientCredentials, .implicit])
+        #expect(imported.grantTypes == [.clientCredentials, .authorizationCodeWithPKCE, .implicit])
         #expect(imported.grantType == .implicit)
         #expect(!imported.isSupported)
     }

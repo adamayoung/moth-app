@@ -7,8 +7,6 @@
 /// brought. The Client Secret is optional, as AWS's Session Token is, because RFC 6749 lets a client have none.
 public nonisolated struct OAuth2Draft: Sendable {
 
-    public static let supportedGrantTypes: [OAuth2GrantType] = [.clientCredentials]
-
     public var grantType = OAuth2GrantType.clientCredentials
     public var tokenURL = ""
     public var clientID = ""
@@ -29,14 +27,14 @@ public nonisolated struct OAuth2Draft: Sendable {
     }
 
     public var grantTypes: [OAuth2GrantType] {
-        guard let storedGrant = stored?.grantType, !Self.supportedGrantTypes.contains(storedGrant) else {
-            return Self.supportedGrantTypes
+        guard let storedGrant = stored?.grantType, !storedGrant.isSupported else {
+            return OAuth2GrantType.supported
         }
-        return Self.supportedGrantTypes + [storedGrant]
+        return OAuth2GrantType.supported + [storedGrant]
     }
 
     public var isSupported: Bool {
-        Self.supportedGrantTypes.contains(grantType)
+        grantType.isSupported
     }
 
     public var clientSecretReference: SecretReference {

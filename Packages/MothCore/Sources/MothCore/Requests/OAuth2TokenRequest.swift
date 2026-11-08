@@ -148,6 +148,8 @@ public nonisolated enum OAuth2TokenError: LocalizedError, Hashable {
     case noAuthorizationCode
     case signInRefused(error: String, description: String?)
     case tokenExpired
+    case signInNeeded
+    case issuedForOtherFields
 
     public var errorDescription: String? {
         switch self {
@@ -177,6 +179,10 @@ public nonisolated enum OAuth2TokenError: LocalizedError, Hashable {
             error
         case .tokenExpired:
             String(localized: "OAUTH2_TOKEN_ERROR_EXPIRED", bundle: .module)
+        case .signInNeeded:
+            String(localized: "OAUTH2_TOKEN_ERROR_SIGN_IN_NEEDED", bundle: .module)
+        case .issuedForOtherFields:
+            String(localized: "OAUTH2_TOKEN_ERROR_OTHER_FIELDS", bundle: .module)
         }
     }
 

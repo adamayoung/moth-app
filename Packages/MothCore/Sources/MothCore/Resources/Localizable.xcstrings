@@ -78,6 +78,28 @@
         }
       }
     },
+    "OAUTH2_TOKEN_ERROR_OTHER_FIELDS" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when the stored OAuth 2.0 token was issued for other fields, such as another environment’s Token URL. Token URL, Client ID and Scope are field labels.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The token was issued for another Token URL, Client ID or Scope. Get a new access token."
+          }
+        }
+      }
+    },
+    "OAUTH2_TOKEN_ERROR_SIGN_IN_NEEDED" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when a send under the OAuth 2.0 Authorization Code grant has no token, because only Get New Access Token can sign in.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Token. Get a new access token."
+          }
+        }
+      }
+    },
     "OAUTH2_TOKEN_ERROR_STATUS_%lld" : {
       "comment" : "Shown under “Couldn’t Get Access Token” when the token endpoint refused with no OAuth error. The argument is the HTTP status code, not a count.",
       "localizations" : {
