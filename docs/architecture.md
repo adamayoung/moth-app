@@ -702,8 +702,9 @@ it removes the policy's `credentialHeaders`, `Authorization` and `Cookie` by
 default, so a secret never follows a redirect to another server, and they stay off
 for the rest of the chain, even back on the first origin. URLSession itself
 drops `Authorization` on every redirect, same origin included, and keeps custom
-headers. Issue #80 adds the API Key header and `X-Amz-Security-Token` to that set,
-from the built request.
+headers. An auth provider names the other headers it adds that hold a secret, the
+API Key header and `X-Amz-Security-Token`; the built request carries them, and the
+sender adds them to the set. A header row typed into the request is never added.
 
 With verification off, the task's delegate accepts the server's trust, and the send
 runs in a `URLSession` of its own, so no verified send can reuse a connection whose

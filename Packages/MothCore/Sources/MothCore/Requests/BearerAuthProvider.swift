@@ -13,6 +13,10 @@ public nonisolated struct BearerAuthProvider: AuthProvider {
         self.token = token
     }
 
+    public var credentialHeaders: Set<String> {
+        ["Authorization"]
+    }
+
     public func apply(to request: inout URLRequest) async throws {
         guard token.isSendableHeaderValue else {
             throw RequestBuildError.invalidBearerToken

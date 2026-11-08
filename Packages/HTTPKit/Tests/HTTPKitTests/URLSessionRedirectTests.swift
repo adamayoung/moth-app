@@ -16,6 +16,12 @@ struct URLSessionRedirectTests {
         session: URLSession(configuration: URLSessionHTTPTransport.sessionConfiguration)
     )
 
+    private static var namingAPIKeyAndSessionToken: SendPolicy {
+        var policy = SendPolicy()
+        policy.credentialHeaders.formUnion(["x-api-key", "x-amz-security-token"])
+        return policy
+    }
+
     private static func redirect(to location: String) -> String {
         "HTTP/1.1 302 Found\r\nLocation: \(location)\r\nX-Hop: first\r\nContent-Length: 0\r\n\r\n"
     }
@@ -37,6 +43,7 @@ struct URLSessionRedirectTests {
         request.setValue("Bearer secret", forHTTPHeaderField: "Authorization")
         request.setValue("m=0", forHTTPHeaderField: "Cookie")
         request.setValue("key", forHTTPHeaderField: "X-API-Key")
+        request.setValue("token", forHTTPHeaderField: "X-Amz-Security-Token")
         request.setValue("kept", forHTTPHeaderField: "X-Custom")
         return request
     }
@@ -142,30 +149,41 @@ struct URLSessionRedirectTests {
     @Test("A redirect on the same origin keeps the typed Cookie, and URLSession drops Authorization on any redirect")
     func sameOriginKeepsCredentials() async throws {
         let server = try await LoopbackServer(routes: ["/start": Self.redirect(to: "/final"), "/final": Self.hello])
-        var policy = SendPolicy()
-        policy.credentialHeaders.insert("x-api-key")
 
-        _ = try await transport.send(Self.withCredentials(server.url(path: "/start")), cookies: nil, policy: policy)
+        _ = try await transport.send(
+            Self.withCredentials(server.url(path: "/start")),
+            cookies: nil,
+            policy: Self.namingAPIKeyAndSessionToken
+        )
 
         let second = try #require(server.request(to: "/final"))
         #expect(!second.contains("Authorization:"))
         #expect(second.contains("\r\nCookie: m=0\r\n"))
         #expect(second.contains("\r\nX-API-Key: key\r\n"))
+        #expect(second.contains("\r\nX-Amz-Security-Token: token\r\n"))
     }
 
-    @Test("A header the policy names as a credential stays behind on another origin too")
+    @Test("Headers the policy names as credentials stay behind on another origin too")
     func namedCredentialHeaderStaysBehind() async throws {
         let target = try await LoopbackServer(routes: ["/final": Self.hello])
         let start = try await LoopbackServer(routes: [
             "/start": Self.redirect(to: target.url(path: "/final", host: "localhost").absoluteString)
         ])
-        var policy = SendPolicy()
-        policy.credentialHeaders.insert("x-api-key")
 
-        _ = try await transport.send(Self.withCredentials(start.url(path: "/start")), cookies: nil, policy: policy)
+        _ = try await transport.send(
+            Self.withCredentials(start.url(path: "/start")),
+            cookies: nil,
+            policy: Self.namingAPIKeyAndSessionToken
+        )
 
-        #expect(try #require(start.request(to: "/start")).contains("\r\nX-API-Key: key\r\n"))
-        #expect(try !#require(target.request(to: "/final")).contains("X-API-Key:"))
+        let first = try #require(start.request(to: "/start"))
+        #expect(first.contains("\r\nX-API-Key: key\r\n"))
+        #expect(first.contains("\r\nX-Amz-Security-Token: token\r\n"))
+        let second = try #require(target.request(to: "/final"))
+        for name in ["X-API-Key:", "X-Amz-Security-Token:", "Authorization:", "Cookie:"] {
+            #expect(!second.contains(name))
+        }
+        #expect(second.contains("\r\nX-Custom: kept\r\n"))
     }
 
 }

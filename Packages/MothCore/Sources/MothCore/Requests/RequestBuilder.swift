@@ -46,7 +46,8 @@ public nonisolated struct RequestBuilder: Sendable {
         return BuiltRequest(
             urlRequest: urlRequest,
             notices: omissions.notices,
-            unresolved: request.unresolved(outside: omissions.leftOut)
+            unresolved: request.unresolved(outside: omissions.leftOut),
+            credentialHeaders: authProvider?.credentialHeaders ?? []
         )
     }
 
