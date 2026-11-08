@@ -64,8 +64,12 @@ nonisolated struct OAuth2SignInRequest: Sendable {
         return url
     }
 
-    /// A web authentication session only catches a callback at a custom scheme, so `http` and `https` can't be one.
     func callbackScheme() throws -> String {
+        try Self.callbackScheme(of: callbackURL)
+    }
+
+    /// A web authentication session only catches a callback at a custom scheme, so `http` and `https` can't be one.
+    static func callbackScheme(of callbackURL: String) throws -> String {
         guard
             let scheme = URL(string: callbackURL)?.scheme?.lowercased(),
             !["http", "https"].contains(scheme)
