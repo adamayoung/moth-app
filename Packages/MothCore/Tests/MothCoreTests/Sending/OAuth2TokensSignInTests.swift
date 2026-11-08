@@ -174,7 +174,7 @@ struct OAuth2TokensSignInTests {
         let expected = OAuth2Token(
             value: "acc3ss",
             expiresAt: Self.now.addingTimeInterval(3600),
-            issuedFor: "https://auth.example.com/token\nmoth\nread",
+            issuedFor: "https://auth.example.com/token\nmoth\nread\nauthorization_code",
             refreshToken: "r3fresh"
         )
         let row = try #require(String(bytes: JSONEncoder().encode(outgoing.request.auth), encoding: .utf8))

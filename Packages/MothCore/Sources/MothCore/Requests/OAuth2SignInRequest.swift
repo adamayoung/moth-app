@@ -69,10 +69,12 @@ nonisolated struct OAuth2SignInRequest: Sendable {
     }
 
     /// A web authentication session only catches a callback at a custom scheme, so `http` and `https` can't be one.
+    /// A port after the colon means a host typed without its scheme, such as `localhost:8080/callback`.
     static func callbackScheme(of callbackURL: String) throws -> String {
         guard
             let scheme = URL(string: callbackURL)?.scheme?.lowercased(),
-            !["http", "https"].contains(scheme)
+            !["http", "https"].contains(scheme),
+            callbackURL.dropFirst(scheme.count + 1).first?.isNumber != true
         else {
             throw OAuth2TokenError.callbackNotCustomScheme
         }

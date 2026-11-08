@@ -6,7 +6,6 @@
 import Foundation
 import HTTPKit
 
-/// Opens the provider's sign-in at the authorization URL and returns the callback URL it ends at.
 public typealias OAuth2SignIn = @MainActor (_ authorizationURL: URL, _ callbackScheme: String) async throws -> URL
 
 /// Keeps each token under its auth's `accessToken` reference, so every request inheriting that auth shares it. Never
@@ -70,9 +69,8 @@ public nonisolated struct OAuth2Tokens: Sendable {
 
     /// A stored token issued for another Token URL, Client ID or Scope, or an imported one, is replaced.
     private func clientCredentialsToken(for oauth2: OAuth2Auth, in resolved: ResolvedRequest) async throws -> String {
-        let fingerprint = Self.tokenRequest(for: oauth2, in: resolved).fingerprint
         if let stored = try await token(for: oauth2.tokenReference),
-           stored.issuedFor == fingerprint, !stored.needsRenewal(at: now()) {
+           stored.issuedFor == Self.issuedFor(oauth2, in: resolved), !stored.needsRenewal(at: now()) {
             return stored.value
         }
         return try await fetchToken(for: oauth2, in: resolved, grant: .clientCredentials).value
@@ -106,7 +104,7 @@ public nonisolated struct OAuth2Tokens: Sendable {
             policy: SendPolicy(followsRedirects: settings.followsRedirects, verifiesTLS: settings.verifiesTLS)
         )
         var token = try OAuth2TokenRequest.token(from: response, receivedAt: now())
-        token.issuedFor = tokenRequest.fingerprint
+        token.issuedFor = Self.issuedFor(oauth2, in: resolved)
         if case .refreshToken(let used) = grant, token.refreshToken == nil {
             token.refreshToken = used
         }

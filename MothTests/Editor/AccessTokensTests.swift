@@ -49,7 +49,6 @@ struct AccessTokensTests {
         .container(.folder(UUID()), draft, .empty)
     }
 
-    /// Client Credentials never opens a sign-in.
     private static func noSignIn(_: URL, _: String) throws -> URL {
         Issue.record("Client Credentials opened a sign-in")
         throw CancellationError()

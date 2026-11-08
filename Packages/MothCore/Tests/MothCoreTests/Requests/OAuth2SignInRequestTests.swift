@@ -87,7 +87,14 @@ struct OAuth2SignInRequestTests {
 
     @Test(
         "A Callback URL that isn't a custom scheme is refused",
-        arguments: ["", "https://oauth.pstmn.io/v1/callback", "http://localhost:8080/callback", "callback"]
+        arguments: [
+            "",
+            "https://oauth.pstmn.io/v1/callback",
+            "http://localhost:8080/callback",
+            "callback",
+            "localhost:8080/callback",
+            "example.com:443/callback"
+        ]
     )
     func callbackNotCustomScheme(callbackURL: String) {
         #expect(throws: OAuth2TokenError.callbackNotCustomScheme) {

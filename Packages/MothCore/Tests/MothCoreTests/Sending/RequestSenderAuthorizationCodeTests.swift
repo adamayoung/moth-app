@@ -12,7 +12,7 @@ struct RequestSenderAuthorizationCodeTests {
 
     static let now = Date(timeIntervalSince1970: 1_800_000_000)
     static let accessToken = SecretReference(identifier: "access-token")
-    static let issuedFor = "https://auth.example.com/token\nmoth\nread"
+    static let issuedFor = "https://auth.example.com/token\nmoth\nread\nauthorization_code"
     nonisolated static let renewed = HTTPResponse(
         status: 200,
         headers: ["Content-Type": "application/json"],

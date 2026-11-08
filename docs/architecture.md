@@ -163,12 +163,16 @@ in the callback is shown, a callback with another `state` is refused, and in
 neither case is a token requested. The code is exchanged with the verifier, the
 client authenticated by a Basic header when it has a secret and named in the form
 when it has none. A send can't open the sheet, so with no token, or one issued for
-another Token URL, Client ID or Scope, it stops and asks for a new one, which also
-keeps a refresh token from reaching another environment's Token URL. A token with
-60 seconds or less left is refreshed at send. A refused refresh stops the send
-with "Token Expired. Get a new access token." and drops the refresh token, while
-an unreachable Token URL keeps it. A token with no refresh token is sent until it
-expires. Any other grant sends no auth and is noted, as an unsupported kind is.
+another Token URL, Client ID, Scope or grant, it stops and asks for a new one,
+which also keeps a refresh token from reaching another environment's Token URL. An
+imported token records none of those, can't be refreshed, and is sent as it is. A
+token with 60 seconds or less left is refreshed at send. Only a 400 or 401 answer,
+section 5.2's refusal, drops the refresh token; an unreachable Token URL, a server
+error or a rate limit keeps it. Whatever the refresh does, a token that hasn't
+expired is still sent, and an expired one stops the send with "Token Expired. Get
+a new access token." A refusal re-reads the record first, so a token another send
+or sign-in stored meanwhile is kept and used. Any other grant sends no auth and is
+noted, as an unsupported kind is.
 
 `OAuth2Tokens` keeps the token as JSON under the auth's `accessToken` reference,
 with its expiry and the resolved Token URL, Client ID and Scope it was issued for,
