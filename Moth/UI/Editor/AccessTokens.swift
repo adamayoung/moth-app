@@ -99,7 +99,11 @@ final class AccessTokens {
         }
     }
 
-    func getNewToken(for reference: SecretReference, from source: Source) async {
+    func getNewToken(
+        for reference: SecretReference,
+        from source: Source,
+        signIn: @escaping OAuth2SignIn
+    ) async {
         guard fetching.insert(reference).inserted else {
             return
         }
@@ -108,7 +112,7 @@ final class AccessTokens {
         failures[reference] = nil
         do {
             let (outgoing, scopes) = try prepare(source)
-            statuses[reference] = try await .token(tokens.getNewToken(for: outgoing, scopes: scopes))
+            statuses[reference] = try await .token(tokens.getNewToken(for: outgoing, scopes: scopes, signIn: signIn))
         } catch is CancellationError {
             return
         } catch {

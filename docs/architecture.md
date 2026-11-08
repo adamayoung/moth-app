@@ -149,7 +149,30 @@ and goes to no History. It takes the request's timeout, Follow Redirects and Ver
 TLS Certificate, because a token endpoint often shares the API's host. A folder's
 or collection's sheet has no request, so its Get New Access Token uses the
 defaults. Two sends that both need a token both ask for one, and the last stored
-wins. Any other grant sends no auth and is noted, as an unsupported kind is.
+wins.
+
+OAuth 2.0 also runs the Authorization Code grant (section 4.1), always with
+RFC 7636's PKCE and S256. Get New Access Token opens the system's web
+authentication sheet, sharing the browser's session, at the Auth URL with a fresh
+`state` and verifier. The app hands `OAuth2Tokens` that sheet as an
+`OAuth2SignIn`, so MothCore has no AuthenticationServices dependency, and a cancelled sheet
+is a `CancellationError` that leaves the token as it was. The sheet catches only a
+custom-scheme callback, so Moth registers no URL scheme and needs no server, and
+an `http` or `https` Callback URL is refused before it opens. A provider's `error`
+in the callback is shown, a callback with another `state` is refused, and in
+neither case is a token requested. The code is exchanged with the verifier, the
+client authenticated by a Basic header when it has a secret and named in the form
+when it has none. A send can't open the sheet, so with no token, or one issued for
+another Token URL, Client ID, Scope or grant, it stops and asks for a new one,
+which also keeps a refresh token from reaching another environment's Token URL. An
+imported token records none of those, can't be refreshed, and is sent as it is. A
+token with 60 seconds or less left is refreshed at send. Only a 400 or 401 answer,
+section 5.2's refusal, drops the refresh token; an unreachable Token URL, a server
+error or a rate limit keeps it. Whatever the refresh does, a token that hasn't
+expired is still sent, and an expired one stops the send with "Token Expired. Get
+a new access token." A refusal re-reads the record first, so a token another send
+or sign-in stored meanwhile is kept and used. Any other grant sends no auth and is
+noted, as an unsupported kind is.
 
 `OAuth2Tokens` keeps the token as JSON under the auth's `accessToken` reference,
 with its expiry and the resolved Token URL, Client ID and Scope it was issued for,
@@ -236,8 +259,9 @@ Moth keeps what it can store and counts the rest:
   it is reported as missing. Basic and Digest always save a password, because they
   can send a username alone.
 - OAuth 2.0 keeps every field Postman exports, and gets a token reference when
-  it has no token. A grant other than Client Credentials is counted as
-  unsupported.
+  it has no token. A grant other than Client Credentials and Authorization Code
+  with PKCE is counted as unsupported, Postman's Authorization Code without PKCE
+  included.
 - AWS takes Postman's own defaults for a blank region or service, `us-east-1` and
   `execute-api`, so an export that worked there signs here with no edit. An export
   leaves a blank `service` out altogether.
@@ -426,7 +450,9 @@ GraphQL body, and a form-data file row. Such a body keeps an entry of its own in
 the picker, and a Save writes the same bytes. Choosing another kind and saving
 replaces it. An OAuth 2.0 grant Moth can't run yet keeps its entry in the Grant
 Type picker and shows Not Supported Yet in the same way. `OAuth2Draft` carries
-the fields its pane doesn't show through a Save unchanged.
+the fields its pane doesn't show through a Save unchanged. A new auth, or choosing
+Authorization Code with an empty Callback URL, gets `moth://oauth/callback`, and a
+Callback URL that isn't a custom scheme says so under the field.
 
 A typed credential stays on the `AuthDraft`. `RequestEdit` holds references, so
 the text has no route to a row. A changed credential takes a new reference, and a
@@ -614,7 +640,9 @@ once the row has changed, unless another row's auth holds that reference. Deleti
 one leaves the item behind as a stray.
 
 An OAuth 2.0 token syncs like any other secret, under the auth's token reference.
-Clear Token removes the item. A token fetched for a new auth that is then reverted
+An Authorization Code grant's refresh token is in the same item, so the row needs
+no reference for it, and an imported `refreshToken` reference isn't used. Clear
+Token removes the item. A token fetched for a new auth that is then reverted
 or never saved is a stray, live until it expires.
 
 ### Cookie Values

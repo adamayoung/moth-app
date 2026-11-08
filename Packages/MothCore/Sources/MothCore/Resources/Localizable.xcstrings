@@ -1,6 +1,61 @@
 {
   "sourceLanguage" : "en-GB",
   "strings" : {
+    "OAUTH2_SIGN_IN_ERROR_CALLBACK_SCHEME" : {
+      "comment" : "Shown under an OAuth 2.0 Callback URL, and under “Couldn’t Get Access Token”, when the Callback URL is http, https or not a URL. A URL scheme is the part before the colon, such as moth in moth://.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moth can only receive a sign-in at a custom URL scheme."
+          }
+        }
+      }
+    },
+    "OAUTH2_SIGN_IN_ERROR_INVALID_URL" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when the OAuth 2.0 Auth URL isn’t an http or https address, so no sign-in opens.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Auth URL isn’t a valid web address."
+          }
+        }
+      }
+    },
+    "OAUTH2_SIGN_IN_ERROR_NO_CODE" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when an OAuth 2.0 sign-in’s callback has no code.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sign-in returned no authorization code."
+          }
+        }
+      }
+    },
+    "OAUTH2_SIGN_IN_ERROR_STATE" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when an OAuth 2.0 sign-in’s callback carries a state value other than the one Moth sent. “state” is the OAuth parameter’s name.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sign-in answered with a different state, so Moth didn’t ask for a token."
+          }
+        }
+      }
+    },
+    "OAUTH2_TOKEN_ERROR_EXPIRED" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when a send finds the OAuth 2.0 token expired and it can’t be refreshed. “Get New Access Token” is the button that signs in again.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token Expired. Get a new access token."
+          }
+        }
+      }
+    },
     "OAUTH2_TOKEN_ERROR_INVALID_URL" : {
       "comment" : "Shown under “Couldn’t Get Access Token” when an OAuth 2.0 Token URL can't be requested.",
       "localizations" : {
@@ -19,6 +74,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The token endpoint’s answer had no access token."
+          }
+        }
+      }
+    },
+    "OAUTH2_TOKEN_ERROR_OTHER_FIELDS" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when the stored OAuth 2.0 token was issued for other fields, such as another environment’s Token URL. Token URL, Client ID and Scope are field labels.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The token was issued for another Token URL, Client ID or Scope. Get a new access token."
+          }
+        }
+      }
+    },
+    "OAUTH2_TOKEN_ERROR_SIGN_IN_NEEDED" : {
+      "comment" : "Shown under “Couldn’t Get Access Token” when a send under the OAuth 2.0 Authorization Code grant has no token, because only Get New Access Token can sign in.",
+      "localizations" : {
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Token. Get a new access token."
           }
         }
       }

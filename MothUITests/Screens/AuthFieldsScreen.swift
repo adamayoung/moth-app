@@ -83,6 +83,18 @@ struct AuthFieldsScreen {
         root.popUpButtons["auth.grantType"]
     }
 
+    var authURLField: XCUIElement {
+        root.textFields["auth.authURL"]
+    }
+
+    var callbackURLField: XCUIElement {
+        root.textFields["auth.callbackURL"]
+    }
+
+    var callbackURLProblemText: XCUIElement {
+        root.staticTexts["auth.callbackURLProblem"]
+    }
+
     var tokenURLField: XCUIElement {
         root.textFields["auth.tokenURL"]
     }

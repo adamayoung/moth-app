@@ -7,12 +7,21 @@
 /// brought. The Client Secret is optional, as AWS's Session Token is, because RFC 6749 lets a client have none.
 public nonisolated struct OAuth2Draft: Sendable {
 
-    public static let supportedGrantTypes: [OAuth2GrantType] = [.clientCredentials]
+    public static let defaultCallbackURL = "moth://oauth/callback"
 
-    public var grantType = OAuth2GrantType.clientCredentials
+    public var grantType = OAuth2GrantType.clientCredentials {
+        didSet {
+            if grantType == .authorizationCodeWithPKCE, callbackURL.isEmpty {
+                callbackURL = Self.defaultCallbackURL
+            }
+        }
+    }
+
     public var tokenURL = ""
     public var clientID = ""
     public var scope = ""
+    public var authorizationURL = ""
+    public var callbackURL = Self.defaultCallbackURL
     private var stored: OAuth2Auth?
     private var clientSecret = DraftCredential()
     private var newAccessToken = SecretReference()
@@ -24,19 +33,33 @@ public nonisolated struct OAuth2Draft: Sendable {
         self.tokenURL = auth.accessTokenURL
         self.clientID = auth.clientID
         self.scope = auth.scope
+        self.authorizationURL = auth.authorizationURL
+        self.callbackURL = auth.callbackURL
         self.stored = auth
         clientSecret.stored = auth.clientSecret
     }
 
     public var grantTypes: [OAuth2GrantType] {
-        guard let storedGrant = stored?.grantType, !Self.supportedGrantTypes.contains(storedGrant) else {
-            return Self.supportedGrantTypes
+        guard let storedGrant = stored?.grantType, !storedGrant.isSupported else {
+            return OAuth2GrantType.supported
         }
-        return Self.supportedGrantTypes + [storedGrant]
+        return OAuth2GrantType.supported + [storedGrant]
     }
 
     public var isSupported: Bool {
-        Self.supportedGrantTypes.contains(grantType)
+        grantType.isSupported
+    }
+
+    /// A Callback URL holding a variable is checked when Get New Access Token resolves it.
+    public var callbackURLProblem: String? {
+        guard
+            grantType == .authorizationCodeWithPKCE,
+            !callbackURL.contains("{{"),
+            (try? OAuth2SignInRequest.callbackScheme(of: callbackURL)) == nil
+        else {
+            return nil
+        }
+        return OAuth2TokenError.callbackNotCustomScheme.errorDescription
     }
 
     public var clientSecretReference: SecretReference {
@@ -60,6 +83,8 @@ public nonisolated struct OAuth2Draft: Sendable {
             scope: ""
         )
         auth.grantType = grantType
+        auth.authorizationURL = authorizationURL
+        auth.callbackURL = callbackURL
         auth.accessTokenURL = tokenURL
         auth.clientID = clientID
         auth.scope = scope
@@ -96,6 +121,8 @@ public nonisolated struct OAuth2Draft: Sendable {
 
     mutating func follow(_ saved: OAuth2Draft) {
         grantType = saved.grantType
+        authorizationURL = saved.authorizationURL
+        callbackURL = saved.callbackURL
         tokenURL = saved.tokenURL
         clientID = saved.clientID
         scope = saved.scope

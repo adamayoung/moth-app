@@ -49,13 +49,18 @@ struct AccessTokensTests {
         .container(.folder(UUID()), draft, .empty)
     }
 
+    private static func noSignIn(_: URL, _: String) throws -> URL {
+        Issue.record("Client Credentials opened a sign-in")
+        throw CancellationError()
+    }
+
     @Test("Get New Access Token stores the token and shows when it expires")
     func getsAToken() async {
         let tokens = accessTokens()
         let draft = draft(tokenURL: "https://stub.invalid/token")
         let reference = draft.oauth2.accessTokenReference
 
-        await tokens.getNewToken(for: reference, from: source(draft))
+        await tokens.getNewToken(for: reference, from: source(draft), signIn: Self.noSignIn)
 
         let token = OAuth2Token(
             value: "stub-access-token",
@@ -74,7 +79,7 @@ struct AccessTokensTests {
         let draft = draft(tokenURL: "https://stub.invalid/token/refused")
         let reference = draft.oauth2.accessTokenReference
 
-        await tokens.getNewToken(for: reference, from: source(draft))
+        await tokens.getNewToken(for: reference, from: source(draft), signIn: Self.noSignIn)
 
         #expect(tokens.failure(of: reference) == "invalid_client: Client authentication failed.")
         #expect(tokens.status(of: reference) == .none)
@@ -86,10 +91,10 @@ struct AccessTokensTests {
         let tokens = accessTokens()
         var draft = draft(tokenURL: "https://stub.invalid/token/refused")
         let reference = draft.oauth2.accessTokenReference
-        await tokens.getNewToken(for: reference, from: source(draft))
+        await tokens.getNewToken(for: reference, from: source(draft), signIn: Self.noSignIn)
 
         draft.oauth2.tokenURL = "https://stub.invalid/token"
-        await tokens.getNewToken(for: reference, from: source(draft))
+        await tokens.getNewToken(for: reference, from: source(draft), signIn: Self.noSignIn)
 
         #expect(tokens.failure(of: reference) == nil)
     }
@@ -99,7 +104,7 @@ struct AccessTokensTests {
         let tokens = accessTokens()
         let draft = draft(tokenURL: "https://stub.invalid/token")
         let reference = draft.oauth2.accessTokenReference
-        await tokens.getNewToken(for: reference, from: source(draft))
+        await tokens.getNewToken(for: reference, from: source(draft), signIn: Self.noSignIn)
 
         await tokens.clear(reference)
 
@@ -112,7 +117,7 @@ struct AccessTokensTests {
         let draft = draft(tokenURL: "https://stub.invalid/token/forever")
         let stored = draft.oauth2.accessTokenReference
         let missing = SecretReference(identifier: "missing")
-        await accessTokens().getNewToken(for: stored, from: source(draft))
+        await accessTokens().getNewToken(for: stored, from: source(draft), signIn: Self.noSignIn)
         let tokens = accessTokens()
 
         #expect(tokens.status(of: stored) == .loading)
@@ -129,7 +134,7 @@ struct AccessTokensTests {
         let reference = draft.oauth2.accessTokenReference
         let tokens = accessTokens()
         await tokens.load(reference)
-        await accessTokens().getNewToken(for: reference, from: source(draft))
+        await accessTokens().getNewToken(for: reference, from: source(draft), signIn: Self.noSignIn)
 
         await tokens.load(reference)
 
@@ -164,7 +169,8 @@ struct AccessTokensTests {
 
         await tokens.getNewToken(
             for: draft.oauth2.accessTokenReference,
-            from: .container(.folder(folder.id), draft, tree)
+            from: .container(.folder(folder.id), draft, tree),
+            signIn: Self.noSignIn
         )
 
         withExtendedLifetime(dataModel) {

@@ -98,7 +98,7 @@ nonisolated extension PostmanMapper {
             accessToken: optionalSecret(postman.text("accessToken")) ?? SecretReference(),
             refreshToken: optionalSecret(postman.text("refreshToken"))
         ))
-        return OAuth2Draft.supportedGrantTypes.contains(grantType) ? auth : storedButUnsupported(.oauth2, auth)
+        return grantType.isSupported ? auth : storedButUnsupported(.oauth2, auth)
     }
 
     private static func grantType(named name: String?) -> OAuth2GrantType {

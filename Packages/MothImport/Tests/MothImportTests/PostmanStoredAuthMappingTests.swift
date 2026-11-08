@@ -40,13 +40,16 @@ struct PostmanStoredAuthMappingTests {
         #expect(oauth2.callbackURL == "https://a.test/cb")
     }
 
-    @Test("Client Credentials maps as a supported auth, with a token reference for the token a send gets")
-    func mapsClientCredentials() async throws {
+    @Test(
+        "A grant Moth runs maps as a supported auth, with a token reference for the token it gets",
+        arguments: ["client_credentials", "authorization_code_with_pkce"]
+    )
+    func mapsRunnableGrants(grant: String) async throws {
         let result = try await Fixture.importingAuth(#"""
         {
             "type": "oauth2",
             "oauth2": [
-                { "key": "grant_type", "value": "client_credentials" },
+                { "key": "grant_type", "value": "\#(grant)" },
                 { "key": "accessTokenUrl", "value": "https://a.test/token" }
             ]
         }
@@ -64,7 +67,6 @@ struct PostmanStoredAuthMappingTests {
 
     @Test("A grant Moth can't run yet is counted as unsupported", arguments: [
         "authorization_code",
-        "authorization_code_with_pkce",
         "implicit",
         "password_credentials"
     ])
